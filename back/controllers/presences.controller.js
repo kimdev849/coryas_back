@@ -24,37 +24,52 @@ const getAllPresences = async (req, res) => {
 // POST /api/presences/checkin - Enregistrer une arrivee
 // ----------------------------------------------------------------
 // 1. On recupere l'ID de l'employe qui veut pointer
-// 2. On prend la date et l'heure actuelle
+// 2. On prend la date et l'heure actuelle (ou celle envoyee par le front)
 // 3. Si l'employe arrive apres 09:00, le statut est "Retard"
 // 4. On enregistre dans la base
 // ----------------------------------------------------------------
 const checkIn = async (req, res) => {
     try {
-        // L'ID de l'employe vient du formulaire ou du token JWT
-        const { employe_id } = req.body;
+        const { employe_id, heure_entree: frontHeure } = req.body;
 
         if (!employe_id) {
             return res.status(400).json({ message: "employe_id obligatoire", data: null });
         }
 
-        // On recupere la date et l'heure actuelles du serveur
-        const now = new Date();
-        const date = now.toISOString().split('T')[0];          // ex: "2026-07-09"
-        const heure = String(now.getHours()).padStart(2, "0"); // ex: "08"
-        const minutes = String(now.getMinutes()).padStart(2, "0"); // ex: "30"
-        const heure_entree = heure + ":" + minutes;          // ex: "08:30"
+        // Auto-fermeture des presences des jours precedents oubliees
+        const closedPresences = await presencesModel.autoCloseStalePresences(employe_id);
+
+        // Utiliser l'heure envoyée par le front (fuseau local) ou celle du serveur
+        let heure_entree;
+        if (frontHeure) {
+            heure_entree = frontHeure;
+        } else {
+            const now = new Date();
+            const paris = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+            const h = String(paris.getHours()).padStart(2, "0");
+            const m = String(paris.getMinutes()).padStart(2, "0");
+            heure_entree = h + ":" + m;
+        }
+
+        // Date au format YYYY-MM-DD (toujours en UTC pour la coherence)
+        const date = new Date().toISOString().split('T')[0];
 
         // Si l'heure d'arrivee est apres 09:00, l'employe est en retard
-        // S'il arrive avant ou a 09:00, il est "Present"
         const statut = heure_entree > "09:00" ? "Retard" : "Present";
 
-        // On enregistre l'arrivee dans la base de donnees
         const newPresence = await presencesModel.checkIn({
             employe_id, date_presence: date, heure_entree, statut,
         });
 
-        // 201 = la presence a ete cree
-        res.status(201).json({ message: "Arrivee enregistree", data: newPresence });
+        const message = closedPresences.length > 0
+            ? `Arrivee enregistree (${closedPresences.length} presence(s) precedente(s) fermee(s) automatiquement)`
+            : "Arrivee enregistree";
+
+        res.status(201).json({
+            message,
+            data: newPresence,
+            autoClosed: closedPresences,
+        });
     } catch (error) {
         console.error("Erreur checkIn:", error);
         res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
@@ -70,20 +85,24 @@ const checkIn = async (req, res) => {
 // ----------------------------------------------------------------
 const checkOut = async (req, res) => {
     try {
-        // presenceId = l'ID de la ligne de presence a mettre a jour
-        const { presenceId } = req.body;
+        const { presenceId, heure_sortie: frontHeure } = req.body;
 
         if (!presenceId) {
             return res.status(400).json({ message: "ID de presence obligatoire", data: null });
         }
 
-        // Heure de depart = heure actuelle
-        const now = new Date();
-        const heure = String(now.getHours()).padStart(2, "0");
-        const minutes = String(now.getMinutes()).padStart(2, "0");
-        const heure_sortie = heure + ":" + minutes;
+        // Heure de depart = celle du front (fuseau local) ou du serveur
+        let heure_sortie;
+        if (frontHeure) {
+            heure_sortie = frontHeure;
+        } else {
+            const now = new Date();
+            const paris = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+            const h = String(paris.getHours()).padStart(2, "0");
+            const m = String(paris.getMinutes()).padStart(2, "0");
+            heure_sortie = h + ":" + m;
+        }
 
-        // On met a jour la presence avec l'heure de sortie
         const presence = await presencesModel.checkOut(presenceId, heure_sortie);
 
         if (!presence) {

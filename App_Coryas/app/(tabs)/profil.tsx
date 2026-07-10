@@ -1,3 +1,20 @@
+// ============================================================
+// ONGLET PROFIL - Informations utilisateur et déconnexion
+// ============================================================
+// Affiche le profil de l'utilisateur connecté avec :
+//   - Avatar (initiales du prénom et nom)
+//   - Nom complet, poste, matricule
+//   - Options de l'application (mockées)
+//   - Bouton de déconnexion
+//
+// ⚙️ Fonctionnement :
+// 1. Au focus de l'onglet, on charge les données depuis AsyncStorage
+// 2. Les données ont été sauvegardées lors de la connexion (login)
+// 3. Le bouton "Déconnexion" appelle logout() qui :
+//    - Supprime le token JWT et les données utilisateur
+//    - Redirige vers l'écran splash (/)
+// ============================================================
+
 import { StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useState, useCallback } from "react";
@@ -6,7 +23,14 @@ import { useFocusEffect } from "expo-router";
 import { logout } from "../../src/services/auth";
 import { Colors } from "../../src/constants/Colors";
 
-// Mock profile options
+// ============================================================
+// OPTIONS DU PROFIL (données mockées pour l'interface)
+// ============================================================
+// Chaque option a :
+//   - label : nom de l'option
+//   - value : valeur affichée (vide si non applicable)
+//   - icon : emoji représentatif
+// ============================================================
 const profileOptions = [
   { label: "Mode de pointage", value: "Manuel", icon: "⏱️" },
   { label: "Notifications", value: "Activées", icon: "🔔" },
@@ -17,8 +41,17 @@ const profileOptions = [
 
 export default function ProfilTab() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(null); // Données utilisateur (any car structure variable)
 
+  // ============================================================
+  // Chargement des données utilisateur depuis AsyncStorage
+  // ============================================================
+  // useFocusEffect : exécute le code à chaque fois que l'utilisateur
+  // se rend sur l'onglet "Profil"
+  //
+  // AsyncStorage.getItem("@user_data") récupère l'objet JSON
+  // qui a été stocké lors du login réussi
+  // ============================================================
   useFocusEffect(
     useCallback(() => {
       const loadUser = async () => {
@@ -35,10 +68,18 @@ export default function ProfilTab() {
     }, [])
   );
 
+  // ============================================================
+  // handleLogout : déconnexion de l'utilisateur
+  // ============================================================
+  // logout() vient du service auth et :
+  //   1. Supprime le token JWT d'AsyncStorage
+  //   2. Supprime les données utilisateur d'AsyncStorage
+  //   3. Redirige vers l'écran splash avec router.replace("/")
+  // ============================================================
   const handleLogout = async () => {
     try {
       await logout();
-      router.replace("/");
+      router.replace("/"); // Retour à l'écran splash (qui redirigera vers login)
     } catch (error) {
       Alert.alert("Erreur", "Impossible de se déconnecter");
     }
@@ -51,7 +92,13 @@ export default function ProfilTab() {
         <Text style={styles.title}>Profil</Text>
       </View>
 
-      {/* User Info */}
+      {/* ============================================================ */}
+      {/* INFORMATIONS UTILISATEUR                                     */}
+      {/* ============================================================ */}
+      {/* Avatar : cercle noir avec les initiales (première lettre     */}
+      {/* du prénom + première lettre du nom)                          */}
+      {/* Infos : nom complet, poste, matricule                        */}
+      {/* ============================================================ */}
       <View style={styles.userInfo}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -71,7 +118,11 @@ export default function ProfilTab() {
         </View>
       </View>
 
-      {/* Options List */}
+      {/* ============================================================ */}
+      {/* LISTE DES OPTIONS (mockées pour l'instant)                   */}
+      {/* ============================================================ */}
+      {/* Chaque ligne affiche : icône | label | valeur | chevron (›)  */}
+      {/* ============================================================ */}
       <View style={styles.optionsList}>
         {profileOptions.map((option, index) => (
           <View key={index} style={styles.optionRow}>
@@ -85,7 +136,9 @@ export default function ProfilTab() {
         ))}
       </View>
 
-      {/* Logout Button */}
+      {/* ============================================================ */}
+      {/* BOUTON DE DÉCONNEXION                                        */}
+      {/* ============================================================ */}
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutIcon}>🚪</Text>
         <Text style={styles.logoutText}>Déconnexion</Text>

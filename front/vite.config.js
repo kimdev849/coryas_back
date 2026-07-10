@@ -48,14 +48,17 @@ import react from "@vitejs/plugin-react";
 // export default signifie que ce fichier EXPORTE cette
 // configuration pour que Vite puisse la lire.
 //
-// C'est comme dire à Vite : "Voici comment tu dois fonctionner"
+// 🔄 PROXY : Toutes les requêtes vers /api sont redirigées
+// vers le backend déployé sur Render.
+// En dev, ça évite les erreurs CORS et le front peut
+// appeler /api/... comme s'il était sur le même serveur.
 // ----------------------------------------------------------------
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "https://coryas-api.onrender.com",
         changeOrigin: true,
       },
     },

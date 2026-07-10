@@ -1,3 +1,24 @@
+// ============================================================
+// ÉCRAN DE POINTAGE - Check-in / Check-out
+// ============================================================
+// Cet écran permet à l'utilisateur de pointer son arrivée
+// (check-in) et son départ (check-out).
+//
+// ⚙️ Fonctionnement :
+// 1. Au chargement, on vérifie si une présence active existe
+// 2. Si oui → on affiche "Vous êtes au travail" + heure d'arrivée
+// 3. Si non → on affiche "Prêt à pointer ?"
+// 4. Au clic sur le bouton :
+//    - Si check-in → appel à checkIn() qui crée une présence
+//    - Si check-out → appel à checkOut(id) qui ferme la présence
+// 5. Animation de succès pendant 2 secondes
+//
+// 📌 Concepts React :
+// - useFocusEffect : rechargement à chaque fois que l'écran est focus
+// - useCallback : évite de recréer la fonction à chaque rendu
+// - Animated : animation du bouton au clic (scale)
+// ============================================================
+
 import { StyleSheet, Text, View, Pressable, Alert, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { useState, useCallback, useEffect } from "react";
@@ -8,20 +29,31 @@ import { Colors } from "../src/constants/Colors";
 export default function PointerScreen() {
   const router = useRouter();
   
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
-  const [checkInTime, setCheckInTime] = useState<string | null>(null);
-  const [activePresenceId, setActivePresenceId] = useState<string | number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingAction, setLoadingAction] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [successTime, setSuccessTime] = useState<string | null>(null);
+  // ============================================================
+  // ÉTATS DU COMPOSANT
+  // ============================================================
+  const [isCheckedIn, setIsCheckedIn] = useState(false);           // L'utilisateur a-t-il pointé son arrivée ?
+  const [checkInTime, setCheckInTime] = useState<string | null>(null); // Heure d'arrivée affichée
+  const [activePresenceId, setActivePresenceId] = useState<string | number | null>(null); // ID de la présence active
+  const [loading, setLoading] = useState(true);                   // Chargement initial
+  const [loadingAction, setLoadingAction] = useState(false);       // Chargement pendant l'action (check-in/out)
+  const [success, setSuccess] = useState(false);                   // Animation de succès visible ?
+  const [successTime, setSuccessTime] = useState<string | null>(null); // Heure affichée dans l'écran de succès
   
+  // Valeur animée pour l'effet de pression sur le bouton (scale 1 → 0.95 → 1)
   const scaleAnim = useState(new Animated.Value(1))[0];
 
-  // Load active presence
+  // ============================================================
+  // loadData : récupère la présence active depuis l'API
+  // ============================================================
+  // useCallback : mémoïse la fonction (ne change que si [] change)
+  // Cela évite des re-rendus inutiles
+  // ============================================================
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      // getActivePresence() appelle GET /api/presences/active
+      // Retourne la présence en cours ou null
       const activePresence = await getActivePresence();
       if (activePresence) {
         setIsCheckedIn(true);
@@ -39,25 +71,36 @@ export default function PointerScreen() {
     }
   }, []);
 
+  // ============================================================
+  // useFocusEffect : rechargement à chaque focus de l'écran
+  // ============================================================
+  // Contrairement à useEffect qui ne s'exécute qu'au montage,
+  // useFocusEffect se déclenche à chaque fois que l'utilisateur
+  // revient sur cet écran (par exemple après un check-in réussi).
+  // ============================================================
   useFocusEffect(
     useCallback(() => {
       loadData();
     }, [loadData])
   );
 
-  // Handle pointer
+  // ============================================================
+  // handlePointer : gère le clic sur le bouton de pointage
+  // ============================================================
   const handlePointer = async () => {
     setLoadingAction(true);
     try {
       if (isCheckedIn && activePresenceId) {
+        // CHECK-OUT : l'utilisateur est déjà présent → on enregistre le départ
         await checkOut(activePresenceId);
         setSuccess(true);
         setSuccessTime(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
         setTimeout(() => {
-          setSuccess(false);
-          loadData();
+          setSuccess(false);  // Cache l'écran de succès
+          loadData();          // Recharge les données
         }, 2000);
       } else {
+        // CHECK-IN : l'utilisateur n'est pas présent → on enregistre l'arrivée
         const presence = await checkIn();
         setSuccess(true);
         setSuccessTime(presence.heure_entree);
@@ -74,7 +117,14 @@ export default function PointerScreen() {
     }
   };
 
-  // Animation for pointer button
+  // ============================================================
+  // animatePress : effet visuel au clic (le bouton rétrécit)
+  // ============================================================
+  // Animated.sequence : exécute les animations l'une après l'autre
+  //   1. Rétrécir à 95% (100ms)
+  //   2. Revenir à 100% (100ms)
+  // Cela donne un effet de "clic" naturel
+  // ============================================================
   const animatePress = () => {
     Animated.sequence([
       Animated.timing(scaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
@@ -82,11 +132,22 @@ export default function PointerScreen() {
     ]).start();
   };
 
-  // Go back
+  // Navigation : retour à l'écran précédent
   const goBack = () => {
     router.back();
   };
 
+  // ============================================================
+  // ÉCRAN DE SUCCÈS (affiché 2 secondes après un pointage)
+  // ============================================================
+  // Si success est true, on affiche cet écran à la place du
+  // formulaire principal. Il montre :
+  //   - Un cercle vert avec un ✓
+  //   - Le message "Pointage enregistré"
+  //   - L'heure du pointage
+  //   - La date du jour
+  //   - Un bouton pour retourner à l'accueil
+  // ============================================================
   if (success) {
     return (
       <View style={styles.container}>
@@ -107,12 +168,17 @@ export default function PointerScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header avec le titre */}
       <View style={styles.header}>
         <Text style={styles.title}>Pointer</Text>
       </View>
 
-      {/* Main Content */}
+      {/* ============================================================ */}
+      {/* BOUTON PRINCIPAL DE POINTAGE                                  */}
+      {/* ============================================================ */}
+      {/* Un grand cercle doré avec un cercle blanc à l'intérieur       */}
+      {/* L'effet scale est animé au clic (rétrécit puis revient)      */}
+      {/* ============================================================ */}
       <View style={styles.content}>
         <Animated.View style={[styles.pointerCircle, { transform: [{ scale: scaleAnim }] }]}>
           <Pressable
@@ -127,6 +193,7 @@ export default function PointerScreen() {
           </Pressable>
         </Animated.View>
         
+        {/* Texte de statut : change selon check-in ou non */}
         <Text style={styles.statusText}>
           {isCheckedIn ? "Vous êtes au travail" : "Prêt à pointer ?"}
         </Text>
@@ -135,7 +202,7 @@ export default function PointerScreen() {
         </Text>
       </View>
 
-      {/* Back Button */}
+      {/* Bouton retour */}
       <View style={styles.footer}>
         <Pressable style={styles.backButton} onPress={goBack}>
           <Text style={styles.backButtonText}>Retour</Text>

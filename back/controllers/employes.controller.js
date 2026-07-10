@@ -141,6 +141,11 @@ async function createEmploye(req, res) {
 // ----------------------------------------------------------------
 // PUT /api/employes/:id - Modifier un employe
 // ----------------------------------------------------------------
+// 1. Recupere l'ID dans l'URL (req.params) et les donnees dans le body
+// 2. Met a jour la table employes (COALESCE = ne change que si fourni)
+// 3. Si email ou role sont fournis, met aussi a jour la table utilisateurs
+// 4. Tout est dans une transaction : si une erreur arrive, on ROLLBACK
+// ----------------------------------------------------------------
 async function updateEmploye(req, res) {
     const client = await require("../config/database").connect();
     try {
@@ -153,7 +158,8 @@ async function updateEmploye(req, res) {
 
         await client.query("BEGIN");
 
-        // Mettre à jour l'employé dans la transaction
+        // Met à jour l'employe dans la transaction
+        // COALESCE($2, matricule) = si $2 est null, garde l'ancienne valeur
         const updateRes = await client.query(`
             UPDATE employes SET
                 matricule = COALESCE($2, matricule),
@@ -177,7 +183,7 @@ async function updateEmploye(req, res) {
             return res.status(404).json({ message: "Employe introuvable", data: null });
         }
 
-        // Mettre à jour l'utilisateur si email/role sont fournis
+        // Si l'admin a aussi modifie l'email ou le role, on met a jour le compte utilisateur
         if (email || role_id !== undefined) {
             await client.query(`
                 UPDATE utilisateurs 
@@ -203,6 +209,10 @@ async function updateEmploye(req, res) {
 // ----------------------------------------------------------------
 // DELETE /api/employes/:id - Supprimer un employe
 // ----------------------------------------------------------------
+// ATTENTION : un employe peut avoir des conges, presences et un compte
+// utilisateur. On supprime TOUT dans l'ordre pour eviter les erreurs
+// de cle etrangere (foreign key). Le tout dans une transaction.
+// ----------------------------------------------------------------
 async function deleteEmploye(req, res) {
     const client = await require("../config/database").connect();
     try {
@@ -210,22 +220,21 @@ async function deleteEmploye(req, res) {
 
         await client.query("BEGIN");
 
-        // Supprimer les conges liés
+        // Ordre de suppression (important : du plus dependant au moins) :
+        // 1. Conges lies a l'employe
         await client.query("DELETE FROM conges WHERE employe_id = $1", [id]);
-
-        // Supprimer les presences liées
+        // 2. Presences liees a l'employe
         await client.query("DELETE FROM presences WHERE employe_id = $1", [id]);
-
-        // Supprimer l'utilisateur lié
+        // 3. Compte utilisateur lie a l'employe
         await client.query("DELETE FROM utilisateurs WHERE employe_id = $1", [id]);
-
-        // Supprimer l'employé dans la transaction
+        // 4. Enfin, l'employe lui-meme
         const deleteRes = await client.query(
             "DELETE FROM employes WHERE id = $1 RETURNING id", [id]
         );
         const deleted = deleteRes.rows[0];
 
         if (!deleted) {
+            // Personne avec cet ID
             await client.query("ROLLBACK");
             return res.status(404).json({ message: "Employe introuvable", data: null });
         }
@@ -236,7 +245,7 @@ async function deleteEmploye(req, res) {
     } catch (error) {
         await client.query("ROLLBACK").catch(() => {});
         console.error("Erreur deleteEmploye:", error);
-        // Détecter les erreurs de clé étrangère PostgreSQL
+        // Si une autre table reference encore cet employe (foreign key)
         if (error.code === '23503') {
             return res.status(400).json({
                 message: "Impossible de supprimer : l'employe a des enregistrements lies dans d'autres tables",

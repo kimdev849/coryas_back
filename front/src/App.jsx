@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Employes from "./pages/Employes";
 import Presences from "./pages/Presences";
 import Conges from "./pages/Conges";
+import MonPointage from "./pages/MonPointage";
 import Configuration from "./pages/Configuration";
 import Profil from "./pages/Profil";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -43,6 +44,17 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
@@ -61,11 +73,12 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/employes" element={<Employes />} />
-        <Route path="/presences" element={<Presences />} />
+        <Route path="/mon-pointage" element={<MonPointage />} />
         <Route path="/conges" element={<Conges />} />
-        <Route path="/configuration" element={<Configuration />} />
         <Route path="/profil" element={<Profil />} />
+        <Route path="/employes" element={<AdminRoute><Employes /></AdminRoute>} />
+        <Route path="/presences" element={<AdminRoute><Presences /></AdminRoute>} />
+        <Route path="/configuration" element={<AdminRoute><Configuration /></AdminRoute>} />
       </Route>
     </Routes>
   );

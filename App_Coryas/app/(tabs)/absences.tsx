@@ -1,7 +1,33 @@
+// ============================================================
+// ONGLET NOTIFICATIONS - Centre de notifications
+// ============================================================
+// Affiche une liste de notifications à l'utilisateur.
+// Pour l'instant, les notifications sont MOCKÉES (données
+// statiques). Dans une version future, elles viendront de l'API.
+//
+// ⚙️ Structure d'une notification :
+//   - icône (emoji) dans un cercle gris
+//   - Titre de la notification
+//   - Horodatage (relatif ou absolu)
+//
+// 📌 Concepts React Native :
+// - FlatList avec données statiques (mock)
+// - Pas d'appel API pour l'instant
+// ============================================================
+
 import { StyleSheet, Text, View, FlatList } from "react-native";
 import { Colors } from "../../src/constants/Colors";
 
-// Mock notifications
+// ============================================================
+// DONNÉES MOCKÉES (simulent des notifications provenant du backend)
+// ============================================================
+// ⚠️ À remplacer par un appel API getNotifications() plus tard.
+// Chaque notification a :
+//   - id : identifiant unique
+//   - icon : emoji représentant le type de notification
+//   - title : message principal
+//   - time : horodatage lisible
+// ============================================================
 const mockNotifications = [
   {
     id: "1",
@@ -30,6 +56,13 @@ const mockNotifications = [
 ];
 
 export default function NotificationsTab() {
+  // ============================================================
+  // renderNotification : rend une notification individuelle
+  // ============================================================
+  // Chaque ligne contient :
+  //   1. Un cercle avec l'icône emoji
+  //   2. Le titre + l'horodatage
+  // ============================================================
   const renderNotification = ({ item }: { item: typeof mockNotifications[0] }) => (
     <View style={styles.notificationItem}>
       <View style={styles.iconContainer}>
@@ -49,7 +82,7 @@ export default function NotificationsTab() {
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
 
-      {/* List */}
+      {/* Liste des notifications (FlatList) */}
       <FlatList
         data={mockNotifications}
         keyExtractor={(item) => item.id}

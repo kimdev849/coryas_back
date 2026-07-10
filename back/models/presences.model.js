@@ -191,5 +191,27 @@ async function getTodayStats() {
     };
 }
 
-module.exports = { getAll, getById, getActivePresence, checkIn, checkOut, rattrapage, getTodayStats };
+// ----------------------------------------------------------------
+// autoCloseStalePresences(employe_id) - Fermeture auto des oublis
+// ----------------------------------------------------------------
+// Quand un employe check-in le matin, si une presence de la veille
+// (ou avant) est encore ouverte (heure_sortie NULL), on la ferme
+// automatiquement avec une heure par defaut et une remarque.
+// L'admin pourra corriger via rattrapage si besoin.
+// ----------------------------------------------------------------
+async function autoCloseStalePresences(employe_id) {
+    const result = await pool.query(`
+        UPDATE presences SET
+            heure_sortie = '19:00',
+            remarque = 'Fermeture automatique (jour suivant)',
+            updated_at = NOW()
+        WHERE employe_id = $1
+          AND heure_sortie IS NULL
+          AND date_presence < CURRENT_DATE
+        RETURNING id, date_presence, heure_entree
+    `, [employe_id]);
+    return result.rows;
+}
+
+module.exports = { getAll, getById, getActivePresence, checkIn, checkOut, rattrapage, getTodayStats, autoCloseStalePresences };
 

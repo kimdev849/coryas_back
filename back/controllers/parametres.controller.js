@@ -1,11 +1,18 @@
 // ================================================================
-// parametres.controller.js - Gere les parametres
+// parametres.controller.js - Gere les parametres de l'entreprise
+// ================================================================
+// Ce fichier contient 2 fonctions :
+// getParametres  -> recupere les reglages (horaires, infos societe)
+// saveParametres -> sauvegarde les reglages
 // ================================================================
 
 const parametresModel = require("../models/parametres.model");
 
 // ----------------------------------------------------------------
 // GET /api/parametres - Recuperer les parametres
+// ----------------------------------------------------------------
+// Retourne les reglages de l'entreprise : horaires d'ouverture,
+// seuil de retard, nom de la societe, telephone, adresse...
 // ----------------------------------------------------------------
 async function getParametres(req, res) {
     try {
@@ -19,6 +26,9 @@ async function getParametres(req, res) {
 
 // ----------------------------------------------------------------
 // PUT /api/parametres - Sauvegarder les parametres
+// ----------------------------------------------------------------
+// Recoit les donnees du formulaire de configuration et les
+// enregistre dans la table parametres (UPSERT = update ou insert).
 // ----------------------------------------------------------------
 async function saveParametres(req, res) {
     try {

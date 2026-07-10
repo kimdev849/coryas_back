@@ -3,7 +3,7 @@
 // ================================================================
 // Les employes connectes peuvent creer et voir les demandes.
 // Les admins et RH peuvent approuver, rejeter ou supprimer.
-// checkRole(["Administrateur", "RH"]) limite l'acces a ces roles.
+// checkRole(["Administrateur", "RH", "Directeur"]) limite l'acces a ces roles.
 // URL de base : /api/conges
 // ================================================================
 
@@ -20,18 +20,18 @@ router.get("/", congesController.getAllConges);       // GET /api/conges -> list
 router.post("/", congesController.creerDemande);      // POST /api/conges -> creer
 router.get("/:id", congesController.getCongeById);    // GET /api/conges/5 -> detail
 
-// Ces routes sont reservees aux Administrateurs et RH
+// Ces routes sont reservees aux Administrateurs, RH et Directeur
 // checkRole verifie que le role est dans la liste
 router.put("/:id/approve",
-  checkRole(["Administrateur", "RH"]),   // Seulement Admin et RH
+  checkRole(["Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
   congesController.appouverConge           // Approuver
 );
 router.put("/:id/reject",
-  checkRole(["Administrateur", "RH"]),   // Seulement Admin et RH
+  checkRole(["Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
   congesController.rejeterConge            // Rejeter
 );
 router.delete("/:id",
-  checkRole(["Administrateur", "RH"]),   // Seulement Admin et RH
+  checkRole(["Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
   congesController.supprimerDemande        // Supprimer
 );
 

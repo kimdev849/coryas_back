@@ -152,14 +152,24 @@ function Presences() {
   // ========== CHECK-IN / CHECK-OUT RAPIDE ==========
 
   // Pointer l'arrivée d'un employé
+  const nowTime = () => {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  };
+
   const handleCheckIn = async () => {
     if (!filtreEmploye) {
       showMessage("Sélectionnez un employé", "error");
       return;
     }
     try {
-      await presencesService.checkIn(filtreEmploye);
-      showMessage("Arrivée enregistrée !");
+      const res = await presencesService.checkIn(filtreEmploye, nowTime());
+      const autoClosed = res.autoClosed;
+      if (autoClosed && autoClosed.length > 0) {
+        showMessage(`Arrivée enregistrée — ${autoClosed.length} présence(s) précédente(s) fermée(s) auto`);
+      } else {
+        showMessage("Arrivée enregistrée !");
+      }
       await loadPresencesFiltrees();
     } catch (err) {
       showMessage("Erreur : " + err.message, "error");
@@ -173,13 +183,12 @@ function Presences() {
       return;
     }
     try {
-      // On cherche si l'employé a une présence active (arrivé mais pas encore parti)
       const activeRes = await presencesService.getActivePresence(filtreEmploye);
       if (!activeRes.data) {
         showMessage("Aucune présence active pour cet employé", "error");
         return;
       }
-      await presencesService.checkOut(activeRes.data.id);
+      await presencesService.checkOut(activeRes.data.id, nowTime());
       showMessage("Départ enregistré !");
       await loadPresencesFiltrees();
     } catch (err) {

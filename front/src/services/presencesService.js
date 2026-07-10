@@ -25,19 +25,23 @@ const presencesService = {
   },
 
   // POST /api/presences/checkin
-  checkIn: async (employe_id) => {
+  checkIn: async (employe_id, heure_entree = null) => {
+    const body = { employe_id };
+    if (heure_entree) body.heure_entree = heure_entree;
     const data = await fetchWithAuth("/presences/checkin", {
       method: "POST",
-      body: { employe_id },
+      body,
     });
     return data;
   },
 
   // POST /api/presences/checkout
-  checkOut: async (presenceId) => {
+  checkOut: async (presenceId, heure_sortie = null) => {
+    const body = { presenceId };
+    if (heure_sortie) body.heure_sortie = heure_sortie;
     const data = await fetchWithAuth("/presences/checkout", {
       method: "POST",
-      body: { presenceId },
+      body,
     });
     return data;
   },

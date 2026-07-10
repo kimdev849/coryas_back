@@ -1,3 +1,21 @@
+// ============================================================
+// PAGE D'ACCUEIL - Tableau de bord de l'utilisateur
+// ============================================================
+// C'est la première page que voit l'utilisateur après connexion.
+// Elle affiche :
+//   - Un message de bienvenue avec le prénom
+//   - Le statut actuel (présent/absent)
+//   - Le temps travaillé (placeholder)
+//   - L'emploi du temps de la journée
+//   - Un bouton flottant pour pointer
+//
+// ⚙️ Fonctionnement :
+// 1. useFocusEffect recharge les données à chaque affichage
+// 2. AsyncStorage récupère les infos de l'utilisateur connecté
+// 3. getActivePresence() vérifie si un pointage est en cours
+// 4. Le bouton flottant navigue vers /pointer
+// ============================================================
+
 import { StyleSheet, Text, View, ScrollView, Pressable } from "react-native";
 import { useState, useCallback } from "react";
 import { getActivePresence } from "../../src/services/data";
@@ -8,38 +26,46 @@ import { Colors } from "../../src/constants/Colors";
 export default function HomeScreen() {
   const router = useRouter();
   
-  const [userName, setUserName] = useState("");
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
-  const [checkInTime, setCheckInTime] = useState("--:--");
-  const [activePresenceId, setActivePresenceId] = useState<string | number | null>(null);
+  // ============================================================
+  // ÉTATS DU COMPOSANT
+  // ============================================================
+  const [userName, setUserName] = useState("");       // Prénom de l'utilisateur
+  const [isCheckedIn, setIsCheckedIn] = useState(false); // Check-in actif ?
+  const [checkInTime, setCheckInTime] = useState("--:--"); // Heure d'arrivée
+  const [activePresenceId, setActivePresenceId] = useState<string | number | null>(null); // ID présence active
   const [loading, setLoading] = useState(true);
   const [loadingAction, setLoadingAction] = useState(false);
 
-  // Get today's date in French
+  // ============================================================
+  // getTodayDate : retourne la date du jour formatée en français
+  // ============================================================
+  // Exemple : "vendredi 10 juillet 2026"
+  // toLocaleDateString('fr-FR') utilise les conventions françaises
+  // ============================================================
   const getTodayDate = () => {
     const today = new Date();
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     return today.toLocaleDateString('fr-FR', options);
   };
 
-  // Format time
-  const formatTime = (timeStr: string | null) => {
-    if (!timeStr) return "--:--";
-    return timeStr;
-  };
-
-  // Load data
+  // ============================================================
+  // loadData : charge les données au focus de l'écran
+  // ============================================================
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // Get user data
+      // 1. Récupération des données utilisateur depuis AsyncStorage
+      //    AsyncStorage est un stockage local persistant (comme localStorage)
+      //    Les données sont sauvegardées après le login réussi
       const userStr = await AsyncStorage.getItem("@user_data");
       if (userStr) {
         const user = JSON.parse(userStr);
         setUserName(`${user.prenom}`);
       }
 
-      // Get active presence
+      // 2. Vérification de la présence active
+      //    getActivePresence() appelle GET /api/presences/active
+      //    Retourne la présence en cours si l'utilisateur a pointé ce matin
       const activePresence = await getActivePresence();
       if (activePresence) {
         setIsCheckedIn(true);
@@ -57,13 +83,17 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // ============================================================
+  // useFocusEffect : se déclenche à chaque fois que l'onglet
+  // "Accueil" devient visible (recharge les données)
+  // ============================================================
   useFocusEffect(
     useCallback(() => {
       loadData();
     }, [loadData])
   );
 
-  // Navigate to pointer screen
+  // Navigation vers l'écran de pointage
   const goToPointer = () => {
     router.push("/pointer");
   };
@@ -71,7 +101,9 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* ============================================================ */}
+        {/* HEADER : Message de bienvenue + icône notification           */}
+        {/* ============================================================ */}
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Bonjour, {userName || "Utilisateur"}</Text>
@@ -82,7 +114,14 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Status Card */}
+        {/* ============================================================ */}
+        {/* CARTE DE STATUT (présent/absent)                             */}
+        {/* ============================================================ */}
+        {/* Fond noir avec :                                             */}
+        {/*   - Un point de couleur (vert = présent, gris = absent)      */}
+        {/*   - Le statut en texte                                       */}
+        {/*   - L'heure d'arrivée si présent                             */}
+        {/* ============================================================ */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
             <Text style={styles.statusLabel}>Statut actuel</Text>
@@ -94,7 +133,12 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Worked Time Section */}
+        {/* ============================================================ */}
+        {/* SECTION TEMPS TRAVAILLÉ (placeholder pour l'instant)          */}
+        {/* ============================================================ */}
+        {/* Affiche "0h 00min / 8h" avec une barre de progression.      */}
+        {/* Pour l'instant les valeurs sont statiques.                   */}
+        {/* ============================================================ */}
         <View style={styles.timeSection}>
           <Text style={styles.timeLabel}>Temps travaillé</Text>
           <View style={styles.timeRow}>
@@ -106,7 +150,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Today's Schedule */}
+        {/* ============================================================ */}
+        {/* EMPLOI DU TEMPS DU JOUR                                      */}
+        {/* ============================================================ */}
+        {/* Timeline horizontale avec Entrée, Pause, Retour, Sortie      */}
+        {/* Les heures de pause (12:00-13:00) sont fixes pour l'instant  */}
+        {/* ============================================================ */}
         <View style={styles.scheduleSection}>
           <Text style={styles.scheduleTitle}>Aujourd'hui</Text>
           
@@ -136,7 +185,14 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating Pointer Button */}
+      {/* ============================================================ */}
+      {/* BOUTON FLOTTANT DE POINTAGE (toujours visible en bas)         */}
+      {/* ============================================================ */}
+      {/* position: absolute pour rester fixé en bas de l'écran         */}
+      {/* Le texte change selon le statut check-in :                    */}
+      {/*   - Check-in fait → "Pointer le départ"                      */}
+      {/*   - Pas de check-in → "Pointer l'arrivée"                    */}
+      {/* ============================================================ */}
       <View style={styles.pointerButtonContainer}>
         <Pressable 
           style={styles.pointerButton} 

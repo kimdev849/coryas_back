@@ -11,6 +11,11 @@ const express = require("express");
 // ================================================================
 // GESTION DES ERREURS GLOBALES (empeche le crash du serveur)
 // ================================================================
+// Depuis Node.js 15, une promesse rejetee non rattrapee (unhandled
+// rejection) fait planter le processus. Ces handlers attrapent
+// toutes les erreurs qui pourraient echapper aux try-catch des
+// controleurs, et les loggent sans crasher le serveur.
+// ================================================================
 process.on("unhandledRejection", (reason) => {
     console.error("UNHANDLED REJECTION:", reason?.message || reason);
 });

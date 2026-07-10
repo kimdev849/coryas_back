@@ -15,7 +15,7 @@ import "./style.css";
 function Conges() {
   const { user } = useAuth();
   // Si le role est Admin ou RH, on peut voir la liste des employes
-  const estAdmin = user?.role === "Administrateur" || user?.role === "RH";
+  const estAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
 
   const [formData, setFormData] = useState({
     employe_id: "",  // ID de l'employe (admin peut choisir)
@@ -294,41 +294,43 @@ function Conges() {
         </div>
       )}
 
-      <div className="conges-filter">
-        {["Tous", "En attente", "Approuve", "Rejete"].map((statut) => (
-          <button
-            key={statut}
-            className={"conges-filter-btn " + (filtreStatut === statut ? "active" : "")}
-            onClick={() => setFiltreStatut(statut)}
-          >
-            {statut}
-          </button>
-        ))}
-      </div>
+      {estAdmin && (
+        <div className="conges-filter">
+          {["Tous", "En attente", "Approuve", "Rejete"].map((statut) => (
+            <button
+              key={statut}
+              className={"conges-filter-btn " + (filtreStatut === statut ? "active" : "")}
+              onClick={() => setFiltreStatut(statut)}
+            >
+              {statut}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="conges-table-container">
         <table className="conges-table">
           <thead>
             <tr>
-              <th>Employé</th>
+              {estAdmin && <th>Employé</th>}
               <th>Debut</th>
               <th>Fin</th>
               <th>Motif</th>
               <th>Jours</th>
               <th>Statut</th>
-              <th>Actions</th>
+              {estAdmin && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="conges-loading">Chargement...</td>
+                <td colSpan={estAdmin ? 7 : 5} className="conges-loading">Chargement...</td>
               </tr>
             )}
 
             {!isLoading && filteredConges.length === 0 && (
               <tr>
-                <td colSpan={7} className="conges-empty">
+                <td colSpan={estAdmin ? 7 : 5} className="conges-empty">
                   Aucune demande de conge.
                 </td>
               </tr>
@@ -337,7 +339,7 @@ function Conges() {
             {!isLoading &&
               filteredConges.map((conge) => (
                 <tr key={conge.id}>
-                  <td><strong>{conge.employe_nom || "-"}</strong></td>
+                  {estAdmin && <td><strong>{conge.employe_nom || "-"}</strong></td>}
                   <td>{conge.dateDebut ? new Date(conge.dateDebut).toLocaleDateString("fr-FR") : "-"}</td>
                   <td>{conge.dateFin ? new Date(conge.dateFin).toLocaleDateString("fr-FR") : "-"}</td>
                   <td>{conge.raison}</td>
@@ -347,30 +349,32 @@ function Conges() {
                       {conge.statut}
                     </span>
                   </td>
-                  <td className="conges-actions">
-                    {conge.statut === "En attente" && (
-                      <>
-                        <button
-                          className="conges-btn-action conges-btn-approve"
-                          onClick={() => handleAppouverConge(conge.id)}
-                          title="Approuver"
-                        >Approuver</button>
-                        <button
-                          className="conges-btn-action conges-btn-reject"
-                          onClick={() => handleRejeterConge(conge.id)}
-                          title="Rejeter"
-                        >Rejeter</button>
-                        <button
-                          className="conges-btn-action conges-btn-delete"
-                          onClick={() => handleSupprimerDemande(conge.id)}
-                          title="Supprimer"
-                        >Supprimer</button>
-                      </>
-                    )}
-                    {conge.statut !== "En attente" && (
-                      <span className="conges-no-action">--</span>
-                    )}
-                  </td>
+                  {estAdmin && (
+                    <td className="conges-actions">
+                      {conge.statut === "En attente" && (
+                        <>
+                          <button
+                            className="conges-btn-action conges-btn-approve"
+                            onClick={() => handleAppouverConge(conge.id)}
+                            title="Approuver"
+                          >Approuver</button>
+                          <button
+                            className="conges-btn-action conges-btn-reject"
+                            onClick={() => handleRejeterConge(conge.id)}
+                            title="Rejeter"
+                          >Rejeter</button>
+                          <button
+                            className="conges-btn-action conges-btn-delete"
+                            onClick={() => handleSupprimerDemande(conge.id)}
+                            title="Supprimer"
+                          >Supprimer</button>
+                        </>
+                      )}
+                      {conge.statut !== "En attente" && (
+                        <span className="conges-no-action">--</span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
           </tbody>

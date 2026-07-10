@@ -1,14 +1,40 @@
+// ============================================================
+// DÉTAIL D'UNE PRÉSENCE - Timeline d'une journée de travail
+// ============================================================
+// Affiche le détail complet d'une présence : timeline des
+// événements (entrée, pause, retour, sortie), temps travaillé,
+// commentaire et statut.
+//
+// ⚙️ Particularité (pour l'instant) :
+//   - Les données sont STATIQUES (valeurs en dur)
+//   - Le paramètre { id } est récupéré depuis l'URL mais pas utilisé
+//   - Dans une version future, on fera un appel API avec cet id
+//   - La bottom nav en bas est un doublon de la tab bar (à corriger)
+//
+// 📌 Concepts Expo Router :
+// - useLocalSearchParams() récupère les paramètres de l'URL
+// - [id].tsx est un fichier dynamique : /presence-detail/5 → { id: "5" }
+// - router.back() retourne à l'écran précédent
+// ============================================================
+
 import { StyleSheet, Text, View, Pressable, TextInput, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Colors } from "../../src/constants/Colors";
 
 export default function PresenceDetailScreen() {
   const router = useRouter();
+  // 📍 Récupération du paramètre dynamique "id" depuis l'URL
+  // Exemple : /presence-detail/42 → { id: "42" }
   const { id } = useLocalSearchParams();
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* ============================================================ */}
+      {/* HEADER : Bouton retour + Date                                */}
+      {/* ============================================================ */}
+      {/* La date affichée est celle du jour (pas celle de la présence) */}
+      {/* À améliorer : afficher la date de la présence réelle          */}
+      {/* ============================================================ */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backText}>←</Text>
@@ -20,7 +46,18 @@ export default function PresenceDetailScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Timeline */}
+        {/* ============================================================ */}
+        {/* TIMELINE DES ÉVÉNEMENTS DE LA JOURNÉE                        */}
+        {/* ============================================================ */}
+        {/* Affiche une ligne verticale avec des points colorés :        */}
+        {/*   ● Entrée (vert)   08:02                                    */}
+        {/*   │                                                          */}
+        {/*   ● Pause (jaune)   12:00                                    */}
+        {/*   │                                                          */}
+        {/*   ● Retour (jaune)  13:05                                    */}
+        {/*   │                                                          */}
+        {/*   ● Sortie (vert)   17:01                                    */}
+        {/* ============================================================ */}
         <View style={styles.timeline}>
           <View style={styles.timelineItem}>
             <View style={[styles.timelineDot, { backgroundColor: Colors.success }]} />
@@ -30,6 +67,7 @@ export default function PresenceDetailScreen() {
             </View>
           </View>
           
+          {/* Ligne verticale de connexion entre les points */}
           <View style={styles.timelineLine} />
 
           <View style={styles.timelineItem}>
@@ -61,14 +99,25 @@ export default function PresenceDetailScreen() {
           </View>
         </View>
 
-        {/* Worked Time */}
+        {/* ============================================================ */}
+        {/* TEMPS TRAVAILLÉ                                              */}
+        {/* ============================================================ */}
+        {/* Affiche "7h 59min / 8h" avec un format statique              */}
+        {/* Basé sur la différence entre entrée et sortie (- pause)      */}
+        {/* ============================================================ */}
         <View style={styles.workedTimeContainer}>
           <Text style={styles.workedTimeLabel}>Temps travaillé</Text>
           <Text style={styles.workedTimeValue}>7h 59min</Text>
           <Text style={styles.workedTimeGoal}>/ 8h</Text>
         </View>
 
-        {/* Comment */}
+        {/* ============================================================ */}
+        {/* COMMENTAIRE (TextInput multiligne)                           */}
+        {/* ============================================================ */}
+        {/* L'utilisateur peut ajouter un commentaire sur sa journée.     */}
+        {/* Pour l'instant, la saisie n'est pas persistée (pas d'appel   */}
+        {/* API pour sauvegarder).                                       */}
+        {/* ============================================================ */}
         <View style={styles.commentContainer}>
           <Text style={styles.commentLabel}>Commentaire</Text>
           <TextInput
@@ -79,7 +128,12 @@ export default function PresenceDetailScreen() {
           />
         </View>
 
-        {/* Status */}
+        {/* ============================================================ */}
+        {/* STATUT DE LA PRÉSENCE                                        */}
+        {/* ============================================================ */}
+        {/* Badge avec un point coloré et le texte du statut              */}
+        {/* Couleurs : Présent=vert, Retard=jaune, Départ anticipé=rouge */}
+        {/* ============================================================ */}
         <View style={styles.statusContainer}>
           <Text style={styles.statusLabel}>Statut</Text>
           <View style={styles.statusBadge}>
@@ -89,7 +143,11 @@ export default function PresenceDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Nav */}
+      {/* ============================================================ */}
+      {/* BARRE DE NAVIGATION BASSE (doublon de la tab bar)            */}
+      {/* ⚠️ Cette barre duplique la tab bar déjà présente.            */}
+      {/*    À supprimer quand l'écran sera intégré correctement.      */}
+      {/* ============================================================ */}
       <View style={styles.bottomNav}>
         <Pressable style={styles.navItem}>
           <Text>🏠</Text>

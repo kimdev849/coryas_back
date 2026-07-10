@@ -10,8 +10,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
 function Sidebar() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -26,21 +28,29 @@ function Sidebar() {
           Dashboard
         </NavLink>
 
-        <NavLink to="/employes" className="sidebar-link">
-          Employes
-        </NavLink>
-
-        <NavLink to="/presences" className="sidebar-link">
-          Presences
-        </NavLink>
+        {!isAdmin && (
+          <NavLink to="/mon-pointage" className="sidebar-link">
+            Mon Pointage
+          </NavLink>
+        )}
 
         <NavLink to="/conges" className="sidebar-link">
-          Conges
+          Mes Conges
         </NavLink>
 
-        <NavLink to="/configuration" className="sidebar-link">
-          Configuration
-        </NavLink>
+        {isAdmin && (
+          <>
+            <NavLink to="/employes" className="sidebar-link">
+              Employes
+            </NavLink>
+            <NavLink to="/presences" className="sidebar-link">
+              Presences
+            </NavLink>
+            <NavLink to="/configuration" className="sidebar-link">
+              Configuration
+            </NavLink>
+          </>
+        )}
 
         <NavLink to="/profil" className="sidebar-link">
           Profil

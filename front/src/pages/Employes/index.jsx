@@ -28,13 +28,15 @@ function Employes() {
     departement_id: "", // ID du département (lié à la table departements)
     email: "",          // Email pour le compte utilisateur
     password: "",       // Mot de passe pour le compte utilisateur
-    role_id: 2,         // Rôle : 1=Admin, 2=Employé (défaut)
+    role_id: 3,         // Rôle : 3=Employé (défaut)
   });
 
   const [departements, setDepartements] = useState([]);
   const [roles] = useState([
     { id: 1, nom: "Administrateur" },
-    { id: 2, nom: "Employe" },
+    { id: 2, nom: "RH" },
+    { id: 3, nom: "Employé" },
+    { id: 4, nom: "Directeur" },
   ]);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
@@ -94,7 +96,7 @@ function Employes() {
       departement_id: "",
       email: "",
       password: "",
-      role_id: 2,
+      role_id: 3,
     });
     setShowForm(true);
     setMessage("");

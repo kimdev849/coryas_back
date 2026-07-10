@@ -2,7 +2,7 @@
 // SERVICE API - Communication avec le backend
 // ============================================================
 // Ce fichier configure Axios pour communiquer avec l'API
-// backend qui tourne sur http://localhost:3000
+// backend qui tourne sur https://coryas-api.onrender.com
 //
 // 📌 Utilisation :
 //   import api from "../services/api";
@@ -19,12 +19,12 @@ const TOKEN_KEY = "@auth_token";
 /**
  * Instance Axios préconfigurée pour l'API
  * 
- * - baseURL : l'adresse du backend (http://localhost:3000/api)
+ * - baseURL : l'adresse du backend déployé (https://coryas-api.onrender.com/api)
  * - Un intercepteur ajoute automatiquement le token JWT
  *   à chaque requête si l'utilisateur est connecté
  */
 const api = axios.create({
-  baseURL: "http://localhost:3000/api",
+  baseURL: "https://coryas-api.onrender.com/api",
   timeout: 10000, // 10 secondes max par requête
   headers: {
     "Content-Type": "application/json",

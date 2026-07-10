@@ -1,22 +1,49 @@
+// ============================================================
+// ONGLET HISTORIQUE - Liste des présences enregistrées
+// ============================================================
+// Affiche l'historique des pointages de l'utilisateur dans
+// une liste (FlatList). Chaque entrée montre :
+//   - La date (formatée en français)
+//   - Le temps travaillé
+//   - Le statut (Présent, En retard, Départ anticipé, etc.)
+//
+// ⚙️ Fonctionnement :
+// 1. Au focus de l'onglet, on charge les données via getPresences()
+// 2. Les données sont affichées dans une FlatList optimisée
+// 3. Le clic sur un élément navigue vers /presence-detail/[id]
+//
+// 📌 Concepts React Native :
+// - FlatList : liste virtuelle performante (ne rend que les éléments visibles)
+// - Filtre mensuel : bouton pour basculer entre mois courant et précédent
+// ============================================================
+
 import { StyleSheet, Text, View, FlatList, Pressable } from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { getPresences, Presence } from "../../src/services/data";
 import { Colors } from "../../src/constants/Colors";
 
-// Type for month filter
+// Type personnalisé pour le filtre de mois
 type MonthFilter = "current" | "previous";
 
 export default function PresencesTab() {
   const router = useRouter();
-  const [presences, setPresences] = useState<Presence[]>([]);
+  
+  // ============================================================
+  // ÉTATS
+  // ============================================================
+  const [presences, setPresences] = useState<Presence[]>([]); // Liste des présences
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<MonthFilter>("current");
+  const [selectedMonth, setSelectedMonth] = useState<MonthFilter>("current"); // Mois sélectionné
 
-  // Load data
+  // ============================================================
+  // loadData : charge la liste des présences depuis l'API
+  // ============================================================
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      // getPresences() appelle GET /api/presences
+      // Retourne un tableau d'objets Presence
       const data = await getPresences();
       setPresences(data);
     } catch (error) {
@@ -26,13 +53,18 @@ export default function PresencesTab() {
     }
   }, []);
 
+  // Recharge à chaque fois que l'utilisateur revient sur cet onglet
   useFocusEffect(
     useCallback(() => {
       loadData();
     }, [loadData])
   );
 
-  // Format date
+  // ============================================================
+  // formatDate : convertit une date ISO en format lisible français
+  // ============================================================
+  // Exemple : "2026-07-10T08:02:00.000Z" → "ven. 10 juil."
+  // ============================================================
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
@@ -46,23 +78,30 @@ export default function PresencesTab() {
     }
   };
 
-  // Get status color
+  // ============================================================
+  // getStatusColor : retourne la couleur selon le statut
+  // ============================================================
   const getStatusColor = (statut: string | null) => {
     switch (statut) {
       case "Present":
       case "Présent":
-        return Colors.success;
+        return Colors.success;     // Vert
       case "Retard":
       case "En retard":
-        return Colors.warning;
+        return Colors.warning;     // Jaune
       case "Départ anticipé":
-        return Colors.danger;
+        return Colors.danger;      // Rouge
       default:
-        return Colors.textLight;
+        return Colors.textLight;   // Gris
     }
   };
 
-  // Get status label
+  // ============================================================
+  // getStatusLabel : normalise l'affichage du statut
+  // ============================================================
+  // Le backend peut renvoyer "Present" (anglais) ou "Présent" (français)
+  // Cette fonction uniformise l'affichage
+  // ============================================================
   const getStatusLabel = (statut: string | null) => {
     if (!statut) return "Absent";
     if (statut === "Present") return "Présent";
@@ -70,14 +109,24 @@ export default function PresencesTab() {
     return statut;
   };
 
-  // Calculate worked time (placeholder for now)
+  // ============================================================
+  // getWorkedTime : calcule le temps travaillé (placeholder)
+  // ============================================================
+  // Pour l'instant, retourne une valeur fixe "7h 59min"
+  // Dans une version future, on pourra calculer la différence
+  // entre heure_entree et heure_sortie
+  // ============================================================
   const getWorkedTime = (arrival: string | null, departure: string | null) => {
     if (!arrival || !departure) return "--";
-    // For now just return a placeholder
     return "7h 59min";
   };
 
-  // Render each presence item
+  // ============================================================
+  // renderPresence : rend un élément de la liste
+  // ============================================================
+  // Chaque élément est un Pressable qui navigue vers le détail.
+  // Il affiche 3 colonnes : date | temps travaillé | statut (avec point coloré)
+  // ============================================================
   const renderPresence = ({ item }: { item: Presence }) => (
     <Pressable style={styles.presenceItem} onPress={() => router.push(`/presence-detail/${item.id}`)}>
       <View style={styles.dateColumn}>
@@ -97,7 +146,9 @@ export default function PresencesTab() {
     </Pressable>
   );
 
-  // Get month label
+  // ============================================================
+  // getMonthLabel : retourne le libellé du mois sélectionné
+  // ============================================================
   const getMonthLabel = () => {
     const now = new Date();
     const currentMonth = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -116,7 +167,12 @@ export default function PresencesTab() {
         <Text style={styles.title}>Historique</Text>
       </View>
 
-      {/* Month Filter */}
+      {/* ============================================================ */}
+      {/* FILTRE PAR MOIS (current / previous)                         */}
+      {/* ============================================================ */}
+      {/* Permet de basculer entre le mois en cours et le mois passé   */}
+      {/* Le bouton actif a le texte en gras et noir                   */}
+      {/* ============================================================ */}
       <View style={styles.monthSelector}>
         <Pressable
           style={[styles.monthButton, selectedMonth === "current" && styles.monthButtonActive]}
@@ -131,7 +187,14 @@ export default function PresencesTab() {
         </Pressable>
       </View>
 
-      {/* List */}
+      {/* ============================================================ */}
+      {/* LISTE DES PRÉSENCES (FlatList optimisée)                     */}
+      {/* ============================================================ */}
+      {/* FlatList est le composant React Native pour les listes       */}
+      {/* Avantages par rapport à ScrollView :                         */}
+      {/*   - Lazy loading : ne rend que les éléments visibles         */}
+      {/*   - Performance : réutilise les vues hors écran              */}
+      {/* ============================================================ */}
       <FlatList
         data={presences}
         keyExtractor={(item) => item.id.toString()}
