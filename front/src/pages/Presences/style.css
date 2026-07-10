@@ -1,0 +1,432 @@
+/* ================================================================
+   style.css — Page Présences (version simplifiée)
+   ================================================================
+   Thème : Jaune Coryas 🔶 | Inter font | Responsive
+   ============================================================ */
+
+/* Animation d'entrée de la page */
+.presences-page {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== MESSAGES ===== */
+.presences-message {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.presences-message-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.presences-message-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* ===== FILTRES ===== */
+.presences-filtres {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.presences-filtre-groupe {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.presences-filtre-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Select personnalisé */
+.presences-select {
+  padding: 10px 14px;
+  border: 2px solid var(--color-gray-200);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--color-white);
+  color: var(--color-gray-900);
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.presences-select:focus {
+  border-color: var(--color-primary);
+}
+
+/* Boutons de filtre période */
+.presences-filtre-boutons {
+  display: flex;
+  gap: 4px;
+}
+
+.presences-filtre-btn {
+  padding: 8px 14px;
+  border: 2px solid var(--color-gray-200);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presences-filtre-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.presences-filtre-btn.active {
+  background: var(--color-primary);
+  color: var(--color-black);
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Boutons d'action */
+.presences-filtre-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.presences-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.presences-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.presences-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.presences-btn-vert {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.presences-btn-vert:hover {
+  background: #c3e6cb;
+}
+
+.presences-btn-rouge {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.presences-btn-rouge:hover {
+  background: #f5c6cb;
+}
+
+.presences-btn-jaune {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary);
+  font-size: 12px;
+  padding: 6px 12px;
+}
+.presences-btn-jaune:hover {
+  background: var(--color-primary);
+  color: var(--color-black);
+}
+
+.presences-btn-gris {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-200);
+}
+.presences-btn-gris:hover {
+  background: var(--color-gray-200);
+}
+
+/* ===== TABLEAU ===== */
+.presences-table-container {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow-x: auto; /* Scroll horizontal si trop large */
+}
+
+.presences-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* Empêche d'écraser les colonnes */
+}
+
+.presences-table th {
+  background: var(--color-primary-bg);
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-primary);
+  white-space: nowrap;
+}
+
+.presences-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-gray-200);
+  font-size: 14px;
+  color: var(--color-gray-900);
+  vertical-align: middle;
+}
+
+.presences-table tbody tr {
+  transition: background 0.15s;
+}
+
+.presences-table tbody tr:hover {
+  background: var(--color-primary-light);
+}
+
+.presences-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badge statut coloré */
+.presences-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+/* Couleurs d'heures */
+.presences-vert {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.presences-rouge {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.presences-encours {
+  color: #17a2b8;
+  font-weight: 600;
+  font-style: italic;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ===== SECTION À VALIDER ===== */
+.presences-valider-section {
+  background: linear-gradient(135deg, #fff3cd, #fff8e1);
+  border: 2px solid #ffc107;
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.presences-valider-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.presences-valider-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.presences-valider-subtitle {
+  font-size: 13px;
+  color: #856404;
+  margin-top: 4px;
+}
+
+.presences-valider-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.presences-valider-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  gap: 12px;
+}
+
+.presences-valider-infos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.presences-valider-date {
+  font-size: 13px;
+  color: var(--color-gray-500);
+}
+
+@media (max-width: 768px) {
+  .presences-valider-item {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .presences-valider-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* État vide */
+.presences-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-gray-500);
+  font-size: 15px;
+}
+
+/* ===== POPUP RATTRAPAGE ===== */
+.presences-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.presences-modal {
+  background: var(--color-white);
+  border-radius: 18px;
+  padding: 28px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.presences-modal-infos {
+  display: flex;
+  gap: 20px;
+  padding: 14px;
+  background: var(--color-gray-50);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.presences-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--color-gray-200);
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.presences-input:focus {
+  border-color: var(--color-primary);
+}
+
+/* ===============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Tablette */
+@media (max-width: 1024px) {
+  .presences-filtres {
+    padding: 16px 18px;
+  }
+
+  .presences-filtre-groupe {
+    min-width: 140px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .presences-filtres {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .presences-filtre-groupe {
+    min-width: 100%;
+  }
+
+  .presences-filtre-boutons {
+    flex-wrap: wrap;
+  }
+
+  .presences-filtre-actions {
+    flex-wrap: wrap;
+  }
+
+  .presences-table th,
+  .presences-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Très petit mobile */
+@media (max-width: 480px) {
+  .presences-modal {
+    padding: 20px;
+  }
+}

@@ -1,0 +1,363 @@
+/* ================================================================
+ * 📄 FICHIER : src/pages/Conges/style.css
+ * Thème : Jaune Coryas 🔶 | Noir ⚫ | Blanc ⚪
+ * ================================================================ */
+
+/* EN-TÊTE */
+.conges-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.conges-btn-new,
+.conges-btn-reload {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.conges-btn-new {
+  background-color: var(--color-primary);
+  color: var(--color-black);
+}
+
+.conges-btn-new:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(245, 166, 35, 0.3);
+}
+
+.conges-btn-new:active {
+  transform: translateY(0);
+}
+
+.conges-btn-reload {
+  background-color: var(--color-gray-900);
+  color: white;
+}
+
+.conges-btn-reload:hover {
+  background-color: var(--color-black);
+  transform: translateY(-2px);
+}
+
+/* MESSAGES */
+.conges-message {
+  padding: 15px 20px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  animation: slideIn 0.3s ease;
+}
+
+.conges-message-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.conges-message-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* FORMULAIRE */
+.conges-form-container {
+  background-color: var(--color-primary-bg);
+  border: 1px solid var(--color-primary-light);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.conges-form-container h2 {
+  color: var(--color-black);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.conges-form {
+  display: grid;
+  gap: 15px;
+}
+
+.conges-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.conges-form-group label {
+  font-weight: bold;
+  color: var(--color-gray-900);
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.conges-form-group input,
+.conges-form-group select {
+  padding: 10px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 5px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.conges-form-group input:focus,
+.conges-form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 5px rgba(245, 166, 35, 0.3) !important;
+  background-color: #fff;
+}
+
+.conges-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.conges-btn-submit,
+.conges-btn-cancel {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.conges-btn-submit {
+  background-color: var(--color-primary);
+  color: var(--color-black);
+}
+
+.conges-btn-submit:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(245, 166, 35, 0.3);
+}
+
+.conges-btn-submit:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.conges-btn-cancel {
+  background-color: var(--color-gray-900);
+  color: white;
+}
+
+.conges-btn-cancel:hover:not(:disabled) {
+  background-color: var(--color-black);
+  transform: translateY(-2px);
+}
+
+.conges-btn-cancel:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* FILTRES */
+.conges-filter {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.conges-filter-btn {
+  padding: 8px 15px;
+  border: 1px solid var(--color-gray-300);
+  background-color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+}
+
+.conges-filter-btn:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.conges-filter-btn.active {
+  background-color: var(--color-primary);
+  color: var(--color-black);
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* TABLEAU */
+.conges-table-container {
+  background-color: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.conges-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.conges-table thead {
+  background-color: var(--color-primary-bg);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.conges-table th {
+  padding: 15px;
+  text-align: left;
+  font-weight: bold;
+  color: var(--color-gray-700);
+  font-size: 14px;
+}
+
+.conges-table tbody tr {
+  border-bottom: 1px solid var(--color-gray-200);
+  transition: background-color 0.2s ease;
+}
+
+.conges-table tbody tr:hover {
+  background-color: var(--color-primary-light);
+}
+
+.conges-table td {
+  padding: 12px 15px;
+  color: var(--color-gray-900);
+  font-size: 14px;
+}
+
+.conges-empty,
+.conges-loading {
+  text-align: center;
+  padding: 30px !important;
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
+/* BADGES STATUT */
+.conges-statut {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.conges-statut-en-attente {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.conges-statut-Approuvé {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.conges-statut-Rejeté {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.conges-jours {
+  text-align: center;
+  font-weight: bold;
+}
+
+/* ACTIONS */
+.conges-actions {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.conges-btn-action {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  min-width: 35px;
+}
+
+.conges-btn-approve {
+  background-color: #28a745;
+  color: white;
+}
+
+.conges-btn-approve:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+.conges-btn-reject {
+  background-color: #dc3545;
+  color: white;
+}
+
+.conges-btn-reject:hover {
+  background-color: #c82333;
+  transform: scale(1.05);
+}
+
+.conges-btn-delete {
+  background-color: var(--color-warning);
+  color: var(--color-black);
+}
+
+.conges-btn-delete:hover {
+  background-color: #e0a800;
+  transform: scale(1.05);
+}
+
+.conges-no-action {
+  color: #ccc;
+  font-weight: bold;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .conges-table-container { overflow-x: auto; }
+  .conges-table { min-width: 600px; }
+  .conges-btn-new, .conges-btn-reload { padding: 8px 15px; font-size: 12px; }
+  .conges-form { gap: 12px; }
+  .conges-form-actions { flex-direction: column; }
+  .conges-filter-btn { padding: 6px 12px; font-size: 12px; }
+  .conges-table th, .conges-table td { padding: 8px 10px; font-size: 12px; }
+  .conges-btn-action { padding: 4px 8px; min-width: 30px; font-size: 11px; }
+}
+
+@media (max-width: 480px) {
+  .conges-header { flex-direction: column; }
+  .conges-btn-new, .conges-btn-reload { width: 100%; }
+  .conges-filter { flex-direction: column; }
+  .conges-filter-btn { width: 100%; }
+  .conges-table { min-width: 400px; font-size: 11px; }
+  .conges-table th, .conges-table td { padding: 6px 5px; }
+}

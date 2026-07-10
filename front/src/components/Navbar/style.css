@@ -1,0 +1,57 @@
+/* ================================================================
+   FICHIER : src/components/Navbar/style.css
+   Thème : Jaune Coryas 🔶 | Noir ⚫ | Blanc ⚪
+   ============================================================ */
+
+.navbar {
+  height: 70px;
+  background: var(--color-white);
+  border-bottom: 2px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.navbar-logo {
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--color-black);
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-user-name {
+  font-size: 14px;
+  color: var(--color-gray-700);
+  font-weight: 500;
+}
+
+.navbar-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}

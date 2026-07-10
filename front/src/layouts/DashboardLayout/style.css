@@ -1,0 +1,84 @@
+/* ================================================================
+   📄 FICHIER : src/layouts/DashboardLayout/style.css
+   ----------------------------------------
+   💡 QU'EST-CE QUE CE FICHIER ?
+   C'est le CSS du LAYOUT principal (DashboardLayout).
+   Ce layout organise la page en 3 zones :
+   ┌─────────────────────────────────┐
+   │          Navbar (hauteur fixe)   │
+   ├──────────┬──────────────────────┤
+   │ Sidebar  │  Contenu principal    │
+   │ (largeur │  (le reste de        │
+   │  fixe)   │  l'ecran)            │
+   └──────────┴──────────────────────┘
+   
+   CONCEPT : FLEXBOX
+   Flexbox est un mode de disposition CSS qui permet
+   d'organiser les elements en RANGEE (row) ou en COLONNE
+   (column). Il est ideal pour les layouts responsives.
+   ============================================================ */
+
+/* ================================================================
+   .layout - Le conteneur principal de toute la page
+   
+   height: 100vh
+   100vh = 100% de la HAUTEUR de l'ecran (viewport height).
+   "vh" signifie "viewport height" (hauteur de la zone visible).
+   Cela force le layout a prendre TOUTE la hauteur de l'ecran,
+   meme s'il y a peu de contenu.
+   
+   Pourquoi 100vh ?
+   Sans ca, si la page a peu de contenu, le layout serait
+   plus petit que l'ecran. Avec 100vh, on remplit toujours
+   tout l'ecran verticalement.
+   ============================================================ */
+.layout {
+  height: 100vh;
+}
+
+/* ================================================================
+   .layout-body - La zone qui contient Sidebar + Contenu
+   
+   display: flex
+   Active le mode FLEXBOX. Les enfants directs (Sidebar et
+   l'element <main>) s'alignent horizontalement (cote a cote).
+   
+   height: calc(100vh - 70px)
+   CALC() permet de faire des calculs en CSS.
+   100vh = toute la hauteur de l'ecran
+   - 70px = on enleve la hauteur de la Navbar
+   Resultat : le corps prend tout l'ecran SAUF la navbar.
+   ============================================================ */
+.layout-body {
+  display: flex;
+  height: calc(100vh - 70px);
+}
+
+/* ================================================================
+   .content - La zone de contenu principal
+   
+   flex: 1
+   C'est la propriete la PLUS IMPORTANTE de flexbox !
+   flex: 1 signifie "prends TOUT l'espace restant disponible".
+   
+   Comment ca marche ?
+   - La Sidebar a une largeur fixe (disons 240px)
+   - flex: 1 dit a <main> : "prends tout ce qui reste"
+   - Si l'ecran fait 1200px : sidebar = 240px, content = 960px
+   - Si l'ecran fait 800px  : sidebar = 240px, content = 560px
+   C'est AUTOMATIQUE et RESPONSIVE !
+   
+   padding: 24px
+   Espace interieur de 24px autour du contenu pour
+   que le texte ne touche pas les bords.
+   
+   overflow-y: auto
+   Si le contenu depasse la hauteur disponible, une barre
+   de defilement (scrollbar) apparait VERTICALEMENT.
+   Cela evite que le contenu deborde du layout.
+   ============================================================ */
+.content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}

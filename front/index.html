@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     📄 FICHIER : index.html
+     ----------------------------------------
+     💡 QU'EST-CE QUE index.html ?
+     C'est le point d'entrée (entry point) de notre application.
+     Quand on visite le site, le navigateur charge CE fichier
+     en premier. C'est le seul fichier HTML de l'app.
+     
+     📚 CONCEPT CLÉ : Single Page Application (SPA)
+     Contrairement à un site classique où chaque page est un
+     fichier HTML différent, ici on a UN SEUL fichier HTML.
+     C'est JavaScript (React) qui se charge d'afficher les
+     différentes pages sans recharger le navigateur !
+     ============================================================ -->
+
+<html lang="fr">
+  <!-- ==========================================
+       🏗️ LA BALISE <html>
+       C'est la balise racine de TOUT document HTML.
+       Tout le contenu du site est à l'intérieur.
+       
+       🌍 Attribut "lang"
+       - lang="fr" dit au navigateur que le site est en français
+       - Utile pour :
+         * Les lecteurs d'écran (accessibilité)
+         * Le référencement (SEO)
+         * La traduction automatique
+       ========================================== -->
+
+  <head>
+    <!-- ==========================================
+         🧠 LA BALISE <head>
+         C'est la partie INVISIBLE de la page (pour l'utilisateur).
+         Elle contient les MÉTADONNÉES (infos sur la page) :
+         - Le titre affiché dans l'onglet
+         - L'encodage des caractères (pour les accents : é, à, ç...)
+         - Les liens vers les polices, les CSS
+         - Les balises pour le référencement (SEO)
+         ========================================== -->
+
+    <!-- 
+      📝 <meta charset="UTF-8">
+      UTF-8 permet d'afficher correctement LES ACCENTS et
+      les caractères spéciaux (é, à, ç, €, etc.)
+      Sans ça, les lettres accentuées seraient des symboles bizarres.
+    -->
+    <meta charset="UTF-8" />
+
+    <!-- 
+      🖼️ <link rel="icon"> — La FAVICON
+      C'est la petite icône qui s'affiche dans l'onglet
+      du navigateur. Elle est au format SVG (vectoriel)
+      pour rester nette quelle que soit la taille.
+      L'attribut "rel" définit la relation avec la page :
+      - rel="icon" = c'est une icône
+      - href = le chemin vers l'image
+    -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+
+    <!-- 
+      📱 <meta name="viewport">
+      C'est ce qui rend le site ADAPTABLE aux mobiles :
+      - width=device-width = la largeur du site = celle de l'écran
+      - initial-scale=1.0 = pas de zoom par défaut
+      SANS CETTE BALISE, un site non-responsive aura l'air
+      tout petit sur mobile avec des textes microscopiques !
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- 
+      📛 <title>
+      Le texte qui s'affiche dans l'ONGLET du navigateur.
+      C'est aussi le nom du site dans les résultats Google.
+    -->
+    <title>Présence Coryas — Gestion des Présences</title>
+  </head>
+
+  <body>
+    <!-- ==========================================
+         👁️ LA BALISE <body>
+         C'est le contenu VISIBLE de la page.
+         Tout ce que l'utilisateur voit est dans <body>.
+         
+         ⚡ ICI, le body est presque VIDE !
+         Pourquoi ? Parce que React va générer
+         tout le contenu avec JavaScript.
+         La magie des SPA (Single Page Application) !
+         ========================================== -->
+
+    <!-- 
+      🎯 <div id="root">
+      C'est le CONTENEUR principal de l'application.
+      "root" veut dire "racine" en anglais.
+      
+      🔧 Comment ça marche ?
+      1. React "attrape" cette div avec : getElementById("root")
+      2. React crée TOUT le site à l'intérieur de cette div
+      3. On n'a plus jamais besoin de toucher à ce HTML
+      
+      C'est comme un terrains vague où React va construire
+      toute la maison (le site) !
+    -->
+    <div id="root"></div>
+
+    <!-- 
+      📦 <script type="module" src="/src/main.jsx">
+      C'est LE point d'entrée de notre code JavaScript.
+      
+      🔍 Décryptage :
+      - type="module" = on utilise les modules ES6
+        (import/export) — c'est moderne !
+      - src="/src/main.jsx" = le fichier principal de React
+      - .jsx = extension spéciale qui permet d'écrire
+        du HTML dans du JavaScript (c'est ce qu'on appelle JSX)
+      
+      💡 SANS CE SCRIPT, le navigateur ne saurait PAS
+      qu'il doit lancer React. C'est la bougie d'allumage !
+    -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
