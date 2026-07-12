@@ -1,14 +1,16 @@
 // ================================================================
 // presences.model.js - Requetes SQL pour les presences
 // ================================================================
-// Ce fichier contient 8 fonctions :
+// Ce fichier contient 9 fonctions :
 // getAll            -> SELECT toutes les presences (avec filtres optionnels)
 // getById           -> SELECT une presence par ID
 // getActivePresence -> SELECT la presence en cours d'un employe
+// getTodayPresence  -> SELECT si l'employe a deja une presence aujourd'hui
 // checkIn           -> INSERT une arrivee
 // checkOut          -> UPDATE pour enregistrer le depart
 // rattrapage        -> UPDATE pour corriger un depart oublie (admin)
 // getTodayStats     -> SELECT les stats du jour
+// autoCloseStalePresences -> UPDATE fermeture auto des oublis
 // ================================================================
 
 const pool = require("../config/database");
@@ -97,11 +99,26 @@ async function getActivePresence(employe_id) {
 }
 
 // ----------------------------------------------------------------
+// getTodayPresence(employe_id) - Présence d'aujourd'hui (même complète)
+// ----------------------------------------------------------------
+// Vérifie si l'employé a DÉJÀ une présence aujourd'hui, qu'elle
+// soit complète (arrivée + départ) ou non.
+// Utilisée pour empêcher le double pointage.
+// ----------------------------------------------------------------
+async function getTodayPresence(employe_id) {
+    const result = await pool.query(`
+        SELECT * FROM presences
+        WHERE employe_id = $1
+          AND date_presence = CURRENT_DATE
+        LIMIT 1
+    `, [employe_id]);
+    return result.rows[0] || null;
+}
+
+// ----------------------------------------------------------------
 // checkIn({ employe_id, date_presence, heure_entree, statut })
 // ----------------------------------------------------------------
 // INSERT une nouvelle ligne de presence (arrivee).
-// Le statut est "Present" si arrive avant 09:00, "Retard" sinon.
-// Le controle est fait dans le controleur, pas ici.
 // ----------------------------------------------------------------
 async function checkIn({ employe_id, date_presence, heure_entree, statut }) {
     const result = await pool.query(`
@@ -121,7 +138,7 @@ async function checkIn({ employe_id, date_presence, heure_entree, statut }) {
 async function checkOut(id, heure_sortie) {
     const result = await pool.query(`
         UPDATE presences SET
-            heure_sortie = $2,
+            heure_sortie = $2::time,
             updated_at = NOW()
         WHERE id = $1
           AND heure_sortie IS NULL
@@ -135,21 +152,29 @@ async function checkOut(id, heure_sortie) {
 // ----------------------------------------------------------------
 // Permet à l'admin de corriger une presence (rattrapage).
 // Utile quand un employe a oublie de pointer son depart.
-// Met aussi a jour le statut pour indiquer que c'est un rattrapage.
+// Met à jour l'heure de sortie et la remarque.
+// NOTE : CAST explicite $2::time pour éviter les erreurs de typage
+//        entre le paramètre texte et la colonne TIME.
 // ----------------------------------------------------------------
 async function rattrapage(id, { heure_sortie, remarque }) {
-    const result = await pool.query(`
-        UPDATE presences SET
-            heure_sortie = COALESCE($2, heure_sortie),
-            remarque = CASE
-                WHEN $3 IS NOT NULL AND $3 != '' THEN $3
-                ELSE COALESCE(remarque, '')
-            END,
-            updated_at = NOW()
-        WHERE id = $1
-        RETURNING *
-    `, [id, heure_sortie, remarque]);
-    return result.rows[0];
+    try {
+        console.log(`📝 SQL rattrapage: id=${id}, heure_sortie=${heure_sortie}, remarque=${remarque}`);
+        
+        const result = await pool.query(`
+            UPDATE presences SET
+                heure_sortie = $2::time,
+                remarque = $3,
+                updated_at = NOW()
+            WHERE id = $1
+            RETURNING *
+        `, [id, heure_sortie, remarque || null]);
+        
+        console.log(`✅ SQL rattrapage reussi: ${result.rowCount} ligne(s)`);
+        return result.rows[0];
+    } catch (error) {
+        console.error("❌ SQL rattrapage erreur:", error.message);
+        throw error; // Laisse le controller gérer l'erreur
+    }
 }
 
 // ----------------------------------------------------------------
@@ -197,7 +222,6 @@ async function getTodayStats() {
 // Quand un employe check-in le matin, si une presence de la veille
 // (ou avant) est encore ouverte (heure_sortie NULL), on la ferme
 // automatiquement avec une heure par defaut et une remarque.
-// L'admin pourra corriger via rattrapage si besoin.
 // ----------------------------------------------------------------
 async function autoCloseStalePresences(employe_id) {
     const result = await pool.query(`
@@ -213,5 +237,4 @@ async function autoCloseStalePresences(employe_id) {
     return result.rows;
 }
 
-module.exports = { getAll, getById, getActivePresence, checkIn, checkOut, rattrapage, getTodayStats, autoCloseStalePresences };
-
+module.exports = { getAll, getById, getActivePresence, getTodayPresence, checkIn, checkOut, rattrapage, getTodayStats, autoCloseStalePresences };

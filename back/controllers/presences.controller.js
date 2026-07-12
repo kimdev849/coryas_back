@@ -3,6 +3,7 @@
 // ================================================================
 
 const presencesModel = require("../models/presences.model");
+const parametresModel = require("../models/parametres.model");
 
 // ----------------------------------------------------------------
 // GET /api/presences - Liste toutes les presences (avec filtres)
@@ -36,10 +37,34 @@ const checkIn = async (req, res) => {
             return res.status(400).json({ message: "employe_id obligatoire", data: null });
         }
 
-        // Auto-fermeture des presences des jours precedents oubliees
-        const closedPresences = await presencesModel.autoCloseStalePresences(employe_id);
+        // ============================================================
+        // 1. VÉRIFICATION : Un seul pointage par jour
+        // ============================================================
+        const todayPresence = await presencesModel.getTodayPresence(employe_id);
+        if (todayPresence) {
+            if (!todayPresence.heure_sortie) {
+                // L'employé est déjà arrivé mais n'est pas encore parti
+                return res.status(400).json({
+                    message: "Vous avez déjà pointé votre arrivée aujourd'hui. Un seul pointage par jour.",
+                    data: null
+                });
+            } else {
+                // L'employé a déjà fait sa journée complète
+                return res.status(400).json({
+                    message: "Vous avez déjà pointé aujourd'hui. Un seul pointage par jour est autorisé.",
+                    data: null
+                });
+            }
+        }
 
-        // Utiliser l'heure envoyée par le front (fuseau local) ou celle du serveur
+        // ============================================================
+        // 2. RÉCUPÉRER LES PARAMÈTRES DE L'ENTREPRISE
+        // ============================================================
+        const params = await parametresModel.get();
+
+        // ============================================================
+        // 3. DÉTERMINER L'HEURE D'ARRIVÉE
+        // ============================================================
         let heure_entree;
         if (frontHeure) {
             heure_entree = frontHeure;
@@ -51,12 +76,48 @@ const checkIn = async (req, res) => {
             heure_entree = h + ":" + m;
         }
 
-        // Date au format YYYY-MM-DD (toujours en UTC pour la coherence)
+        // ============================================================
+        // 4. VALIDATION : Horaires de l'entreprise
+        // ============================================================
+        const heureOuverture = params?.heure_ouverture || "07:00";
+        const heureFermeture = params?.heure_fermeture || "19:00";
+
+        if (heure_entree < heureOuverture) {
+            return res.status(400).json({
+                message: `L'entreprise ouvre à ${heureOuverture}. Vous ne pouvez pas pointer avant.`,
+                data: null
+            });
+        }
+
+        if (heure_entree > heureFermeture) {
+            return res.status(400).json({
+                message: `L'entreprise ferme à ${heureFermeture}. Vous ne pouvez plus pointer.`,
+                data: null
+            });
+        }
+
+        // ============================================================
+        // 5. Auto-fermeture des présences des jours précédents oubliées
+        // ============================================================
+        const closedPresences = await presencesModel.autoCloseStalePresences(employe_id);
+
+        // ============================================================
+        // 6. DÉTERMINER LE STATUT (Présent ou Retard)
+        // ============================================================
+        // Si l'heure d'arrivée dépasse l'heure d'ouverture + la marge de retard
+        const retardApres = params?.retard_apres || 0;
+        let heureLimite = heureOuverture;
+        if (retardApres > 0) {
+            const [h, m] = heureLimite.split(":").map(Number);
+            const totalMinutes = h * 60 + m + retardApres;
+            heureLimite = String(Math.floor(totalMinutes / 60)).padStart(2, "0") + ":" + String(totalMinutes % 60).padStart(2, "0");
+        }
+        const statut = heure_entree > heureLimite ? "Retard" : "Present";
+
+        // ============================================================
+        // 7. ENREGISTRER LA PRÉSENCE
+        // ============================================================
         const date = new Date().toISOString().split('T')[0];
-
-        // Si l'heure d'arrivee est apres 09:00, l'employe est en retard
-        const statut = heure_entree > "09:00" ? "Retard" : "Present";
-
         const newPresence = await presencesModel.checkIn({
             employe_id, date_presence: date, heure_entree, statut,
         });
@@ -91,7 +152,17 @@ const checkOut = async (req, res) => {
             return res.status(400).json({ message: "ID de presence obligatoire", data: null });
         }
 
-        // Heure de depart = celle du front (fuseau local) ou du serveur
+        // ============================================================
+        // 1. RÉCUPÉRER LA PRÉSENCE POUR VALIDER
+        // ============================================================
+        const presenceActuelle = await presencesModel.getById(presenceId);
+        if (!presenceActuelle) {
+            return res.status(404).json({ message: "Presence non trouvee", data: null });
+        }
+
+        // ============================================================
+        // 2. DÉTERMINER L'HEURE DE DÉPART
+        // ============================================================
         let heure_sortie;
         if (frontHeure) {
             heure_sortie = frontHeure;
@@ -103,6 +174,19 @@ const checkOut = async (req, res) => {
             heure_sortie = h + ":" + m;
         }
 
+        // ============================================================
+        // 3. VALIDATION : L'heure de départ doit être après l'arrivée
+        // ============================================================
+        if (presenceActuelle.heure_entree && heure_sortie <= presenceActuelle.heure_entree) {
+            return res.status(400).json({
+                message: "L'heure de départ doit être après l'heure d'arrivée.",
+                data: null
+            });
+        }
+
+        // ============================================================
+        // 4. ENREGISTRER LE DÉPART
+        // ============================================================
         const presence = await presencesModel.checkOut(presenceId, heure_sortie);
 
         if (!presence) {
@@ -172,22 +256,41 @@ const getActivePresence = async (req, res) => {
 const rattrapage = async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Vérification que req.body existe (express.json() doit être configuré)
+        if (!req.body || typeof req.body !== 'object') {
+            return res.status(400).json({ message: "Corps de requete invalide", data: null });
+        }
+
         const { heure_sortie, remarque } = req.body;
 
         if (!heure_sortie) {
-            return res.status(400).json({ message: "heure_sortie obligatoire", data: null });
+            return res.status(400).json({ message: "L'heure de départ est obligatoire", data: null });
+        }
+
+        // Validation du format HH:MM
+        if (!/^\d{2}:\d{2}$/.test(heure_sortie)) {
+            return res.status(400).json({ message: "Format d'heure invalide. Utilisez HH:MM", data: null });
+        }
+
+        // Validation : l'heure doit être entre 00:00 et 23:59
+        const [h, m] = heure_sortie.split(':').map(Number);
+        if (h > 23 || m > 59) {
+            return res.status(400).json({ message: "Heure invalide (00:00 - 23:59)", data: null });
         }
 
         const presence = await presencesModel.rattrapage(id, { heure_sortie, remarque });
 
         if (!presence) {
-            return res.status(404).json({ message: "Presence non trouvee", data: null });
+            return res.status(404).json({ message: "Presence introuvable. Verifiez l'ID.", data: null });
         }
+
+        console.log(`✅ Rattrapage: presence #${id} → heure_sortie = ${heure_sortie}`);
 
         res.json({ message: "Rattrapage enregistre avec succes", data: presence });
     } catch (error) {
-        console.error("Erreur rattrapage:", error);
-        res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+        console.error("❌ Erreur rattrapage:", error);
+        res.status(500).json({ message: "Erreur serveur lors du rattrapage", error: error.message, data: null });
     }
 };
 

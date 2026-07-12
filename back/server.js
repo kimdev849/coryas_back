@@ -1,105 +1,106 @@
 // ================================================================
-// server.js - Point de demarrage du serveur
+// server.js - Point d'entrée du serveur Express
 // ================================================================
-// Ce fichier cree le serveur Express, branche les middlewares
-// et les routes, puis demarre sur le port 3000.
+// Ce fichier :
+// 1. Charge les variables d'environnement (.env)
+// 2. Configure Express (JSON, CORS, logger)
+// 3. Monte toutes les routes (/api/auth, /api/presences, etc.)
+// 4. Gère les erreurs 404 et les erreurs serveur
+// 5. Démarre le serveur sur le port configuré (3000 par défaut)
 // ================================================================
 
-// Importe Express pour creer le serveur web
+// ================================================================
+// 1. CHARGEMENT DES VARIABLES D'ENVIRONNEMENT
+// ================================================================
+require("dotenv").config();
+
+// ================================================================
+// 2. IMPORT DES BIBLIOTHÈQUES
+// ================================================================
 const express = require("express");
-
-// ================================================================
-// GESTION DES ERREURS GLOBALES (empeche le crash du serveur)
-// ================================================================
-// Depuis Node.js 15, une promesse rejetee non rattrapee (unhandled
-// rejection) fait planter le processus. Ces handlers attrapent
-// toutes les erreurs qui pourraient echapper aux try-catch des
-// controleurs, et les loggent sans crasher le serveur.
-// ================================================================
-process.on("unhandledRejection", (reason) => {
-    console.error("UNHANDLED REJECTION:", reason?.message || reason);
-});
-process.on("uncaughtException", (err) => {
-    console.error("UNCAUGHT EXCEPTION:", err?.message || err);
-});
-
-// Cree une instance de l'application Express
 const app = express();
 
-// Connecte a la base de donnees Supabase (voir config/database.js)
-require("./config/database");
+// ================================================================
+// 3. IMPORT DES ROUTES
+// ================================================================
+const authRoutes = require("./routes/auth.routes");
+const presencesRoutes = require("./routes/presences.routes");
+const congesRoutes = require("./routes/conges.routes");
+const employesRoutes = require("./routes/employes.routes");
+const departementsRoutes = require("./routes/departements.routes");
+const parametresRoutes = require("./routes/parametres.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 
-// === Imports des fichiers de routes ===
-// Chaque fichier .routes.js definit les URLs d'une partie de l'app
-const authRoutes = require("./routes/auth.routes");       // Routes pour login/register
-const dashboardRoutes = require("./routes/dashboard.routes"); // Routes pour les stats
-const employesRoutes = require("./routes/employes.routes");  // Routes pour les employes
-const presencesRoutes = require("./routes/presences.routes"); // Routes pour les pointages
-const congesRoutes = require("./routes/conges.routes");     // Routes pour les conges
-const departementsRoutes = require("./routes/departements.routes"); // Routes pour les departements
-const parametresRoutes = require("./routes/parametres.routes"); // Routes pour les parametres
-
-// === Imports des middlewares ===
-// Les middlewares sont des fonctions qui s'executent avant les routes
-const loggerMiddleware = require("./middlewares/logger.middleware");  // Affiche les requetes
-const corsMiddleware = require("./middlewares/cors.middleware");      // Autorise le frontend
+// ================================================================
+// 4. IMPORT DES MIDDLEWARES
+// ================================================================
+const corsMiddleware = require("./middlewares/cors.middleware");
+const loggerMiddleware = require("./middlewares/logger.middleware");
 const { errorHandler, notFoundHandler } = require("./middlewares/errorHandler.middleware");
 
 // ================================================================
-// MIDDLEWARES (s'executent avant les routes)
+// 5. CONFIGURATION DES MIDDLEWARES GLOBAUX
 // ================================================================
 
-// Transforme le JSON du body en objet JavaScript
-// Exemple: si on envoie {"nom":"Jean"}, on recoit req.body.nom = "Jean"
-app.use(express.json());
-
-// Pareil pour les formulaires HTML (urlencoded)
-app.use(express.urlencoded({ extended: true }));
-
-// Autorise le navigateur du frontend a appeler cette API
-// Sans CORS, le navigateur bloquerait les requetes
+// Middleware CORS : autorise le frontend à appeler l'API
 app.use(corsMiddleware);
 
-// Affiche chaque requete dans la console (pour le debogage)
-// Exemple: [14:30:00] GET /api/employes -> 200
+// Middleware pour lire le JSON dans le corps des requêtes (req.body)
+app.use(express.json());
+
+// Middleware logger : affiche chaque requête dans la console
 app.use(loggerMiddleware);
 
 // ================================================================
-// ROUTES (chaque URL = une page ou une action)
+// 6. MONTAGE DES ROUTES
+// ================================================================
+// Chaque groupe de routes est monté sur un préfixe :
+//   /api/auth        → routes/auth.routes.js
+//   /api/presences   → routes/presences.routes.js
+//   /api/conges      → routes/conges.routes.js
+//   /api/employes    → routes/employes.routes.js
+//   /api/departements → routes/departements.routes.js
+//   /api/parametres  → routes/parametres.routes.js
+//   /api/dashboard   → routes/dashboard.routes.js
 // ================================================================
 
-// Route de test : si on va sur http://localhost:3000/
-app.get("/", (req, res) => {
-  res.send("Serveur Presence Coryas fonctionne !");
+app.use("/api/auth", authRoutes);
+app.use("/api/presences", presencesRoutes);
+app.use("/api/conges", congesRoutes);
+app.use("/api/employes", employesRoutes);
+app.use("/api/departements", departementsRoutes);
+app.use("/api/parametres", parametresRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+
+// ================================================================
+// 7. ROUTE DE TEST (vérifier que le serveur répond)
+// ================================================================
+app.get("/api/health", (req, res) => {
+    res.json({ status: "OK", message: "Serveur Présence Coryas opérationnel 💪" });
 });
 
-// Branche chaque fichier de routes sur une URL de base
-// Exemple: /api/auth/login appelle la route login du fichier auth.routes.js
-app.use("/api/auth", authRoutes);           // Connexion, inscription
-app.use("/api/dashboard", dashboardRoutes); // Statistiques du tableau de bord
-app.use("/api/employes", employesRoutes);   // Gestion des employes
-app.use("/api/presences", presencesRoutes); // Pointage arrivee/depart
-app.use("/api/conges", congesRoutes);       // Demandes de conges
-app.use("/api/departements", departementsRoutes); // Departements
-app.use("/api/parametres", parametresRoutes);     // Parametres
-
 // ================================================================
-// GESTION DES ERREURS
+// 8. GESTION DES ERREURS
 // ================================================================
-
-// Si l'URL demandee n'existe pas, renvoie une erreur 404
+// Si aucune route n'a été trouvée → 404
 app.use(notFoundHandler);
 
-// Si une erreur survient pendant le traitement, renvoie 500
+// Attrape toutes les erreurs non gérées → 500
 app.use(errorHandler);
 
 // ================================================================
-// DEMARRAGE
+// 9. DÉMARRAGE DU SERVEUR
 // ================================================================
+const PORT = process.env.PORT || 3000;
 
-// Lance le serveur sur le port 3000
-// Le serveur ecoute et attend les requetes
-app.listen(3000, () => {
-  console.log("Serveur sur port 3000");
+app.listen(PORT, () => {
+    console.log("");
+    console.log("🚀 ====================================");
+    console.log(`   Présence Coryas API en ligne !`);
+    console.log(`   📡 Port : ${PORT}`);
+    console.log(`   🌍 http://localhost:${PORT}/api/health`);
+    console.log("====================================");
+    console.log("");
 });
-     
+
+module.exports = app;

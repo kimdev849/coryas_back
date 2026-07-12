@@ -42,14 +42,17 @@ function Presences() {
   // Charge les présences à valider (arrivée sans départ, date passée)
   const loadPresencesAValider = async () => {
     try {
-      // On prend toutes les présences avec heure_sortie NULL et date < aujourd'hui
+      // On prend toutes les présences JUSQU'À hier (date_fin = hier)
+      // Cela exclut les présences d'aujourd'hui qui sont encore "en cours"
+      // (l'employé travaille encore, pas besoin de validation)
+      const hier = new Date(Date.now() - 86400000).toISOString().split("T")[0];
       const res = await presencesService.getAll({
-        date_fin: new Date(Date.now() - 86400000).toISOString().split("T")[0], // hier
+        date_fin: hier,
       });
       const incompletes = (res.data || []).filter(p => !p.heure_sortie);
       setPresencesAValider(incompletes);
-    } catch {
-      // silencieux
+    } catch (err) {
+      console.warn("⚠️ Erreur chargement présences à valider:", err);
     }
   };
 
@@ -130,22 +133,44 @@ function Presences() {
   // Enregistre le rattrapage (l'admin fixe l'heure de départ)
   const handleRattrapage = async (e) => {
     e.preventDefault();
+    
+    // Vérification : heure de départ obligatoire
     if (!rattrapageHeure) {
       showMessage("Veuillez saisir l'heure de départ", "error");
       return;
     }
 
+    // Vérification : ID de présence obligatoire
+    if (!rattrapagePresence || !rattrapagePresence.id) {
+      showMessage("Erreur : présence introuvable. Rechargez la page.", "error");
+      fermerRattrapage();
+      return;
+    }
+
     try {
+      console.log("📤 Envoi rattrapage:", {
+        id: rattrapagePresence.id,
+        heure_sortie: rattrapageHeure,
+        employe: rattrapagePresence.employe_nom,
+      });
+
       await presencesService.rattrapage(rattrapagePresence.id, {
         heure_sortie: rattrapageHeure,
-        remarque: "Rattrapage admin",
+        remarque: "Rattrapage RH",
       });
-      showMessage("Rattrapage enregistré !");
+      
+      showMessage("✅ Rattrapage enregistré !");
       fermerRattrapage();
-      await loadPresencesFiltrees();
-      await loadPresencesAValider();
+      
+      // Recharge les données en arrière-plan (silencieux si échec)
+      loadPresencesFiltrees().catch(() => {});
+      loadPresencesAValider().catch(() => {});
     } catch (err) {
-      showMessage("Erreur : " + err.message, "error");
+      console.error("❌ Erreur rattrapage:", err);
+      
+      // Le message d'erreur vient déjà du backend via fetchWithAuth
+      const msg = err.message || "Erreur inconnue";
+      showMessage("❌ " + msg, "error");
     }
   };
 
@@ -231,6 +256,12 @@ function Presences() {
     return `${h}h${m > 0 ? String(m).padStart(2, '0') : '00'}`;
   };
 
+  // Affiche une date au format français (extrait YYYY-MM-DD avant parsing)
+  const afficherDate = (dateStr, options) => {
+    const d = (dateStr || "").split("T")[0];
+    return d ? new Date(d + "T12:00:00").toLocaleDateString("fr-FR", options) : "-";
+  };
+
   return (
     <div className="presences-page">
       {/* ===== TITRE ===== */}
@@ -268,9 +299,7 @@ function Presences() {
                 <div className="presences-valider-infos">
                   <strong>{p.employe_nom}</strong>
                   <span className="presences-valider-date">
-                    {new Date(p.date_presence + "T00:00:00").toLocaleDateString("fr-FR", {
-                      weekday: "long", day: "numeric", month: "long"
-                    })}
+                    {afficherDate(p.date_presence, { weekday: "long", day: "numeric", month: "long" })}
                   </span>
                   <span className="presences-vert">Arrivée : {p.heure_entree}</span>
                 </div>
@@ -363,11 +392,7 @@ function Presences() {
                 {/* Nom de l'employé */}
                 <td><strong>{p.employe_nom}</strong></td>
                 {/* Date formatée en français */}
-                <td>{p.date_presence
-                  ? new Date(p.date_presence + "T00:00:00").toLocaleDateString("fr-FR", {
-                      weekday: "short", day: "numeric", month: "short"
-                    })
-                  : "-"}</td>
+                <td>{afficherDate(p.date_presence, { weekday: "short", day: "numeric", month: "short" })}</td>
                 {/* Heure d'arrivée */}
                 <td><span className="presences-vert">{p.heure_entree || "-"}</span></td>
                 {/* Heure de départ */}
@@ -402,7 +427,7 @@ function Presences() {
             </h3>
             {/* Date du jour */}
             <p style={{ color: "#888", fontSize: "14px", marginBottom: "16px" }}>
-              {new Date(rattrapagePresence.date_presence + "T00:00:00").toLocaleDateString("fr-FR", {
+              {afficherDate(rattrapagePresence.date_presence, {
                 weekday: "long", day: "numeric", month: "long", year: "numeric"
               })}
             </p>
