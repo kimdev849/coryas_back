@@ -336,21 +336,146 @@
   transform: scale(1.05);
 }
 
+/* ================================================================
+   MODALE D'APPROBATION / RÉJECTION
+   ================================================================ */
+.conges-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.conges-modal {
+  background: white;
+  border-radius: 14px;
+  padding: 28px;
+  width: 90%;
+  max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.conges-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.conges-modal-icon {
+  font-size: 24px;
+}
+
+.conges-modal-header h3 {
+  font-size: 18px;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.conges-modal-desc {
+  color: var(--color-gray-700);
+  font-size: 14px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.conges-modal-field {
+  margin-bottom: 20px;
+}
+
+.conges-modal-field label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--color-gray-900);
+}
+
+.conges-modal-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.conges-modal-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15) !important;
+}
+
+.conges-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.conges-modal-actions button {
+  flex: 1;
+}
+
+.conges-commentaire-rh {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid var(--color-primary);
+  font-size: 13px;
+  color: var(--color-gray-700);
+}
+
+.conges-commentaire-rh small {
+  display: block;
+  line-height: 1.4;
+}
+
 .conges-no-action {
   color: #ccc;
   font-weight: bold;
 }
 
 /* RESPONSIVE */
+@media (max-width: 1024px) {
+  .conges-form-container { padding: 16px; }
+}
+
 @media (max-width: 768px) {
-  .conges-table-container { overflow-x: auto; }
+  .conges-table-container { overflow-x: auto; margin: 0 -4px; }
   .conges-table { min-width: 600px; }
   .conges-btn-new, .conges-btn-reload { padding: 8px 15px; font-size: 12px; }
   .conges-form { gap: 12px; }
   .conges-form-actions { flex-direction: column; }
-  .conges-filter-btn { padding: 6px 12px; font-size: 12px; }
+  .conges-filter { flex-wrap: wrap; }
+  .conges-filter-btn { padding: 6px 12px; font-size: 12px; flex: 1; text-align: center; }
   .conges-table th, .conges-table td { padding: 8px 10px; font-size: 12px; }
   .conges-btn-action { padding: 4px 8px; min-width: 30px; font-size: 11px; }
+  .conges-commentaire-rh { font-size: 11px; padding: 4px 8px; }
+  .conges-actions { flex-direction: column; gap: 4px; }
+  .conges-actions button { width: 100%; }
+  .conges-modal { width: 95%; padding: 20px; margin: 10px; }
+  .conges-modal-actions { flex-direction: column; }
 }
 
 @media (max-width: 480px) {
@@ -358,6 +483,6 @@
   .conges-btn-new, .conges-btn-reload { width: 100%; }
   .conges-filter { flex-direction: column; }
   .conges-filter-btn { width: 100%; }
-  .conges-table { min-width: 400px; font-size: 11px; }
+  .conges-table { min-width: 450px; font-size: 11px; }
   .conges-table th, .conges-table td { padding: 6px 5px; }
 }

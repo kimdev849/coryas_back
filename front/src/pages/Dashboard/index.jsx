@@ -7,6 +7,7 @@
 // ================================================================
 
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import dashboardService from "../../services/dashboardService";
 import presencesService from "../../services/presencesService";
@@ -18,8 +19,11 @@ function Dashboard() {
 
   const [stats, setStats] = useState(null);
   const [activePresence, setActivePresence] = useState(null);
+  const [todayPresences, setTodayPresences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const todayStr = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     if (isEmploye) {
@@ -32,10 +36,12 @@ function Dashboard() {
   const loadEmployeData = async () => {
     setIsLoading(true);
     try {
-      const [presenceRes] = await Promise.all([
+      const [presenceRes, todayRes] = await Promise.all([
         presencesService.getActivePresence(user.employe_id),
+        presencesService.getAll({ employe_id: user.employe_id, date_debut: todayStr, date_fin: todayStr }),
       ]);
       setActivePresence(presenceRes.data || null);
+      setTodayPresences(todayRes.data || []);
     } catch {
       // silencieux
     } finally {
@@ -59,11 +65,9 @@ function Dashboard() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="page-title">Tableau de Bord</h1>
-        <div style={{
-          textAlign: "center", padding: "60px", color: "#888", fontSize: "18px"
-        }}>
-          Chargement...
+        <h1 className="page-title">Tableau de bord</h1>
+        <div className="loading-spinner">
+          <span className="loading-spinner-text">Chargement...</span>
         </div>
       </div>
     );
@@ -74,7 +78,7 @@ function Dashboard() {
     return (
       <div>
         <h1 className="page-title">
-          Bonjour, {user?.prenom || "Utilisateur"}
+          {new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour"}, {user?.prenom || "Utilisateur"}
         </h1>
         <p className="page-description">
           {new Date().toLocaleDateString("fr-FR", {
@@ -85,12 +89,14 @@ function Dashboard() {
         <div className="dashboard-cards">
           <div className="dashboard-card">
             <h3 className="dashboard-card-title">Statut</h3>
-            <p className="dashboard-number" style={{ color: activePresence ? "#22c55e" : "#808080" }}>
-              {activePresence ? "Présent" : "Absent"}
+            <p className="dashboard-number" style={{ color: activePresence ? "#22c55e" : todayPresences.length > 0 ? "#f59e0b" : "#808080" }}>
+              {activePresence ? "Présent" : todayPresences.length > 0 ? "Départ enregistré" : "Absent"}
             </p>
-            {activePresence && (
+            {activePresence ? (
               <p className="dashboard-card-desc">Arrivé à {activePresence.heure_entree}</p>
-            )}
+            ) : todayPresences.length > 0 ? (
+              <p className="dashboard-card-desc">Arrivé à {todayPresences[0]?.heure_entree} - Départ à {todayPresences[0]?.heure_sortie}</p>
+            ) : null}
           </div>
 
           <div className="dashboard-card">
@@ -103,12 +109,12 @@ function Dashboard() {
         <div className="dashboard-recent">
           <h2 className="dashboard-recent-title">Actions rapides</h2>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
-            <a href="/mon-pointage" className="employes-btn employes-btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
+            <Link to="/mon-pointage" className="employes-btn employes-btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
               {activePresence ? "Pointer le départ" : "Pointer l'arrivée"}
-            </a>
-            <a href="/conges" className="employes-btn employes-btn-primary" style={{ textDecoration: "none", display: "inline-block", background: "#6c757d" }}>
+            </Link>
+            <Link to="/conges" className="employes-btn employes-btn-primary" style={{ textDecoration: "none", display: "inline-block", background: "#6c757d" }}>
               Demander un congé
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -119,7 +125,7 @@ function Dashboard() {
   if (error) {
     return (
       <div>
-        <h1 className="page-title">Tableau de Bord</h1>
+        <h1 className="page-title">Tableau de bord</h1>
         <div className="dashboard-error" style={{
           background: "#f8d7da", color: "#721c24", padding: "20px",
           borderRadius: "12px", textAlign: "center", marginBottom: "24px"
@@ -127,7 +133,7 @@ function Dashboard() {
           {error}
         </div>
         <button onClick={loadStats} className="employes-btn employes-btn-primary">
-          Reessayer
+          Réessayer
         </button>
       </div>
     );
@@ -135,8 +141,8 @@ function Dashboard() {
 
   return (
     <div>
-      <h1 className="page-title">Tableau de Bord</h1>
-      <p className="page-description">Résumé des activités du jour</p>
+      <h1 className="page-title">Tableau de bord</h1>
+      <p className="page-description">Résumé du jour</p>
 
       <div className="dashboard-cards">
         <div className="dashboard-card">
@@ -146,7 +152,7 @@ function Dashboard() {
         </div>
         <div className="dashboard-card">
           <h3 className="dashboard-card-title">Présent(s)</h3>
-          <p className="dashboard-number">{stats?.presentAujourdhui || 0}</p>
+          <p className="dashboard-number">{stats?.presents || 0}</p>
           <p className="dashboard-card-desc">Présent(s) aujourd'hui</p>
         </div>
         <div className="dashboard-card">
@@ -156,12 +162,12 @@ function Dashboard() {
         </div>
         <div className="dashboard-card">
           <h3 className="dashboard-card-title">Retard(s)</h3>
-          <p className="dashboard-number">{stats?.retrards || 0}</p>
+          <p className="dashboard-number">{stats?.retards || 0}</p>
           <p className="dashboard-card-desc">En retard ce matin</p>
         </div>
         <div className="dashboard-card">
           <h3 className="dashboard-card-title">Taux présence</h3>
-          <p className="dashboard-number">{stats?.presensTaux || 0}%</p>
+          <p className="dashboard-number">{stats?.tauxPresence || 0}%</p>
           <p className="dashboard-card-desc">Taux de présence global</p>
         </div>
         <div className="dashboard-card">

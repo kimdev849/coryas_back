@@ -19,8 +19,16 @@ const pool = require("../config/database");
 // au lieu de les faire une par une (beaucoup plus rapide).
 // ----------------------------------------------------------------
 async function getStats() {
-    // On lance 4 requetes SQL en parallele
-    const [totalEmployes, presencesAujourdhui, congesEnAttente, congesApprouves] = await Promise.all([
+    // ============================================================
+    // VERIFICATION : Si on est samedi (6) ou dimanche (0),
+    // on ne compte pas les absents (les employes ne travaillent pas)
+    // ============================================================
+    const aujourdhui = new Date();
+    const jourSemaine = aujourdhui.getDay(); // 0=Dimanche, 6=Samedi
+    const estWeekend = jourSemaine === 0 || jourSemaine === 6;
+
+    // On lance 5 requetes SQL en parallele
+    const [totalEmployes, presencesAujourdhui, congesEnAttente, congesApprouves, employesEnConge] = await Promise.all([
 
         // Requete 1 : compte les employes avec statut 'Actif'
         pool.query("SELECT COUNT(*) AS total FROM employes WHERE statut = 'Actif'"),
@@ -49,37 +57,56 @@ async function getStats() {
             -- Meme mois que la date actuelle
             AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
         `),
+
+        // Requete 5 : compte les employés EN CONGÉ AUJOURD'HUI
+        // Ceux-ci ne doivent PAS être comptés comme absents
+        pool.query(`
+            SELECT COUNT(DISTINCT employe_id) AS total
+            FROM conges
+            WHERE statut = 'Approuve'
+              AND date_debut <= CURRENT_DATE
+              AND date_fin >= CURRENT_DATE
+        `),
     ]);
 
     // On extrait les valeurs des resultats SQL
     // parseInt() convertit le texte en nombre. Si c'est null, on met 0.
     const employesActifs = parseInt(totalEmployes.rows[0].total) || 0;
+    const enConge = parseInt(employesEnConge.rows[0].total) || 0;
     const p = presencesAujourdhui.rows[0];
+    const totalPresents = parseInt(p.total) || 0;
     const presents = parseInt(p.presents) || 0;
     const retards = parseInt(p.retards) || 0;
-
-    // Les absents = employes actifs - ceux qui sont venus aujourd'hui
-    const absents = employesActifs - (parseInt(p.total) || 0);
 
     const congesAttente = parseInt(congesEnAttente.rows[0].total) || 0;
     const congesApprouvesCeMois = parseInt(congesApprouves.rows[0].total) || 0;
 
-    // Taux de presence = (presents / total employes) * 100
-    // Math.round() arrondit a l'entier le plus proche
-    const tauxPresence = employesActifs > 0
-        ? Math.round((presents / employesActifs) * 100)
-        : 0;
+    // Si c'est le week-end, on ne compte pas les absents
+    // Les employés qui ne sont pas venus samedi/dimanche ne sont PAS absents
+    let absents = 0;
+    let tauxPresence = 0;
+
+    if (!estWeekend && employesActifs > 0) {
+        // Les employés attendus = actifs - ceux en congé
+        const employesAttendus = employesActifs - enConge;
+        absents = Math.max(0, employesAttendus - totalPresents);
+        tauxPresence = employesAttendus > 0
+            ? Math.round((presents / employesAttendus) * 100)
+            : 0;
+    }
 
     // On renvoie un objet avec toutes les stats
     // Le controleur l'enverra au frontend
     return {
         totalEmployes: employesActifs,
         presentAujourdhui: presents,
+        enConge: enConge,
         absents: absents,
-        retrards: retards,
+        retards: retards,
         congesEnAttente: congesAttente,
         congesApprouves: congesApprouvesCeMois,
-        presensTaux: tauxPresence,
+        tauxPresence: tauxPresence,
+        estWeekend: estWeekend,
     };
 }
 

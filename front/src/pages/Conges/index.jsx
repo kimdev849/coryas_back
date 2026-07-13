@@ -17,9 +17,11 @@ function Conges() {
   // Si le role est Admin ou RH, on peut voir la liste des employes
   const estAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
 
+  const today = new Date().toISOString().split("T")[0];
+
   const [formData, setFormData] = useState({
     employe_id: "",  // ID de l'employe (admin peut choisir)
-    dateDebut: "",
+    dateDebut: today,
     dateFin: "",
     raison: "",
   });
@@ -31,6 +33,9 @@ function Conges() {
   const [messageType, setMessageType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [filtreStatut, setFiltreStatut] = useState("Tous");
+  const [modalInfo, setModalInfo] = useState(null); // { type: 'approve'|'reject', id, nom }
+  const [modalComment, setModalComment] = useState("");
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     handleLoadConges();
@@ -70,6 +75,18 @@ function Conges() {
       return;
     }
 
+    if (new Date(formData.dateDebut) < new Date(today)) {
+      setMessage("La date de debut ne peut pas etre avant aujourd'hui !");
+      setMessageType("error");
+      return;
+    }
+
+    if (new Date(formData.dateFin) < new Date(today)) {
+      setMessage("La date de fin ne peut pas etre avant aujourd'hui !");
+      setMessageType("error");
+      return;
+    }
+
     if (new Date(formData.dateFin) < new Date(formData.dateDebut)) {
       setMessage("La date de fin doit etre apres la date de debut !");
       setMessageType("error");
@@ -93,7 +110,7 @@ function Conges() {
       setMessage(result.message || "Demande creee avec succes !");
       setMessageType("success");
 
-      setFormData({ employe_id: "", dateDebut: "", dateFin: "", raison: "" });
+      setFormData({ employe_id: "", dateDebut: today, dateFin: "", raison: "" });
       setTimeout(() => setShowForm(false), 1500);
       await handleLoadConges();
       setTimeout(() => setMessage(""), 3000);
@@ -115,6 +132,7 @@ function Conges() {
         dateDebut: c.date_debut,
         dateFin: c.date_fin,
         raison: c.motif || c.raison,
+        commentaireRh: c.commentaire_rh || "",
         nombreJours: c.nombre_jours || calcJours(c.date_debut, c.date_fin),
       }));
       setListConges(normalized);
@@ -135,47 +153,46 @@ function Conges() {
     return diff > 0 ? diff + " jour(s)" : "-";
   };
 
-  const handleAppouverConge = async (id) => {
+  // Ouvre la modale d'approbation/réjection
+  const openModal = (type, id, nom) => {
+    setModalInfo({ type, id, nom });
+    setModalComment("");
+  };
+
+  // Ferme la modale
+  const closeModal = () => {
+    setModalInfo(null);
+    setModalComment("");
+  };
+
+  // Confirme l'action (approuver ou rejeter)
+  const handleModalConfirm = async () => {
+    if (!modalInfo) return;
+    setModalLoading(true);
     try {
-      const result = await congesService.appouverConge(id);
-      setMessage(result.message || "Demande approuvee !");
+      const { type, id } = modalInfo;
+      if (type === "approve") {
+        const result = await congesService.appouverConge(id, modalComment || null);
+        setMessage(result.message || "Demande approuvée !");
+      } else {
+        if (!modalComment.trim()) {
+          setMessage("Veuillez saisir un motif de rejet.");
+          setMessageType("error");
+          setModalLoading(false);
+          return;
+        }
+        const result = await congesService.rejeterConge(id, modalComment);
+        setMessage(result.message || "Demande rejetée !");
+      }
       setMessageType("success");
+      closeModal();
       await handleLoadConges();
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setMessage("Erreur lors de l'approbation");
+      setMessage("Erreur lors de l'opération");
       setMessageType("error");
-    }
-  };
-
-  const handleRejeterConge = async (id) => {
-    const commentaire = prompt("Motif du rejet :");
-    if (commentaire !== null) {
-      try {
-        const result = await congesService.rejeterConge(id, commentaire);
-        setMessage(result.message || "Demande rejetee !");
-        setMessageType("success");
-        await handleLoadConges();
-        setTimeout(() => setMessage(""), 3000);
-      } catch (error) {
-        setMessage("Erreur lors du rejet");
-        setMessageType("error");
-      }
-    }
-  };
-
-  const handleSupprimerDemande = async (id) => {
-    if (window.confirm("Etes-vous sur de vouloir supprimer cette demande ?")) {
-      try {
-        const result = await congesService.supprimerDemande(id);
-        setMessage(result.message || "Demande supprimee !");
-        setMessageType("success");
-        await handleLoadConges();
-        setTimeout(() => setMessage(""), 3000);
-      } catch (error) {
-        setMessage("Erreur lors de la suppression");
-        setMessageType("error");
-      }
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -189,9 +206,9 @@ function Conges() {
 
   return (
     <div>
-      <h1 className="page-title">Gestion des Conges</h1>
+      <h1 className="page-title">Congés</h1>
       <p className="page-description">
-        Demandez vos conges et suivez le statut de vos demandes.
+        Consultez et gérez vos demandes de congés
       </p>
 
       {message && (
@@ -205,7 +222,7 @@ function Conges() {
           className="conges-btn-new"
           onClick={() => setShowForm(!showForm)}
         >
-          {showForm ? "Fermer" : "+ Nouvelle demande"}
+          {showForm ? "Fermer" : "+ Nouveau congé"}
         </button>
         <button className="conges-btn-reload" onClick={handleLoadConges}>
           Recharger
@@ -214,7 +231,7 @@ function Conges() {
 
       {showForm && (
         <div className="conges-form-container">
-          <h2>Nouvelle demande de conge</h2>
+          <h2>Nouveau congé</h2>
           <form onSubmit={handleSubmitForm} className="conges-form">
 
             {/* Si l'utilisateur est admin, il peut choisir l'employe */}
@@ -239,13 +256,14 @@ function Conges() {
             )}
 
             <div className="conges-form-group">
-              <label htmlFor="dateDebut">Date de debut *</label>
+              <label htmlFor="dateDebut">Date de début *</label>
               <input
                 type="date"
                 id="dateDebut"
                 name="dateDebut"
                 value={formData.dateDebut}
                 onChange={handleInputChange}
+                min={today}
                 required
               />
             </div>
@@ -258,12 +276,13 @@ function Conges() {
                 name="dateFin"
                 value={formData.dateFin}
                 onChange={handleInputChange}
+                min={today}
                 required
               />
             </div>
 
             <div className="conges-form-group">
-              <label htmlFor="raison">Motif du conge *</label>
+              <label htmlFor="raison">Motif *</label>
               <select
                 id="raison"
                 name="raison"
@@ -284,7 +303,7 @@ function Conges() {
 
             <div className="conges-form-actions">
               <button type="submit" className="conges-btn-submit" disabled={isLoading}>
-                {isLoading ? "Envoi..." : "Envoyer la demande"}
+                {isLoading ? "Envoi..." : "Envoyer"}
               </button>
               <button type="button" className="conges-btn-cancel" onClick={() => setShowForm(false)}>
                 Annuler
@@ -324,14 +343,18 @@ function Conges() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={estAdmin ? 7 : 5} className="conges-loading">Chargement...</td>
+                <td colSpan={estAdmin ? 7 : 5}>
+                <div className="loading-spinner" style={{ padding: "30px" }}>
+                  <span className="loading-spinner-text">Chargement...</span>
+                </div>
+              </td>
               </tr>
             )}
 
             {!isLoading && filteredConges.length === 0 && (
               <tr>
                 <td colSpan={estAdmin ? 7 : 5} className="conges-empty">
-                  Aucune demande de conge.
+                  Aucun congé pour le moment.
                 </td>
               </tr>
             )}
@@ -348,6 +371,11 @@ function Conges() {
                     <span className={"conges-statut conges-statut-" + formatStatutClass(conge.statut)}>
                       {conge.statut}
                     </span>
+                    {conge.commentaireRh && (conge.statut === "Rejete" || conge.statut === "Approuve") && (
+                      <div className="conges-commentaire-rh">
+                        <small>💬 {conge.commentaireRh}</small>
+                      </div>
+                    )}
                   </td>
                   {estAdmin && (
                     <td className="conges-actions">
@@ -355,19 +383,14 @@ function Conges() {
                         <>
                           <button
                             className="conges-btn-action conges-btn-approve"
-                            onClick={() => handleAppouverConge(conge.id)}
+                            onClick={() => openModal("approve", conge.id, conge.employe_nom)}
                             title="Approuver"
-                          >Approuver</button>
+                          >✓ Approuver</button>
                           <button
                             className="conges-btn-action conges-btn-reject"
-                            onClick={() => handleRejeterConge(conge.id)}
+                            onClick={() => openModal("reject", conge.id, conge.employe_nom)}
                             title="Rejeter"
-                          >Rejeter</button>
-                          <button
-                            className="conges-btn-action conges-btn-delete"
-                            onClick={() => handleSupprimerDemande(conge.id)}
-                            title="Supprimer"
-                          >Supprimer</button>
+                          >✗ Rejeter</button>
                         </>
                       )}
                       {conge.statut !== "En attente" && (
@@ -380,6 +403,63 @@ function Conges() {
           </tbody>
         </table>
       </div>
+
+      {/* ===== MODALE D'APPROBATION / RÉJECTION ===== */}
+      {modalInfo && (
+        <div className="conges-modal-overlay" onClick={closeModal}>
+          <div className="conges-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="conges-modal-header">
+              <span className="conges-modal-icon">
+                {modalInfo.type === "approve" ? "✅" : "❌"}
+              </span>
+              <h3>
+                {modalInfo.type === "approve" ? "Approuver la demande" : "Rejeter la demande"}
+              </h3>
+            </div>
+
+            <p className="conges-modal-desc">
+              {modalInfo.type === "approve"
+                ? `Vous êtes sur le point d'approuver la demande de ${modalInfo.nom}.`
+                : `Vous êtes sur le point de rejeter la demande de ${modalInfo.nom}.`}
+            </p>
+
+            <div className="conges-modal-field">
+              <label htmlFor="modalComment">
+                {modalInfo.type === "approve" ? "Message (optionnel)" : "Motif du rejet *"}
+              </label>
+              <textarea
+                id="modalComment"
+                className="conges-modal-textarea"
+                value={modalComment}
+                onChange={(e) => setModalComment(e.target.value)}
+                placeholder={modalInfo.type === "approve"
+                  ? "Félicitations ! Votre congé a été approuvé."
+                  : "Expliquez le motif du rejet..."}
+                rows={3}
+                autoFocus
+              />
+            </div>
+
+            <div className="conges-modal-actions">
+              <button
+                className="conges-btn-submit"
+                onClick={handleModalConfirm}
+                disabled={modalLoading}
+                style={{ background: modalInfo.type === "approve" ? "#28a745" : "#dc3545" }}
+              >
+                {modalLoading ? "Traitement..." : modalInfo.type === "approve" ? "✓ Approuver" : "✗ Rejeter"}
+              </button>
+              <button
+                className="conges-btn-cancel"
+                onClick={closeModal}
+                disabled={modalLoading}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

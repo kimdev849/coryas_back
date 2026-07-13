@@ -9,7 +9,6 @@
 const employeModel = require("../models/employes.model");
 const authModel = require("../models/auth.model");
 const bcrypt = require("bcrypt");
-const { sendCredentials } = require("../services/email");
 
 // ----------------------------------------------------------------
 // GET /api/employes - Lister tous les employes
@@ -115,11 +114,6 @@ async function createEmploye(req, res) {
 
         await client.query("COMMIT");
 
-        // Envoyer les identifiants par email (non bloquant)
-        sendCredentials(email, {
-            prenom, nom, email, password, matricule: nouveauMatricule
-        }).catch(() => {});
-
         // On renvoie l'employe cree AVEC ses identifiants
         res.status(201).json({
             message: `Employe cree avec succes (matricule: ${nouveauMatricule})`,
@@ -207,55 +201,81 @@ async function updateEmploye(req, res) {
 }
 
 // ----------------------------------------------------------------
-// DELETE /api/employes/:id - Supprimer un employe
+// PUT /api/employes/:id/deactivate - Desactiver un employe
 // ----------------------------------------------------------------
-// ATTENTION : un employe peut avoir des conges, presences et un compte
-// utilisateur. On supprime TOUT dans l'ordre pour eviter les erreurs
-// de cle etrangere (foreign key). Le tout dans une transaction.
+// Au lieu de supprimer l'employe (ce qui perd ses donnees), on le
+// DESACTIVE :
+//   1. employes.statut = 'Inactif'
+//   2. utilisateurs.actif = false (l'employe ne peut plus se connecter)
+//
+// AVANTAGE : toutes les presences, conges et historique sont conserves.
 // ----------------------------------------------------------------
-async function deleteEmploye(req, res) {
+async function deactivateEmploye(req, res) {
     const client = await require("../config/database").connect();
     try {
         const { id } = req.params;
 
         await client.query("BEGIN");
 
-        // Ordre de suppression (important : du plus dependant au moins) :
-        // 1. Conges lies a l'employe
-        await client.query("DELETE FROM conges WHERE employe_id = $1", [id]);
-        // 2. Presences liees a l'employe
-        await client.query("DELETE FROM presences WHERE employe_id = $1", [id]);
-        // 3. Compte utilisateur lie a l'employe
-        await client.query("DELETE FROM utilisateurs WHERE employe_id = $1", [id]);
-        // 4. Enfin, l'employe lui-meme
-        const deleteRes = await client.query(
-            "DELETE FROM employes WHERE id = $1 RETURNING id", [id]
-        );
-        const deleted = deleteRes.rows[0];
+        // 1. Desactiver l'employe (statut = Inactif)
+        const updateRes = await client.query(`
+            UPDATE employes SET
+                statut = 'Inactif',
+                updated_at = NOW()
+            WHERE id = $1
+              AND statut != 'Inactif'
+            RETURNING id, nom, prenom, statut
+        `, [id]);
 
-        if (!deleted) {
-            // Personne avec cet ID
+        const employe = updateRes.rows[0];
+
+        if (!employe) {
             await client.query("ROLLBACK");
-            return res.status(404).json({ message: "Employe introuvable", data: null });
-        }
-
-        await client.query("COMMIT");
-
-        res.json({ message: "Employe supprime avec succes", data: { id: parseInt(id) } });
-    } catch (error) {
-        await client.query("ROLLBACK").catch(() => {});
-        console.error("Erreur deleteEmploye:", error);
-        // Si une autre table reference encore cet employe (foreign key)
-        if (error.code === '23503') {
-            return res.status(400).json({
-                message: "Impossible de supprimer : l'employe a des enregistrements lies dans d'autres tables",
+            return res.status(404).json({
+                message: "Employe introuvable ou deja inactif",
                 data: null
             });
         }
+
+        // 2. Desactiver le compte utilisateur
+        await client.query(`
+            UPDATE utilisateurs SET
+                actif = false,
+                updated_at = NOW()
+            WHERE employe_id = $1
+        `, [id]);
+
+        await client.query("COMMIT");
+
+        console.log(`👤 Employe desactive: ${employe.prenom} ${employe.nom} (id=${id})`);
+
+        res.json({
+            message: `${employe.prenom} ${employe.nom} a ete desactive avec succes. Ses donnees sont conservees.`,
+            data: employe
+        });
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        console.error("Erreur deactivateEmploye:", error);
         res.status(500).json({ message: "Erreur serveur", data: null });
     } finally {
         client.release();
     }
 }
 
-module.exports = { getEmployes, getEmployeById, createEmploye, updateEmploye, deleteEmploye };
+// ----------------------------------------------------------------
+// GET /api/employes/:id/stats - Statistiques d'un employé
+// ----------------------------------------------------------------
+async function getEmployeStats(req, res) {
+    try {
+        const stats = await employeModel.getEmployeStats(req.params.id);
+        if (!stats) {
+            return res.status(404).json({ message: "Employe introuvable", data: null });
+        }
+        res.json({ message: "Statistiques de l'employe", data: stats });
+    } catch (error) {
+        console.error("Erreur getEmployeStats:", error);
+        res.status(500).json({ message: "Erreur serveur", data: null });
+    }
+}
+
+module.exports = { getEmployes, getEmployeById, createEmploye, updateEmploye, deactivateEmploye, getEmployeStats };

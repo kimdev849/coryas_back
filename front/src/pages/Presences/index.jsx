@@ -148,12 +148,6 @@ function Presences() {
     }
 
     try {
-      console.log("📤 Envoi rattrapage:", {
-        id: rattrapagePresence.id,
-        heure_sortie: rattrapageHeure,
-        employe: rattrapagePresence.employe_nom,
-      });
-
       await presencesService.rattrapage(rattrapagePresence.id, {
         heure_sortie: rattrapageHeure,
         remarque: "Rattrapage RH",
@@ -375,7 +369,11 @@ function Presences() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="presences-empty">Chargement...</td>
+                <td colSpan={6}>
+                  <div className="loading-spinner" style={{ padding: "30px" }}>
+                    <span className="loading-spinner-text">Chargement...</span>
+                  </div>
+                </td>
               </tr>
             )}
 

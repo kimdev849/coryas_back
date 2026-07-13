@@ -22,6 +22,11 @@ router.post("/register", authController.register);
 // Route pour se deconnecter : POST /api/auth/logout
 router.post("/logout", authController.logout);
 
+// Route pour changer le mot de passe : POST /api/auth/change-password
+// Nécessite un token JWT valide (verifyToken)
+const { verifyToken } = require("../middlewares/auth.middleware");
+router.post("/change-password", verifyToken, authController.changePassword);
+
 // Exporte le routeur pour l'utiliser dans server.js
 module.exports = router;
 

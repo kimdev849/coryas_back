@@ -4,6 +4,7 @@
 
 const presencesModel = require("../models/presences.model");
 const parametresModel = require("../models/parametres.model");
+const notificationsModel = require("../models/notifications.model");
 
 // ----------------------------------------------------------------
 // GET /api/presences - Liste toutes les presences (avec filtres)
@@ -12,7 +13,11 @@ const parametresModel = require("../models/parametres.model");
 // ----------------------------------------------------------------
 const getAllPresences = async (req, res) => {
     try {
-        const { employe_id, date_debut, date_fin } = req.query;
+        // Si l'utilisateur est un employé, il ne voit que ses propres présences
+        let { employe_id, date_debut, date_fin } = req.query;
+        if (req.user?.role === "Employé") {
+            employe_id = req.user.employe_id;
+        }
         const presences = await presencesModel.getAll({ employe_id, date_debut, date_fin });
         res.json({ message: "Liste des presences", data: presences });
     } catch (error) {
@@ -26,8 +31,9 @@ const getAllPresences = async (req, res) => {
 // ----------------------------------------------------------------
 // 1. On recupere l'ID de l'employe qui veut pointer
 // 2. On prend la date et l'heure actuelle (ou celle envoyee par le front)
-// 3. Si l'employe arrive apres 09:00, le statut est "Retard"
-// 4. On enregistre dans la base
+// 3. Le statut "Retard" est determine selon heure_ouverture + retard_apres
+// 4. L'employe peut arriver a tout moment (meme avant l'ouverture)
+// 5. On enregistre dans la base
 // ----------------------------------------------------------------
 const checkIn = async (req, res) => {
     try {
@@ -70,24 +76,21 @@ const checkIn = async (req, res) => {
             heure_entree = frontHeure;
         } else {
             const now = new Date();
-            const paris = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
-            const h = String(paris.getHours()).padStart(2, "0");
-            const m = String(paris.getMinutes()).padStart(2, "0");
+            const h = String(now.getHours()).padStart(2, "0");
+            const m = String(now.getMinutes()).padStart(2, "0");
             heure_entree = h + ":" + m;
         }
 
         // ============================================================
         // 4. VALIDATION : Horaires de l'entreprise
         // ============================================================
+        // L'employé peut arriver à tout moment (même avant l'ouverture).
+        // On vérifie juste qu'il n'arrive pas après la fermeture.
+        // Le statut "Retard" est déterminé à l'étape suivante
+        // en fonction de l'heure d'ouverture + la tolérance.
+        // ============================================================
         const heureOuverture = params?.heure_ouverture || "07:00";
         const heureFermeture = params?.heure_fermeture || "19:00";
-
-        if (heure_entree < heureOuverture) {
-            return res.status(400).json({
-                message: `L'entreprise ouvre à ${heureOuverture}. Vous ne pouvez pas pointer avant.`,
-                data: null
-            });
-        }
 
         if (heure_entree > heureFermeture) {
             return res.status(400).json({
@@ -104,23 +107,50 @@ const checkIn = async (req, res) => {
         // ============================================================
         // 6. DÉTERMINER LE STATUT (Présent ou Retard)
         // ============================================================
-        // Si l'heure d'arrivée dépasse l'heure d'ouverture + la marge de retard
-        const retardApres = params?.retard_apres || 0;
-        let heureLimite = heureOuverture;
-        if (retardApres > 0) {
-            const [h, m] = heureLimite.split(":").map(Number);
+        // Statut "Retard" si heure_arrivée > heure_ouverture + retard_apres.
+        // Exemple : ouverture 09:00, retard_apres=15 → Retard si > 09:15
+        // Si retard_apres = 0 ou NULL → tous les pointages sont "Present"
+        // (configurable par le RH dans la page Configuration).
+        // ============================================================
+        const retardApres = params?.retard_apres;
+        
+        // Si retard_apres est NULL ou 0, on désactive le statut "Retard"
+        // → tous les pointages sont marqués "Present"
+        let statut;
+        if (!retardApres || retardApres <= 0) {
+            statut = "Present";
+        } else {
+            // Sinon, on calcule l'heure limite : ouverture + retard_apres minutes
+            const [h, m] = heureOuverture.split(":").map(Number);
             const totalMinutes = h * 60 + m + retardApres;
-            heureLimite = String(Math.floor(totalMinutes / 60)).padStart(2, "0") + ":" + String(totalMinutes % 60).padStart(2, "0");
+            const heureLimite = String(Math.floor(totalMinutes / 60)).padStart(2, "0") 
+                + ":" + String(totalMinutes % 60).padStart(2, "0");
+            statut = heure_entree > heureLimite ? "Retard" : "Present";
         }
-        const statut = heure_entree > heureLimite ? "Retard" : "Present";
 
         // ============================================================
-        // 7. ENREGISTRER LA PRÉSENCE
+        // 7. ENREGISTRER LA PRÉSENCE (date_presence = CURRENT_DATE dans le modèle)
         // ============================================================
-        const date = new Date().toISOString().split('T')[0];
         const newPresence = await presencesModel.checkIn({
-            employe_id, date_presence: date, heure_entree, statut,
+            employe_id, heure_entree, statut,
         });
+
+        // Créer une notification pour l'employé
+        try {
+            const notifTitre = statut === "Retard" ? "Arrivée en retard ⏰" : "Arrivée enregistrée ✅";
+            const notifMessage = statut === "Retard"
+                ? `Vous êtes arrivé à ${heure_entree} (en retard).`
+                : `Vous êtes arrivé à ${heure_entree}. Bonne journée !`;
+            await notificationsModel.create({
+                employe_id,
+                titre: notifTitre,
+                message: notifMessage,
+                type: statut === "Retard" ? "warning" : "success",
+                lien: "/(tabs)/presences",
+            });
+        } catch (notifError) {
+            console.error("Erreur création notification check-in:", notifError);
+        }
 
         const message = closedPresences.length > 0
             ? `Arrivee enregistree (${closedPresences.length} presence(s) precedente(s) fermee(s) automatiquement)`
@@ -132,6 +162,13 @@ const checkIn = async (req, res) => {
             autoClosed: closedPresences,
         });
     } catch (error) {
+        // Vérifie si c'est une violation de contrainte UNIQUE (double pointage)
+        if (error.code === '23505') {
+            return res.status(400).json({
+                message: "Vous avez déjà pointé aujourd'hui. Un seul pointage par jour est autorisé.",
+                data: null
+            });
+        }
         console.error("Erreur checkIn:", error);
         res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
     }
@@ -140,9 +177,11 @@ const checkIn = async (req, res) => {
 // ----------------------------------------------------------------
 // POST /api/presences/checkout - Enregistrer un depart
 // ----------------------------------------------------------------
-// 1. On recupere l'ID de la presence (pas l'employe)
-// 2. On prend l'heure actuelle comme heure de sortie
-// 3. On met a jour la presence dans la base
+// VALIDATIONS :
+// 1. L'heure de depart doit etre apres l'heure d'arrivee
+// 2. L'employe ne peut pas partir avant l'heure de fermeture
+//    (sauf tolerance definie dans parametres.depart_anticipe)
+// 3. On verifie aussi que le depart n'est pas apres la fermeture + 2h
 // ----------------------------------------------------------------
 const checkOut = async (req, res) => {
     try {
@@ -161,21 +200,27 @@ const checkOut = async (req, res) => {
         }
 
         // ============================================================
-        // 2. DÉTERMINER L'HEURE DE DÉPART
+        // 2. RÉCUPÉRER LES PARAMÈTRES (horaires de l'entreprise)
+        // ============================================================
+        const params = await parametresModel.get();
+        const heureFermeture = params?.heure_fermeture || "17:00";
+        const departAnticipe = params?.depart_anticipe || 0;
+
+        // ============================================================
+        // 3. DÉTERMINER L'HEURE DE DÉPART
         // ============================================================
         let heure_sortie;
         if (frontHeure) {
             heure_sortie = frontHeure;
         } else {
             const now = new Date();
-            const paris = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
-            const h = String(paris.getHours()).padStart(2, "0");
-            const m = String(paris.getMinutes()).padStart(2, "0");
+            const h = String(now.getHours()).padStart(2, "0");
+            const m = String(now.getMinutes()).padStart(2, "0");
             heure_sortie = h + ":" + m;
         }
 
         // ============================================================
-        // 3. VALIDATION : L'heure de départ doit être après l'arrivée
+        // 4. VALIDATION : L'heure de départ doit être après l'arrivée
         // ============================================================
         if (presenceActuelle.heure_entree && heure_sortie <= presenceActuelle.heure_entree) {
             return res.status(400).json({
@@ -185,7 +230,57 @@ const checkOut = async (req, res) => {
         }
 
         // ============================================================
-        // 4. ENREGISTRER LE DÉPART
+        // 4b. VALIDATION : Temps de travail minimum (3h = 180 min)
+        // ============================================================
+        if (presenceActuelle.heure_entree) {
+            const [ah, am] = presenceActuelle.heure_entree.split(":").map(Number);
+            const [dh, dm] = heure_sortie.split(":").map(Number);
+            const minutesWorked = (dh * 60 + dm) - (ah * 60 + am);
+            if (minutesWorked < 180) {
+                return res.status(400).json({
+                    message: "Le temps de travail minimum est de 3h. Vous ne pouvez pas partir si tôt. Contactez les RH si besoin.",
+                    data: null
+                });
+            }
+        }
+
+        // ============================================================
+        // 5. VALIDATION : Départ anticipé
+        // ============================================================
+        // Calcule l'heure minimale de départ autorisée
+        // Exemple : fermeture à 17:00, tolérance 15min → départ autorisé à partir de 16:45
+        const [fh, fm] = heureFermeture.split(":").map(Number);
+        let fermetureMinutes = fh * 60 + fm;         // Heure de fermeture en minutes
+        let minimumMinutes = fermetureMinutes - departAnticipe; // Heure min de départ
+        
+        const [sh, sm] = heure_sortie.split(":").map(Number);
+        const sortieMinutes = sh * 60 + sm;
+
+        if (sortieMinutes < minimumMinutes) {
+            const heureMin = String(Math.floor(minimumMinutes / 60)).padStart(2, "0") 
+                + ":" + String(minimumMinutes % 60).padStart(2, "0");
+            
+            return res.status(400).json({
+                message: `Vous ne pouvez pas partir avant ${heureMin}. `
+                    + `L'entreprise ferme à ${heureFermeture}.`,
+                data: null
+            });
+        }
+
+        // ============================================================
+        // 6. VALIDATION : Départ trop tard (après fermeture + 2h max)
+        // ============================================================
+        const maxMinutes = fermetureMinutes + 120; // 2h après fermeture
+        if (sortieMinutes > maxMinutes) {
+            return res.status(400).json({
+                message: `L'heure de départ semble incorrecte. `
+                    + `L'entreprise ferme à ${heureFermeture}.`,
+                data: null
+            });
+        }
+
+        // ============================================================
+        // 7. ENREGISTRER LE DÉPART
         // ============================================================
         const presence = await presencesModel.checkOut(presenceId, heure_sortie);
 
@@ -193,9 +288,22 @@ const checkOut = async (req, res) => {
             return res.status(404).json({ message: "Presence non trouvee ou deja partie", data: null });
         }
 
-        res.json({ message: "Depart enregistre", data: presence });
+        // Créer une notification pour l'employé
+        try {
+            await notificationsModel.create({
+                employe_id: presenceActuelle.employe_id,
+                titre: "Départ enregistré 👋",
+                message: `Vous avez quitté à ${heure_sortie}. Bonne fin de journée !`,
+                type: "info",
+                lien: "/(tabs)/presences",
+            });
+        } catch (notifError) {
+            console.error("Erreur création notification check-out:", notifError);
+        }
+
+        res.json({ message: "Départ enregistré. Bonne fin de journée !", data: presence });
     } catch (error) {
-        console.error("Erreur checkOut:", error);
+        console.error("❌ Erreur checkOut:", error);
         res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
     }
 };
@@ -227,8 +335,13 @@ const getPresenceById = async (req, res) => {
 // ----------------------------------------------------------------
 const getActivePresence = async (req, res) => {
     try {
-        const { employe_id } = req.query;
-
+        // Si l'utilisateur est un employé, il ne voit que sa propre présence active
+        let { employe_id } = req.query;
+        if (req.user?.role === "Employé") {
+            employe_id = req.user.employe_id;
+        } else if (!employe_id && req.user?.employe_id) {
+            employe_id = req.user.employe_id;
+        }
         if (!employe_id) {
             return res.status(400).json({ message: "employe_id requis", data: null });
         }
@@ -284,8 +397,6 @@ const rattrapage = async (req, res) => {
         if (!presence) {
             return res.status(404).json({ message: "Presence introuvable. Verifiez l'ID.", data: null });
         }
-
-        console.log(`✅ Rattrapage: presence #${id} → heure_sortie = ${heure_sortie}`);
 
         res.json({ message: "Rattrapage enregistre avec succes", data: presence });
     } catch (error) {

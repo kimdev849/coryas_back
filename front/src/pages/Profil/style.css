@@ -126,3 +126,57 @@
   color: var(--color-gray-500);
   margin-top: 16px;
 }
+
+/* ===== RESPONSIVE PROFIL ===== */
+@media (max-width: 768px) {
+  .profil-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+    gap: 16px;
+  }
+
+  .profil-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .profil-avatar-letter {
+    font-size: 26px;
+  }
+
+  .profil-name {
+    font-size: 18px;
+  }
+
+  .profil-form-card {
+    padding: 20px;
+  }
+
+  .profil-input {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .profil-card {
+    padding: 20px 16px;
+  }
+
+  .profil-avatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  .profil-avatar-letter {
+    font-size: 22px;
+  }
+
+  .profil-form-card {
+    padding: 16px;
+  }
+
+  .profil-form-title {
+    font-size: 16px;
+  }
+}

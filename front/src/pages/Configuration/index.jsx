@@ -83,7 +83,11 @@ function Configuration() {
   };
 
   if (isLoading) {
-    return <div style={{ textAlign: "center", padding: "60px", color: "#888" }}>Chargement...</div>;
+    return (
+      <div className="loading-spinner">
+        <span className="loading-spinner-text">Chargement des paramètres...</span>
+      </div>
+    );
   }
 
   return (

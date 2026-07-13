@@ -7,11 +7,13 @@
 // ================================================================
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import employesService from "../../services/employesService";
 import departementsService from "../../services/departementsService";
 import "./style.css";
 
 function Employes() {
+  const navigate = useNavigate();
   const [employes, setEmployes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -115,7 +117,7 @@ function Employes() {
       statut: employe.statut || "Actif",
       email: employe.email || "",
       password: "",
-      role_id: employe.role_id || 2,
+      role_id: employe.role_id || 3,
     });
     setShowForm(true);
     setMessage("");
@@ -130,15 +132,54 @@ function Employes() {
     e.preventDefault();
     setMessage("");
 
+    // --- Validation côté client ---
+
     if (!formData.nom || !formData.prenom || !formData.departement_id) {
       setMessage("Nom, prénom et département obligatoires !");
       setMessageType("error");
       return;
     }
 
+    // Vérifie que le nom ne contient pas de chiffres
+    const regexLettres = /^[A-Za-zÀ-ÖØ-öø-ÿ\s\-']+$/;
+    if (!regexLettres.test(formData.nom)) {
+      setMessage("Le nom ne doit contenir que des lettres (pas de chiffres !)");
+      setMessageType("error");
+      return;
+    }
+    if (!regexLettres.test(formData.prenom)) {
+      setMessage("Le prénom ne doit contenir que des lettres (pas de chiffres !)");
+      setMessageType("error");
+      return;
+    }
+
+    // Vérifie le téléphone (si fourni)
+    if (formData.telephone && formData.telephone.trim() !== "") {
+      const regexTel = /^[\d\s\+\-\.\(\)]+$/;
+      if (!regexTel.test(formData.telephone)) {
+        setMessage("Le téléphone ne doit contenir que des chiffres");
+        setMessageType("error");
+        return;
+      }
+    }
+
     // En creation, email + password sont obligatoires
     if (!editingId && (!formData.email || !formData.password)) {
       setMessage("Email et mot de passe obligatoires pour creer le compte !");
+      setMessageType("error");
+      return;
+    }
+
+    // Vérifie le format de l'email
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setMessage("Format d'email invalide (ex: nom@domaine.com)");
+      setMessageType("error");
+      return;
+    }
+
+    // Vérifie la longueur du mot de passe
+    if (formData.password && formData.password.length < 6) {
+      setMessage("Le mot de passe doit contenir au moins 6 caractères");
       setMessageType("error");
       return;
     }
@@ -164,12 +205,12 @@ function Employes() {
     }
   };
 
-  const handleDelete = async (id, nomComplet) => {
-    if (!window.confirm(`Etes-vous sur de vouloir supprimer ${nomComplet} ?`)) return;
+  const handleDeactivate = async (id, nomComplet) => {
+    if (!window.confirm(`Desactiver ${nomComplet} ? Il ne pourra plus se connecter mais ses donnees seront conservees.`)) return;
 
     try {
-      await employesService.delete(id);
-      setMessage(`${nomComplet} supprime avec succes`);
+      await employesService.deactivate(id);
+      setMessage(`${nomComplet} desactive avec succes. Ses donnees sont conservees.`);
       setMessageType("success");
       await loadEmployes();
       setTimeout(() => setMessage(""), 3000);
@@ -177,6 +218,11 @@ function Employes() {
       setMessage("Erreur : " + (err.message || "Erreur inconnue"));
       setMessageType("error");
     }
+  };
+
+  const getRoleLabel = (roleId) => {
+    const role = roles.find(r => r.id === roleId);
+    return role ? role.nom : "-";
   };
 
   const getSexeLabel = (sexe) => {
@@ -231,10 +277,6 @@ function Employes() {
             {editingId ? "Modifier l'employé" : "Ajouter un employé"}
           </h3>
           <form onSubmit={handleSubmit} style={{ display: "grid", gap: "16px", maxWidth: "700px" }}>
-
-            <p style={{ fontSize: "13px", color: "var(--color-gray-500)", marginBottom: "4px" }}>
-              📋 Le matricule sera auto-généré (EMP001, EMP002...)
-            </p>
 
             {/* LIGNE 1 : Nom + Prenom */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -414,19 +456,24 @@ function Employes() {
               <th>Département</th>
               <th>Tél.</th>
               <th>Statut</th>
+              <th>Rôle</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={8} className="employes-empty">Chargement...</td>
+                <td colSpan={9}>
+                  <div className="loading-spinner" style={{ padding: "30px" }}>
+                    <span className="loading-spinner-text">Chargement...</span>
+                  </div>
+                </td>
               </tr>
             )}
 
             {!isLoading && employes.length === 0 && (
               <tr>
-                <td colSpan={8} className="employes-empty">
+                <td colSpan={9} className="employes-empty">
                   Aucun employé pour le moment.<br />
                   <small>Cliquez sur "Ajouter un employé" pour commencer.</small>
                 </td>
@@ -451,17 +498,27 @@ function Employes() {
                     {emp.statut || "Actif"}
                   </span>
                 </td>
+                <td>{getRoleLabel(emp.role_id)}</td>
                 <td>
-                  <button className="employes-btn"
-                    onClick={() => openEditForm(emp)}
-                    style={{ background: "#F5A623", color: "black", padding: "6px 12px", marginRight: "6px" }}>
-                    Modifier
-                  </button>
-                  <button className="employes-btn"
-                    onClick={() => handleDelete(emp.id, `${emp.prenom} ${emp.nom}`)}
-                    style={{ background: "#dc3545", color: "white", padding: "6px 12px" }}>
-                    Supprimer
-                  </button>
+                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                    <button className="employes-btn"
+                      onClick={() => navigate(`/employes/${emp.id}`)}
+                      style={{ background: "#3b82f6", color: "white", padding: "6px 10px", fontSize: "12px" }}
+                      title="Voir les statistiques">
+                      📊 Stats
+                    </button>
+                    <button className="employes-btn"
+                      onClick={() => openEditForm(emp)}
+                      style={{ background: "#F5A623", color: "black", padding: "6px 10px", fontSize: "12px" }}>
+                      Modifier
+                    </button>
+                    <button className="employes-btn"
+                      onClick={() => handleDeactivate(emp.id, `${emp.prenom} ${emp.nom}`)}
+                      style={{ background: "#6c757d", color: "white", padding: "6px 10px", fontSize: "12px" }}
+                      disabled={emp.statut === "Inactif"}>
+                      {emp.statut === "Inactif" ? "✔" : "Désactiver"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

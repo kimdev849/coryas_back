@@ -7,7 +7,7 @@
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
-function Navbar() {
+function Navbar({ onToggleSidebar }) {
   const { user } = useAuth();
 
   const avatarLetter = user?.prenom ? user.prenom.charAt(0).toUpperCase() : "A";
@@ -15,9 +15,18 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="navbar-brand">
-        <img src="/logo.png" alt="Logo" className="navbar-logo-img" />
-        <span className="navbar-logo">PRESENCE CORYAS</span>
+      <div className="navbar-left">
+        {/* Bouton hamburger pour mobile */}
+        <button className="navbar-hamburger" onClick={onToggleSidebar} aria-label="Menu">
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+        </button>
+
+        <div className="navbar-brand">
+          <img src="/logo.png" alt="Logo" className="navbar-logo-img" />
+          <span className="navbar-logo">PRÉSENCE CORYAS</span>
+        </div>
       </div>
 
       <div className="navbar-user">

@@ -23,20 +23,38 @@
 // la Navbar et la Sidebar !
 // ================================================================
 
+import { useState, useCallback } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import "./style.css";
 
 function DashboardLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
   return (
     <div className="layout">
       {/* Barre de navigation horizontale en haut */}
-      <Navbar />
+      <Navbar onToggleSidebar={toggleSidebar} />
 
       <div className="layout-body">
+        {/* Overlay mobile pour fermer la sidebar */}
+        {sidebarOpen && (
+          <div className="sidebar-overlay" onClick={closeSidebar} />
+        )}
+
         {/* Menu lateral gauche */}
-        <Sidebar />
+        <div className={`sidebar-wrapper ${sidebarOpen ? "sidebar-open" : ""}`}>
+          <Sidebar onClose={closeSidebar} />
+        </div>
 
         {/* Contenu principal qui change selon la page */}
         <main className="content">

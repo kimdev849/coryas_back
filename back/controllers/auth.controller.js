@@ -143,6 +143,51 @@ const logout = (req, res) => {
     }
 };
 
-// On exporte les 3 fonctions pour les utiliser dans les routes
-module.exports = { login, register, logout };
+// ----------------------------------------------------------------
+// POST /api/auth/change-password - Changer le mot de passe
+// ----------------------------------------------------------------
+const changePassword = async (req, res) => {
+    try {
+        const { ancien_mot_de_passe, nouveau_mot_de_passe } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: "Utilisateur non authentifié", data: null });
+        }
+
+        if (!ancien_mot_de_passe || !nouveau_mot_de_passe) {
+            return res.status(400).json({ message: "Ancien et nouveau mot de passe requis", data: null });
+        }
+
+        if (nouveau_mot_de_passe.length < 6) {
+            return res.status(400).json({ message: "Le mot de passe doit contenir au moins 6 caractères", data: null });
+        }
+
+        // Récupère l'utilisateur pour vérifier l'ancien mot de passe
+        const user = await authModel.findByEmail(req.user.email);
+        if (!user) {
+            return res.status(404).json({ message: "Utilisateur introuvable", data: null });
+        }
+
+        // Vérifie que l'ancien mot de passe est correct
+        const passwordMatch = await bcrypt.compare(ancien_mot_de_passe, user.mot_de_passe);
+        if (!passwordMatch) {
+            return res.status(400).json({ message: "Ancien mot de passe incorrect", data: null });
+        }
+
+        // Hash le nouveau mot de passe
+        const hashedPassword = await bcrypt.hash(nouveau_mot_de_passe, 10);
+
+        // Enregistre le nouveau mot de passe
+        await authModel.changePassword(userId, hashedPassword);
+
+        res.json({ message: "Mot de passe modifié avec succès", data: null });
+    } catch (error) {
+        console.error("Erreur changePassword:", error);
+        res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+    }
+};
+
+// On exporte les 4 fonctions pour les utiliser dans les routes
+module.exports = { login, register, logout, changePassword };
 

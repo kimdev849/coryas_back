@@ -44,12 +44,23 @@ const employesService = {
   },
 
   // ================================================================
-  // DELETE /api/employes/:id - Supprimer un employé
+  // PUT /api/employes/:id/deactivate - Désactiver un employé
   // ================================================================
-  delete: async (id) => {
-    const data = await fetchWithAuth(`/employes/${id}`, {
-      method: "DELETE",
+  // L'employé garde toutes ses données (présences, congés) mais
+  // ne peut plus se connecter. Son statut passe à "Inactif".
+  // ================================================================
+  deactivate: async (id) => {
+    const data = await fetchWithAuth(`/employes/${id}/deactivate`, {
+      method: "PUT",
     });
+    return data;
+  },
+
+  // ================================================================
+  // GET /api/employes/:id/stats - Statistiques d'un employé
+  // ================================================================
+  getStats: async (id) => {
+    const data = await fetchWithAuth(`/employes/${id}/stats`);
     return data;
   },
 };

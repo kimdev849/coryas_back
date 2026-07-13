@@ -30,7 +30,12 @@ function Login() {
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Email ou mot de passe incorrect");
+      // ⚠️ Si le serveur est injoignable, fetch() lance une TypeError
+      if (err.name === "TypeError" || err.message?.includes("fetch") || err.message?.includes("Network")) {
+        setError("Impossible de contacter le serveur. Vérifiez votre connexion internet.");
+      } else {
+        setError(err.message || "Email ou mot de passe incorrect");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -43,9 +48,9 @@ function Login() {
           <div className="login-logo">
             <img src="/logo.png" alt="Logo Presence Coryas" className="login-logo-img" />
           </div>
-          <h1 className="login-title">PRESENCE CORYAS</h1>
+          <h1 className="login-title">PRÉSENCE CORYAS</h1>
           <p className="login-subtitle">
-            Connectez-vous a votre compte
+            Connectez-vous à votre compte
           </p>
         </div>
 

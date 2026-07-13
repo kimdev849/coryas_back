@@ -1,49 +1,70 @@
 // ================================================================
 // Page Profil - Informations de l'utilisateur connecte
+// Changement de mot de passe operationnel pour tous les roles
 // ================================================================
 
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import authService from "../../services/authService";
 import "./style.css";
 
 function Profil() {
   const { user } = useAuth();
 
-  const [formData, setFormData] = useState({
-    nom: user?.nom || "",
-    prenom: user?.prenom || "",
-    email: user?.email || "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [ancienMdp, setAncienMdp] = useState("");
+  const [nouveauMdp, setNouveauMdp] = useState("");
+  const [confirmMdp, setConfirmMdp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
 
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+  };
 
   const avatarLetter = user?.prenom ? user.prenom.charAt(0).toUpperCase() : "U";
   const displayName = user?.prenom && user?.nom
     ? user.prenom + " " + user.nom
     : "Utilisateur";
   const displayEmail = user?.email || "email@non.disponible";
-  const displayRole = user?.role || "Employe";
+  const displayRole = user?.role || "Employé";
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
-    setMessage("Les modifications seront disponibles prochainement.");
-    setMessageType("success");
-    setTimeout(() => setMessage(""), 3000);
+
+    // Validations
+    if (!ancienMdp || !nouveauMdp || !confirmMdp) {
+      showMessage("Veuillez remplir tous les champs.", "error");
+      return;
+    }
+    if (nouveauMdp !== confirmMdp) {
+      showMessage("Les nouveaux mots de passe ne correspondent pas.", "error");
+      return;
+    }
+    if (nouveauMdp.length < 6) {
+      showMessage("Le mot de passe doit contenir au moins 6 caractères.", "error");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await authService.changePassword(ancienMdp, nouveauMdp);
+      showMessage(result.message || "Mot de passe modifié avec succès !");
+      setAncienMdp("");
+      setNouveauMdp("");
+      setConfirmMdp("");
+    } catch (err) {
+      showMessage(err.message || "Erreur lors du changement de mot de passe.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div>
       <h1 className="page-title">Mon Profil</h1>
       <p className="page-description">
-        Gerez vos informations personnelles
+        Gérez votre profil et votre mot de passe
       </p>
 
       <div className="profil-card">
@@ -58,80 +79,68 @@ function Profil() {
         </div>
       </div>
 
-      {message && (
-        <div className={"profil-message " + messageType}>
-          {message}
+      {message.text && (
+        <div className={`profil-message ${message.type}`}>
+          {message.text}
         </div>
       )}
 
       <div className="profil-form-card">
         <h3 className="profil-form-title">
-          Modifier mes informations
+          <span style={{ marginRight: 8 }}>🔒</span>
+          Changer mon mot de passe
         </h3>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleChangePassword}>
           <div className="profil-form-group">
-            <label className="profil-label" htmlFor="prenom">
-              Prenom
+            <label className="profil-label" htmlFor="ancienMdp">
+              Ancien mot de passe
             </label>
             <input
-              type="text"
-              id="prenom"
-              name="prenom"
+              type="password"
+              id="ancienMdp"
               className="profil-input"
-              value={formData.prenom}
-              onChange={handleChange}
-              placeholder="Votre prenom"
+              value={ancienMdp}
+              onChange={(e) => setAncienMdp(e.target.value)}
+              placeholder="Votre mot de passe actuel"
             />
           </div>
 
           <div className="profil-form-group">
-            <label className="profil-label" htmlFor="nom">
-              Nom
-            </label>
-            <input
-              type="text"
-              id="nom"
-              name="nom"
-              className="profil-input"
-              value={formData.nom}
-              onChange={handleChange}
-              placeholder="Votre nom"
-            />
-          </div>
-
-          <div className="profil-form-group">
-            <label className="profil-label" htmlFor="email">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="profil-input"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="votre@email.com"
-            />
-          </div>
-
-          <div className="profil-form-group">
-            <label className="profil-label" htmlFor="password">
+            <label className="profil-label" htmlFor="nouveauMdp">
               Nouveau mot de passe
             </label>
             <input
               type="password"
-              id="password"
-              name="password"
+              id="nouveauMdp"
               className="profil-input"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Laissez vide pour ne pas changer"
+              value={nouveauMdp}
+              onChange={(e) => setNouveauMdp(e.target.value)}
+              placeholder="Au moins 6 caractères"
             />
           </div>
 
-          <button type="submit" className="employes-btn employes-btn-primary">
-            Enregistrer les modifications
+          <div className="profil-form-group">
+            <label className="profil-label" htmlFor="confirmMdp">
+              Confirmer le nouveau mot de passe
+            </label>
+            <input
+              type="password"
+              id="confirmMdp"
+              className="profil-input"
+              value={confirmMdp}
+              onChange={(e) => setConfirmMdp(e.target.value)}
+              placeholder="Retapez le nouveau mot de passe"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="employes-btn employes-btn-primary"
+            disabled={loading}
+            style={loading ? { opacity: 0.6, cursor: "not-allowed" } : {}}
+          >
+            {loading ? "Changement en cours..." : "Changer le mot de passe"}
           </button>
         </form>
       </div>

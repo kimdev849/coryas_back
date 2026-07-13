@@ -17,6 +17,7 @@ import Conges from "./pages/Conges";
 import MonPointage from "./pages/MonPointage";
 import Configuration from "./pages/Configuration";
 import Profil from "./pages/Profil";
+import EmployeDetail from "./pages/EmployeDetail";
 import DashboardLayout from "./layouts/DashboardLayout";
 
 function ProtectedRoute({ children }) {
@@ -76,6 +77,7 @@ function AppRoutes() {
         <Route path="/mon-pointage" element={<MonPointage />} />
         <Route path="/conges" element={<Conges />} />
         <Route path="/profil" element={<Profil />} />
+        <Route path="/employes/:id" element={<AdminRoute><EmployeDetail /></AdminRoute>} />
         <Route path="/employes" element={<AdminRoute><Employes /></AdminRoute>} />
         <Route path="/presences" element={<AdminRoute><Presences /></AdminRoute>} />
         <Route path="/configuration" element={<AdminRoute><Configuration /></AdminRoute>} />

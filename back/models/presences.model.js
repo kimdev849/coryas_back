@@ -120,12 +120,12 @@ async function getTodayPresence(employe_id) {
 // ----------------------------------------------------------------
 // INSERT une nouvelle ligne de presence (arrivee).
 // ----------------------------------------------------------------
-async function checkIn({ employe_id, date_presence, heure_entree, statut }) {
+async function checkIn({ employe_id, heure_entree, statut }) {
     const result = await pool.query(`
         INSERT INTO presences (employe_id, date_presence, heure_entree, statut)
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, CURRENT_DATE, $2, $3)
         RETURNING *
-    `, [employe_id, date_presence, heure_entree, statut]);
+    `, [employe_id, heure_entree, statut]);
     return result.rows[0];
 }
 
@@ -157,10 +157,7 @@ async function checkOut(id, heure_sortie) {
 //        entre le paramètre texte et la colonne TIME.
 // ----------------------------------------------------------------
 async function rattrapage(id, { heure_sortie, remarque }) {
-    try {
-        console.log(`📝 SQL rattrapage: id=${id}, heure_sortie=${heure_sortie}, remarque=${remarque}`);
-        
-        const result = await pool.query(`
+    try {        const result = await pool.query(`
             UPDATE presences SET
                 heure_sortie = $2::time,
                 remarque = $3,
@@ -169,7 +166,6 @@ async function rattrapage(id, { heure_sortie, remarque }) {
             RETURNING *
         `, [id, heure_sortie, remarque || null]);
         
-        console.log(`✅ SQL rattrapage reussi: ${result.rowCount} ligne(s)`);
         return result.rows[0];
     } catch (error) {
         console.error("❌ SQL rattrapage erreur:", error.message);
@@ -183,7 +179,15 @@ async function rattrapage(id, { heure_sortie, remarque }) {
 // Retourne : total, presents, retards, absents, actifs (pas encore partis)
 // ----------------------------------------------------------------
 async function getTodayStats() {
-    const [totalEmployes, presencesAujourdhui] = await Promise.all([
+    // ============================================================
+    // VERIFICATION : Si on est samedi (6) ou dimanche (0),
+    // on ne compte pas les absents (les employes ne travaillent pas)
+    // ============================================================
+    const aujourdhui = new Date();
+    const jourSemaine = aujourdhui.getDay(); // 0=Dimanche, 6=Samedi
+    const estWeekend = jourSemaine === 0 || jourSemaine === 6;
+
+    const [totalEmployes, presencesAujourdhui, employesEnConge] = await Promise.all([
         pool.query("SELECT COUNT(*) AS total FROM employes WHERE statut = 'Actif'"),
         pool.query(`
             SELECT
@@ -194,25 +198,50 @@ async function getTodayStats() {
             FROM presences
             WHERE date_presence = CURRENT_DATE
         `),
+        // Compte les employés qui sont en congé approuvé AUJOURD'HUI
+        // (date_debut <= aujourd'hui <= date_fin)
+        // Ceux-ci ne doivent PAS être comptés comme absents
+        pool.query(`
+            SELECT COUNT(DISTINCT employe_id) AS total
+            FROM conges
+            WHERE statut = 'Approuve'
+              AND date_debut <= CURRENT_DATE
+              AND date_fin >= CURRENT_DATE
+        `),
     ]);
 
     const employesActifs = parseInt(totalEmployes.rows[0].total) || 0;
+    const enConge = parseInt(employesEnConge.rows[0].total) || 0;
     const p = presencesAujourdhui.rows[0];
     const totalPresents = parseInt(p.total) || 0;
     const presents = parseInt(p.presents) || 0;
     const retards = parseInt(p.retards) || 0;
     const enCours = parseInt(p.en_cours) || 0;
-    const absents = employesActifs - totalPresents;
-    const tauxPresence = employesActifs > 0 ? Math.round((totalPresents / employesActifs) * 100) : 0;
+
+    // Calcul des absents :
+    //   employesActifs - ceux presents aujourd'hui - ceux en congé = absents
+    // Les employés en congé approuvé ne sont PAS absents
+    let absents = 0;
+    let tauxPresence = 0;
+
+    if (!estWeekend && employesActifs > 0) {
+        const employesAttendus = employesActifs - enConge;
+        absents = Math.max(0, employesAttendus - totalPresents);
+        tauxPresence = employesAttendus > 0
+            ? Math.round((totalPresents / employesAttendus) * 100)
+            : 0;
+    }
 
     return {
         employesActifs,
+        enConge,         // Nb d'employés en congé aujourd'hui
         totalPresents,
         presents,
         retards,
-        absents: absents < 0 ? 0 : absents,
+        absents,
         enCours,
         tauxPresence,
+        estWeekend,
     };
 }
 

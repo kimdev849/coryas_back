@@ -77,6 +77,10 @@
   background: #808080;
 }
 
+.mp-status-dot.depart {
+  background: #f59e0b;
+}
+
 .mp-status-value {
   font-size: 28px;
   font-weight: 700;
@@ -135,6 +139,34 @@
   cursor: not-allowed;
 }
 
+.mp-already-done {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f9fafb;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.mp-already-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.mp-already-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin: 0 0 4px;
+}
+
+.mp-already-sub {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
 .mp-btn-icon {
   font-size: 48px;
 }
@@ -158,6 +190,76 @@
   color: #aaa;
   font-size: 14px;
   padding: 20px 0;
+}
+
+/* ===== RESPONSIVE MON POINTAGE ===== */
+@media (max-width: 768px) {
+  .mp-container {
+    padding: 20px 16px;
+  }
+
+  .mp-header h1 {
+    font-size: 22px;
+  }
+
+  .mp-pointer-btn {
+    width: 180px;
+    height: 180px;
+    font-size: 15px;
+  }
+
+  .mp-btn-icon {
+    font-size: 36px;
+  }
+
+  .mp-status-value {
+    font-size: 24px;
+  }
+
+  .mp-status-card {
+    padding: 20px;
+  }
+
+  .mp-timeline {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mp-container {
+    padding: 16px 12px;
+  }
+
+  .mp-header h1 {
+    font-size: 20px;
+  }
+
+  .mp-pointer-btn {
+    width: 140px;
+    height: 140px;
+    font-size: 13px;
+  }
+
+  .mp-btn-icon {
+    font-size: 28px;
+  }
+
+  .mp-status-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .mp-status-value {
+    font-size: 20px;
+  }
+
+  .mp-already-done {
+    padding: 24px 16px;
+  }
+
+  .mp-already-icon {
+    font-size: 36px;
+  }
 }
 
 .mp-timeline-item {

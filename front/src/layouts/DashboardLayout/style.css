@@ -82,3 +82,30 @@
   padding: 24px;
   overflow-y: auto;
 }
+
+/* ===== RESPONSIVE LAYOUT ===== */
+@media (max-width: 1024px) {
+  .content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .layout {
+    height: 100dvh;
+  }
+
+  .layout-body {
+    height: calc(100dvh - 60px);
+  }
+
+  .content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px;
+  }
+}

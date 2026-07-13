@@ -84,6 +84,20 @@ async function updateLastLogin(userId) {
     );
 }
 
-// On exporte les 4 fonctions pour les utiliser dans le controleur
-module.exports = { findByEmail, create, emailExists, updateLastLogin };
+// ----------------------------------------------------------------
+// changePassword(userId, newHashedPassword) - Modifie le mot de passe
+// ----------------------------------------------------------------
+async function changePassword(userId, newHashedPassword) {
+    const result = await pool.query(`
+        UPDATE utilisateurs SET
+            mot_de_passe = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING id
+    `, [userId, newHashedPassword]);
+    return result.rows[0];
+}
+
+// On exporte les 5 fonctions pour les utiliser dans le controleur
+module.exports = { findByEmail, create, emailExists, updateLastLogin, changePassword };
 

@@ -98,6 +98,49 @@
   cursor: not-allowed;
 }
 
+/* ===== RESPONSIVE LOGIN ===== */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 20px;
+    margin: 16px;
+    border-radius: 12px;
+  }
+
+  .login-logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .login-title {
+    font-size: 20px;
+  }
+
+  .login-subtitle {
+    margin-bottom: 24px;
+  }
+
+  .login-btn {
+    padding: 14px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 20px 16px;
+    margin: 12px;
+  }
+
+  .login-logo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .login-title {
+    font-size: 18px;
+  }
+}
+
 .login-btn {
   width: 100%;
   padding: 12px;

@@ -46,13 +46,16 @@ function MonPointage() {
     return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
   };
 
+  // Vérifier si l'employé a déjà pointé aujourd'hui (même après départ)
+  const alreadyCheckedInToday = todayPresences.length > 0 && !activePresence;
+
   const handleCheckIn = async () => {
     setActionLoading(true);
     try {
       const res = await presencesService.checkIn(user.employe_id, nowTime());
       const autoClosed = res.autoClosed;
       if (autoClosed && autoClosed.length > 0) {
-        showMessage(`✅ Arrivée enregistrée — ${autoClosed.length} présence(s) précédente(s) fermée(s) automatiquement (RH peut corriger)`);
+        showMessage(`✅ Arrivée enregistrée — ${autoClosed.length} présence(s) précédente(s) fermée(s) automatiquement`);
       } else {
         showMessage("✅ Arrivée enregistrée avec succès");
       }
@@ -79,7 +82,11 @@ function MonPointage() {
   };
 
   const formatTime = (str) => str || "--:--";
-  const getStatus = () => (activePresence ? "Présent" : "Absent");
+  const getStatus = () => {
+    if (activePresence) return "Présent";
+    if (todayPresences.length > 0) return "Départ enregistré";
+    return "Absent";
+  };
 
   return (
     <div className="mp-container">
@@ -100,42 +107,56 @@ function MonPointage() {
       )}
 
       {loading ? (
-        <div className="mp-loading">Chargement...</div>
+        <div className="loading-spinner">
+          <span className="loading-spinner-text">Chargement...</span>
+        </div>
       ) : (
         <>
           {/* Carte statut */}
           <div className="mp-status-card">
             <div className="mp-status-header">
               <span>Statut actuel</span>
-              <span className={`mp-status-dot ${activePresence ? "present" : "absent"}`} />
+              <span className={`mp-status-dot ${activePresence ? "present" : todayPresences.length > 0 ? "depart" : "absent"}`} />
             </div>
             <div className="mp-status-value">{getStatus()}</div>
-            {activePresence && (
+            {activePresence ? (
               <div className="mp-status-sub">depuis {activePresence.heure_entree}</div>
-            )}
+            ) : todayPresences.length > 0 ? (
+              <div className="mp-status-sub">
+                {todayPresences[0]?.heure_entree} → {todayPresences[0]?.heure_sortie}
+              </div>
+            ) : null}
           </div>
 
           {/* Bouton pointer */}
           <div className="mp-pointer-area">
-            <button
-              className={`mp-pointer-btn ${activePresence ? "checkout" : "checkin"}`}
-              onClick={activePresence ? handleCheckOut : handleCheckIn}
-              disabled={actionLoading}
-            >
-              {actionLoading ? (
-                "Patientez..."
-              ) : activePresence ? (
-                <>
-                  <span className="mp-btn-icon">⏱</span>
-                  Pointer le départ
-                </>
-              ) : (
-                <>
-                  <span className="mp-btn-icon">⏱</span>
-                  Pointer l'arrivée
-                </>
-              )}
-            </button>
+            {alreadyCheckedInToday ? (
+              <div className="mp-already-done">
+                <span className="mp-already-icon">✅</span>
+                <p className="mp-already-text">Pointage déjà effectué aujourd'hui</p>
+                <p className="mp-already-sub">Un seul pointage par jour est autorisé</p>
+              </div>
+            ) : (
+              <button
+                className={`mp-pointer-btn ${activePresence ? "checkout" : "checkin"}`}
+                onClick={activePresence ? handleCheckOut : handleCheckIn}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  "Patientez..."
+                ) : activePresence ? (
+                  <>
+                    <span className="mp-btn-icon">⏱</span>
+                    Pointer le départ
+                  </>
+                ) : (
+                  <>
+                    <span className="mp-btn-icon">⏱</span>
+                    Pointer l'arrivée
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Timeline du jour */}

@@ -9,7 +9,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import "./style.css";
 
-function Sidebar() {
+function Sidebar({ onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -21,38 +21,46 @@ function Sidebar() {
     navigate("/");
   };
 
+  const handleNavClick = () => {
+    if (onClose) onClose();
+  };
+
   return (
     <aside className="sidebar">
+      {/* Bouton fermer pour mobile */}
+      <button className="sidebar-close" onClick={onClose} aria-label="Fermer">
+        ✕
+      </button>
       <nav className="sidebar-nav">
-        <NavLink to="/dashboard" className="sidebar-link">
+        <NavLink to="/dashboard" className="sidebar-link" onClick={handleNavClick}>
           Dashboard
         </NavLink>
 
         {!isAdmin && (
-          <NavLink to="/mon-pointage" className="sidebar-link">
+          <NavLink to="/mon-pointage" className="sidebar-link" onClick={handleNavClick}>
             Mon Pointage
           </NavLink>
         )}
 
-        <NavLink to="/conges" className="sidebar-link">
-          Mes Conges
+        <NavLink to="/conges" className="sidebar-link" onClick={handleNavClick}>
+          Mes Congés
         </NavLink>
 
         {isAdmin && (
           <>
-            <NavLink to="/employes" className="sidebar-link">
-              Employes
+            <NavLink to="/employes" className="sidebar-link" onClick={handleNavClick}>
+              Employés
             </NavLink>
-            <NavLink to="/presences" className="sidebar-link">
-              Presences
+            <NavLink to="/presences" className="sidebar-link" onClick={handleNavClick}>
+              Présences
             </NavLink>
-            <NavLink to="/configuration" className="sidebar-link">
+            <NavLink to="/configuration" className="sidebar-link" onClick={handleNavClick}>
               Configuration
             </NavLink>
           </>
         )}
 
-        <NavLink to="/profil" className="sidebar-link">
+        <NavLink to="/profil" className="sidebar-link" onClick={handleNavClick}>
           Profil
         </NavLink>
       </nav>

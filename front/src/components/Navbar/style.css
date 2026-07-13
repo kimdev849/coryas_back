@@ -11,24 +11,58 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+  position: relative;
+  z-index: 100;
 }
 
-.navbar-brand {
+.navbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
+/* Hamburger menu */
+.navbar-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.navbar-hamburger:hover {
+  background: var(--color-gray-100);
+}
+
+.hamburger-line {
+  width: 22px;
+  height: 2.5px;
+  background: var(--color-gray-900);
+  border-radius: 2px;
+  display: block;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .navbar-logo-img {
-  height: 40px;
+  height: 36px;
   width: auto;
   object-fit: contain;
 }
 
 .navbar-logo {
-  font-weight: bold;
-  font-size: 18px;
+  font-weight: 700;
+  font-size: 16px;
   color: var(--color-black);
+  letter-spacing: 0.5px;
 }
 
 .navbar-user {
@@ -54,4 +88,34 @@
   justify-content: center;
   font-size: 16px;
   font-weight: bold;
+}
+
+/* ===== RESPONSIVE NAVBAR ===== */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  .navbar-hamburger {
+    display: flex;
+  }
+
+  .navbar-logo {
+    display: none;
+  }
+
+  .navbar-logo-img {
+    height: 32px;
+  }
+
+  .navbar-user-name {
+    display: none;
+  }
+
+  .navbar-user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
 }

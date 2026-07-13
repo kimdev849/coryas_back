@@ -30,6 +30,7 @@ const employesRoutes = require("./routes/employes.routes");
 const departementsRoutes = require("./routes/departements.routes");
 const parametresRoutes = require("./routes/parametres.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const notificationsRoutes = require("./routes/notifications.routes");
 
 // ================================================================
 // 4. IMPORT DES MIDDLEWARES
@@ -71,6 +72,7 @@ app.use("/api/employes", employesRoutes);
 app.use("/api/departements", departementsRoutes);
 app.use("/api/parametres", parametresRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 // ================================================================
 // 7. ROUTE DE TEST (vérifier que le serveur répond)
