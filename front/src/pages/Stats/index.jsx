@@ -65,13 +65,13 @@ function Stats() {
 
   return (
     <div>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-        <div>
+      {/* Header responsive */}
+      <div className="stats-header">
+        <div className="stats-header-left">
           <h1 className="page-title">Ponctualité</h1>
           <p className="page-description" style={{ marginBottom: 0 }}>
             Heure limite : <strong>{heureLimite}</strong>
-            {retardApres > 0 && <span> (ouverture {heureOuverture} + {retardApres} min de tolérance)</span>}
+            {retardApres > 0 && <span> (ouverture {heureOuverture} + {retardApres} min)</span>}
           </p>
         </div>
         {/* Filtre période */}
@@ -82,7 +82,7 @@ function Stats() {
               className={`stats-periode-btn ${periode === p ? "active" : ""}`}
               onClick={() => setPeriode(p)}
             >
-              {p === "semaine" ? "Cette semaine" : p === "mois" ? "Ce mois" : "Cette année"}
+              {p === "semaine" ? "Semaine" : p === "mois" ? "Mois" : "Année"}
             </button>
           ))}
         </div>

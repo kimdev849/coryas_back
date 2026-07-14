@@ -1,21 +1,36 @@
 /* ================================================================
    FICHIER : src/pages/Stats/style.css
+   Thème : Jaune Coryas 🔶 | Noir ⚫
    ============================================================ */
 
-/* Cartes de stats */
+/* ===== HEADER RESPONSIVE ===== */
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stats-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== CARTES STATS ===== */
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
   margin-bottom: 24px;
 }
 
 .stats-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   background: var(--color-white);
-  padding: 20px;
+  padding: 18px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s;
@@ -26,9 +41,10 @@
 }
 
 .stats-card-icon {
-  font-size: 28px;
-  width: 48px;
-  height: 48px;
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -38,32 +54,34 @@
 
 .stats-card-body {
   flex: 1;
+  min-width: 0;
 }
 
 .stats-card-number {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--color-black);
   line-height: 1.2;
 }
 
 .stats-card-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-gray-500);
   margin-top: 2px;
 }
 
-/* Filtres période */
+/* ===== FILTRES PÉRIODE ===== */
 .stats-periodes {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   background: var(--color-gray-100);
   padding: 4px;
   border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .stats-periode-btn {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border: none;
   border-radius: 8px;
   font-size: 13px;
@@ -72,6 +90,7 @@
   color: var(--color-gray-700);
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .stats-periode-btn.active {
@@ -85,37 +104,78 @@
   color: var(--color-black);
 }
 
-/* Deux colonnes */
+/* ===== DEUX COLONNES (Top ponctuels + Top retards) ===== */
 .stats-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 18px;
   margin-bottom: 24px;
 }
 
 .stats-section-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--color-black);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .stats-table-section {
   margin-bottom: 0;
+  min-width: 0;
 }
 
-/* Rangs */
+/* ===== TABLEAUX RESPONSIVES ===== */
+.stats-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-white);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stats-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-gray-200);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.stats-table th {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.stats-table tbody tr:nth-child(even) {
+  background: var(--color-gray-50);
+}
+
+.stats-table tbody tr:hover {
+  background: var(--color-primary-light);
+}
+
+/* ===== RANGS ===== */
 .stats-rank {
   display: inline-flex;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 700;
   background: var(--color-gray-100);
   color: var(--color-gray-700);
@@ -131,61 +191,161 @@
   color: #dc2626;
 }
 
-/* Barres de progression */
+/* ===== BARRES DE PROGRESSION ===== */
 .stats-bar-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 100px;
+  gap: 6px;
+  min-width: 80px;
 }
 
 .stats-bar {
-  height: 8px;
+  height: 7px;
   border-radius: 4px;
   transition: width 0.5s;
-  min-width: 4px;
+  min-width: 3px;
+  flex: 1;
 }
 
 .stats-bar-text {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-gray-700);
-  min-width: 32px;
+  min-width: 30px;
+  text-align: right;
 }
 
-/* Responsive */
+/* ===== NOM EMPLOYÉ ===== */
+.stats-emp-name {
+  font-weight: 600;
+  color: var(--color-black);
+}
+
+.stats-emp-matricule {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  margin-top: 1px;
+}
+
+/* ===== BOUTON ACTUALISER ===== */
+.stats-refresh-btn {
+  margin-top: 16px;
+  background: #6c757d;
+}
+
+/* ===== RESPONSIVE : TABLETTE ===== */
 @media (max-width: 1024px) {
   .stats-columns {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
+/* ===== RESPONSIVE : MOBILE ===== */
 @media (max-width: 768px) {
-  .stats-cards {
-    grid-template-columns: 1fr 1fr;
+  .stats-header {
+    flex-direction: column;
     gap: 12px;
   }
 
-  .stats-card {
-    padding: 14px;
-  }
-
-  .stats-card-number {
-    font-size: 22px;
+  .stats-header-left {
+    width: 100%;
   }
 
   .stats-periodes {
-    flex-wrap: wrap;
+    width: 100%;
+    justify-content: stretch;
   }
 
   .stats-periode-btn {
-    padding: 6px 12px;
+    flex: 1;
+    text-align: center;
+    padding: 8px 6px;
     font-size: 12px;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stats-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .stats-card-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .stats-card-number {
+    font-size: 20px;
+  }
+
+  .stats-card-label {
+    font-size: 11px;
+  }
+
+  .stats-table {
+    min-width: 420px;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .stats-bar-wrap {
+    min-width: 70px;
+  }
+
+  .stats-bar-text {
+    font-size: 10px;
+    min-width: 26px;
+  }
+
+  .stats-section-title {
+    font-size: 14px;
   }
 }
 
+/* ===== RESPONSIVE : TRÈS PETIT MOBILE ===== */
 @media (max-width: 480px) {
   .stats-cards {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stats-card {
+    padding: 10px 14px;
+  }
+
+  .stats-table {
+    min-width: 360px;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .stats-bar-wrap {
+    min-width: 60px;
+  }
+
+  .stats-bar {
+    height: 6px;
+  }
+
+  .stats-bloc-title h1 {
+    font-size: 22px;
   }
 }
