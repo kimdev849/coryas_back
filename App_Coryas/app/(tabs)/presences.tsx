@@ -1,49 +1,28 @@
 // ============================================================
-// ONGLET HISTORIQUE - Liste des présences enregistrées
+// ONGLET PRÉSENCES - Calendrier & historique épuré
 // ============================================================
-// Affiche l'historique des pointages de l'utilisateur dans
-// une liste (FlatList). Chaque entrée montre :
-//   - La date (formatée en français)
-//   - Le temps travaillé
-//   - Le statut (Présent, En retard, Départ anticipé, etc.)
-//
-// ⚙️ Fonctionnement :
-// 1. Au focus de l'onglet, on charge les données via getPresences()
-// 2. Les données sont affichées dans une FlatList optimisée
-// 3. Le clic sur un élément navigue vers /presence-detail/[id]
-//
-// 📌 Concepts React Native :
-// - FlatList : liste virtuelle performante (ne rend que les éléments visibles)
-// - Filtre mensuel : bouton pour basculer entre mois courant et précédent
+// Design clean avec mini-calendrier mensuel, carte de stats
+// rapides et liste des présences au design moderne.
 // ============================================================
 
-import { StyleSheet, Text, View, FlatList, Pressable } from "react-native";
+import { StyleSheet, Text, View, FlatList, Pressable, ActivityIndicator } from "react-native";
 import { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getPresences, Presence } from "../../src/services/data";
 import { Colors } from "../../src/constants/Colors";
 
-// Type personnalisé pour le filtre de mois
-type MonthFilter = "current" | "previous";
-
 export default function PresencesTab() {
   const router = useRouter();
-  
-  // ============================================================
-  // ÉTATS
-  // ============================================================
-  const [presences, setPresences] = useState<Presence[]>([]); // Liste des présences
-  const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<MonthFilter>("current"); // Mois sélectionné
+  const insets = useSafeAreaInsets();
 
-  // ============================================================
-  // loadData : charge la liste des présences depuis l'API
-  // ============================================================
+  const [presences, setPresences] = useState<Presence[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // getPresences() appelle GET /api/presences
-      // Retourne un tableau d'objets Presence
       const data = await getPresences();
       setPresences(data);
     } catch (error) {
@@ -53,55 +32,87 @@ export default function PresencesTab() {
     }
   }, []);
 
-  // Recharge à chaque fois que l'utilisateur revient sur cet onglet
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  // ============================================================
-  // formatDate : convertit une date ISO en format lisible français
-  // ============================================================
-  // Exemple : "2026-07-10T08:02:00.000Z" → "ven. 10 juil."
-  // ============================================================
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString("fr-FR", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-      });
-    } catch {
-      return dateStr;
-    }
+  // ── Calcule les stats du mois ──
+  const stats = () => {
+    const now = new Date();
+    const mois = now.getMonth();
+    const annee = now.getFullYear();
+    const duMois = presences.filter((p) => {
+      if (!p.date_presence) return false;
+      const d = new Date(p.date_presence);
+      return d.getMonth() === mois && d.getFullYear() === annee;
+    });
+    const presents = duMois.filter(
+      (p) => p.statut === "Present" || p.statut === "Présent" || p.statut === "Retard" || p.statut === "En retard"
+    ).length;
+    const retards = duMois.filter(
+      (p) => p.statut === "Retard" || p.statut === "En retard"
+    ).length;
+    const total = duMois.length;
+    return { total, presents, retards, taux: total > 0 ? Math.round((presents / total) * 100) : 0 };
   };
 
-  // ============================================================
-  // getStatusColor : retourne la couleur selon le statut
-  // ============================================================
+  const s = stats();
+
+  // ── Mini calendrier du mois ──
+  const calendrier = () => {
+    const now = new Date();
+    const annee = now.getFullYear();
+    const mois = now.getMonth();
+    const premierJour = new Date(annee, mois, 1).getDay(); // 0=Dim
+    const nbJours = new Date(annee, mois + 1, 0).getDate();
+    const jours = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
+
+    const cases: ({ jour: number; type: "passe" | "present" | "futur" | "absent" | "weekend" | "retard" | "aujourdhui" })[] = [];
+    const aujourdhui = now.getDate();
+
+    for (let i = 0; i < premierJour; i++) {
+      cases.push({ jour: 0, type: "passe" });
+    }
+    for (let j = 1; j <= nbJours; j++) {
+      const dateObj = new Date(annee, mois, j);
+      const jourSem = dateObj.getDay();
+      const dateStr = dateObj.toISOString().split("T")[0];
+      const presence = presences.find((p) => p.date_presence && p.date_presence.startsWith(dateStr));
+      const estFutur = dateObj > now;
+      const estWeekend = jourSem === 0 || jourSem === 6;
+
+      let type: "passe" | "present" | "futur" | "absent" | "weekend" | "retard" | "aujourdhui";
+      if (j === aujourdhui && !estFutur) {
+        if (presence && (presence.statut === "Retard" || presence.statut === "En retard")) type = "retard";
+        else if (presence) type = "present";
+        else type = estWeekend ? "weekend" : "absent";
+      } else if (estFutur) {
+        type = "futur";
+      } else if (estWeekend) {
+        type = "weekend";
+      } else if (presence && (presence.statut === "Retard" || presence.statut === "En retard")) {
+        type = "retard";
+      } else if (presence) {
+        type = "present";
+      } else {
+        type = "absent";
+      }
+      cases.push({ jour: j, type });
+    }
+    return cases;
+  };
+
+  const cal = calendrier();
+
+  // ── Couleurs des statuts ──
   const getStatusColor = (statut: string | null) => {
     switch (statut) {
       case "Present":
-      case "Présent":
-        return Colors.success;     // Vert
+      case "Présent": return Colors.success;
       case "Retard":
-      case "En retard":
-        return Colors.warning;     // Jaune
-      case "Départ anticipé":
-        return Colors.danger;      // Rouge
-      default:
-        return Colors.textLight;   // Gris
+      case "En retard": return Colors.warning;
+      default: return Colors.textLight;
     }
   };
 
-  // ============================================================
-  // getStatusLabel : normalise l'affichage du statut
-  // ============================================================
-  // Le backend peut renvoyer "Present" (anglais) ou "Présent" (français)
-  // Cette fonction uniformise l'affichage
-  // ============================================================
   const getStatusLabel = (statut: string | null) => {
     if (!statut) return "Absent";
     if (statut === "Present") return "Présent";
@@ -109,179 +120,222 @@ export default function PresencesTab() {
     return statut;
   };
 
-  // ============================================================
-  // getWorkedTime : calcule le temps travaillé (placeholder)
-  // ============================================================
-  // Pour l'instant, retourne une valeur fixe "7h 59min"
-  // Dans une version future, on pourra calculer la différence
-  // entre heure_entree et heure_sortie
-  // ============================================================
   const getWorkedTime = (arrival: string | null, departure: string | null) => {
-    if (!arrival || !departure) return "--";
-    return "7h 59min";
+    if (!arrival) return "--";
+    if (!departure) return "En cours";
+    const [ah, am] = arrival.split(":").map(Number);
+    const [dh, dm] = departure.split(":").map(Number);
+    const totalMin = (dh * 60 + dm) - (ah * 60 + am);
+    if (totalMin <= 0) return "0h 00";
+    const hours = Math.floor(totalMin / 60);
+    const mins = totalMin % 60;
+    return `${hours}h ${String(mins).padStart(2, "0")}`;
   };
 
-  // ============================================================
-  // renderPresence : rend un élément de la liste
-  // ============================================================
-  // Chaque élément est un Pressable qui navigue vers le détail.
-  // Il affiche 3 colonnes : date | temps travaillé | statut (avec point coloré)
-  // ============================================================
-  const renderPresence = ({ item }: { item: Presence }) => (
-    <Pressable style={styles.presenceItem} onPress={() => router.push(`/presence-detail/${item.id}`)}>
-      <View style={styles.dateColumn}>
-        <Text style={styles.dateText}>{formatDate(item.date_presence)}</Text>
-      </View>
-      
-      <View style={styles.timeColumn}>
-        <Text style={styles.timeText}>{getWorkedTime(item.heure_entree, item.heure_sortie)}</Text>
-      </View>
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
+    } catch { return dateStr; }
+  };
 
-      <View style={styles.statusColumn}>
-        <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.statut) }]} />
-        <Text style={[styles.statusText, { color: getStatusColor(item.statut) }]}>
-          {getStatusLabel(item.statut)}
-        </Text>
+  const renderPresence = ({ item }: { item: Presence }) => (
+    <Pressable
+      style={({ pressed }) => [styles.presCard, pressed && { opacity: 0.7 }]}
+      onPress={() => router.push(`/presence-detail/${item.id}`)}
+    >
+      <View style={styles.presCardLeft}>
+        <View style={[styles.presCardDot, { backgroundColor: getStatusColor(item.statut) }]} />
+      </View>
+      <View style={styles.presCardCenter}>
+        <Text style={styles.presCardDate}>{formatDate(item.date_presence)}</Text>
+        <Text style={styles.presCardTime}>{getWorkedTime(item.heure_entree, item.heure_sortie)}</Text>
+      </View>
+      <View style={styles.presCardRight}>
+        <View style={[styles.presCardBadge, { backgroundColor: getStatusColor(item.statut) + "18" }]}>
+          <Text style={[styles.presCardStatus, { color: getStatusColor(item.statut) }]}>
+            {getStatusLabel(item.statut)}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={Colors.textLight} />
       </View>
     </Pressable>
   );
 
-  // ============================================================
-  // getMonthLabel : retourne le libellé du mois sélectionné
-  // ============================================================
-  const getMonthLabel = () => {
-    const now = new Date();
-    const currentMonth = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    if (selectedMonth === "current") {
-      return currentMonth;
-    } else {
-      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return prevMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const getCouleurCase = (type: string) => {
+    switch (type) {
+      case "present": return Colors.success;
+      case "retard": return Colors.warning;
+      case "absent": return Colors.bgLight;
+      case "weekend": return Colors.lightGray;
+      case "aujourdhui": return Colors.primary;
+      case "futur": return "transparent";
+      default: return "transparent";
     }
+  };
+
+  const getTexteCase = (type: string) => {
+    return type === "futur" || type === "passe" ? Colors.textLight : type === "absent" ? Colors.textLight : Colors.white;
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Historique</Text>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View>
+          <Text style={styles.title}>Présences</Text>
+          <Text style={styles.subtitle}>{new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</Text>
+        </View>
       </View>
 
-      {/* ============================================================ */}
-      {/* FILTRE PAR MOIS (current / previous)                         */}
-      {/* ============================================================ */}
-      {/* Permet de basculer entre le mois en cours et le mois passé   */}
-      {/* Le bouton actif a le texte en gras et noir                   */}
-      {/* ============================================================ */}
-      <View style={styles.monthSelector}>
-        <Pressable
-          style={[styles.monthButton, selectedMonth === "current" && styles.monthButtonActive]}
-          onPress={() => setSelectedMonth("current")}
-        >
-          <Text style={[styles.monthText, selectedMonth === "current" && styles.monthTextActive]}>
-            {new Date().toLocaleDateString('fr-FR', { month: 'long' })}
-          </Text>
-        </Pressable>
-        <Pressable style={styles.chevron}>
-          <Text>›</Text>
-        </Pressable>
-      </View>
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={Colors.black} />
+        </View>
+      ) : (
+        <FlatList
+          data={presences}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderPresence}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <>
+              {/* Mini calendrier */}
+              <View style={styles.calWrap}>
+                {/* En-tête jours */}
+                <View style={styles.calHeader}>
+                  {["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"].map((j, i) => (
+                    <Text key={i} style={styles.calHeaderText}>{j}</Text>
+                  ))}
+                </View>
+                {/* Grille */}
+                <View style={styles.calGrid}>
+                  {cal.map((c, i) => (
+                    <View key={i} style={styles.calCase}>
+                      {c.jour > 0 && (
+                        <View
+                          style={[
+                            styles.calCaseInner,
+                            c.type === "futur" && styles.calCaseFuture,
+                            c.type === "passe" && styles.calCaseFuture,
+                            { backgroundColor: getCouleurCase(c.type) },
+                          ]}
+                        >
+                          <Text style={[styles.calDayText, { color: getTexteCase(c.type) }]}>
+                            {c.jour}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
 
-      {/* ============================================================ */}
-      {/* LISTE DES PRÉSENCES (FlatList optimisée)                     */}
-      {/* ============================================================ */}
-      {/* FlatList est le composant React Native pour les listes       */}
-      {/* Avantages par rapport à ScrollView :                         */}
-      {/*   - Lazy loading : ne rend que les éléments visibles         */}
-      {/*   - Performance : réutilise les vues hors écran              */}
-      {/* ============================================================ */}
-      <FlatList
-        data={presences}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderPresence}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+              {/* Stats */}
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{s.total}</Text>
+                  <Text style={styles.statLabel}>Présences</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: Colors.warning }]}>{s.retards}</Text>
+                  <Text style={styles.statLabel}>Retards</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: Colors.success }]}>{s.taux}%</Text>
+                  <Text style={styles.statLabel}>Présence</Text>
+                </View>
+              </View>
+
+              {/* Titre liste */}
+              <Text style={styles.listTitle}>Historique</Text>
+            </>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Ionicons name="calendar-outline" size={48} color={Colors.lightGray} />
+              <Text style={styles.emptyText}>Aucune présence</Text>
+              <Text style={styles.emptySub}>Les pointages apparaîtront ici</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.white,
+  container: { flex: 1, backgroundColor: Colors.bgLight },
+  header: { paddingHorizontal: 20, paddingBottom: 12, backgroundColor: Colors.white },
+  title: { fontSize: 26, fontWeight: "800", color: Colors.black },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
+
+  // ── Calendrier ──
+  calWrap: {
+    marginHorizontal: 20, marginBottom: 16,
+    backgroundColor: Colors.white, borderRadius: 16,
+    padding: 16, borderWidth: 1, borderColor: Colors.lightGray,
   },
-  header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+  calHeader: {
+    flexDirection: "row", justifyContent: "space-around",
+    marginBottom: 8,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.black,
+  calHeaderText: {
+    fontSize: 12, fontWeight: "600", color: Colors.textSecondary,
+    width: 32, textAlign: "center",
   },
-  monthSelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 16,
+  calGrid: {
+    flexDirection: "row", flexWrap: "wrap",
   },
-  monthButton: {
-    paddingVertical: 8,
+  calCase: {
+    width: "14.28%", aspectRatio: 1,
+    alignItems: "center", justifyContent: "center",
+    padding: 2,
   },
-  monthButtonActive: {
-    // Optional: add underline effect
+  calCaseInner: {
+    width: 30, height: 30, borderRadius: 8,
+    alignItems: "center", justifyContent: "center",
   },
-  monthText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textSecondary,
+  calCaseFuture: { backgroundColor: "transparent" },
+  calDayText: { fontSize: 13, fontWeight: "600" },
+
+  // ── Stats ──
+  statsRow: {
+    flexDirection: "row", marginHorizontal: 20, marginBottom: 20, gap: 10,
   },
-  monthTextActive: {
-    color: Colors.black,
-    fontWeight: "700",
+  statCard: {
+    flex: 1, backgroundColor: Colors.white, borderRadius: 14,
+    padding: 16, alignItems: "center", borderWidth: 1, borderColor: Colors.lightGray,
   },
-  chevron: {
-    marginLeft: 8,
+  statNumber: { fontSize: 22, fontWeight: "800", color: Colors.black },
+  statLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
+
+  // ── Liste ──
+  list: { paddingBottom: 40 },
+  listTitle: {
+    fontSize: 16, fontWeight: "700", color: Colors.black,
+    marginHorizontal: 20, marginBottom: 12,
   },
-  list: {
-    paddingHorizontal: 20,
+
+  // ── Cartes présence ──
+  presCard: {
+    flexDirection: "row", alignItems: "center",
+    marginHorizontal: 20, marginBottom: 8,
+    backgroundColor: Colors.white, borderRadius: 14,
+    padding: 14, borderWidth: 1, borderColor: Colors.lightGray,
   },
-  presenceItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.bgLight,
-  },
-  dateColumn: {
-    width: 100,
-  },
-  dateText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  timeColumn: {
-    flex: 1,
-  },
-  timeText: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    fontWeight: "500",
-  },
-  statusColumn: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  presCardLeft: { marginRight: 12 },
+  presCardDot: { width: 10, height: 10, borderRadius: 5 },
+  presCardCenter: { flex: 1 },
+  presCardDate: { fontSize: 14, fontWeight: "600", color: Colors.black },
+  presCardTime: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  presCardRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  presCardBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8 },
+  presCardStatus: { fontSize: 12, fontWeight: "700" },
+
+  emptyWrap: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 8 },
+  emptyText: { fontSize: 16, fontWeight: "600", color: Colors.textSecondary },
+  emptySub: { fontSize: 13, color: Colors.textLight },
 });

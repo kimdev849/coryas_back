@@ -25,6 +25,10 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -66,81 +70,84 @@ export default function LoginPage() {
       router.replace("/(tabs)"); // Redirection vers l'accueil
     } catch (error: any) {
       // Si erreur, on récupère le message du backend ou un message par défaut
-      const message =
-        error.response?.data?.message ||
-        "Email ou mot de passe incorrect.";
-      Alert.alert("Erreur de connexion", message);
+      // ⚠️ Si le serveur est injoignable, error.response est undefined
+      if (!error.response) {
+        Alert.alert(
+          "Erreur réseau",
+          "Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez."
+        );
+      } else {
+        const message =
+          error.response?.data?.message ||
+          "Email ou mot de passe incorrect.";
+        Alert.alert("Erreur de connexion", message);
+      }
     } finally {
       setLoading(false); // Cache le spinner (que ce soit un succès ou une erreur)
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* ============================================================ */}
-      {/* HEADER : Logo de l'application                                */}
-      {/* ============================================================ */}
-      <View style={styles.header}>
-        <Text style={styles.logoPrimary}>PRESENCE</Text>
-        <Text style={styles.logoSecondary}>CORYAS</Text>
-      </View>
-
-      {/* ============================================================ */}
-      {/* FORMULAIRE DE CONNEXION                                       */}
-      {/* ============================================================ */}
-      <View style={styles.content}>
-        <Text style={styles.title}>Connexion</Text>
-
-        {/* Champ Email */}
-        {/* TextInput : champ de saisie géré par React Native */}
-        {/*   - keyboardType="email-address" : affiche le clavier avec @ */}
-        {/*   - autoCapitalize="none" : pas de majuscule automatique */}
-        {/*   - value/onChangeText : pattern React contrôlé (two-way binding) */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="votre@email.com"
-            placeholderTextColor={Colors.textLight}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
-          />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* HEADER : Logo */}
+        <View style={styles.header}>
+          <Image source={require("../assets/logo.png")} style={styles.logoImage} />
+          <Text style={styles.logoPrimary}>PRÉSENCE</Text>
+          <Text style={styles.logoSecondary}>CORYAS</Text>
         </View>
 
-        {/* Champ Mot de passe */}
-        {/* secureTextEntry : masque les caractères saisis (••••) */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={Colors.textLight}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
+        {/* FORMULAIRE */}
+        <View style={styles.content}>
+          <Text style={styles.title}>Connexion</Text>
 
-        {/* Bouton de connexion */}
-        {/* Pressable : bouton tactile (remplace TouchableOpacity) */}
-        {/*   - disabled={loading} : empêche les doubles clics */}
-        {/*   - Condition : si loading → spinner, sinon → texte */}
-        <Pressable
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={Colors.white} />
-          ) : (
-            <Text style={styles.buttonText}>Se connecter</Text>
-          )}
-        </Pressable>
-      </View>
-    </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="votre@email.com"
+              placeholderTextColor={Colors.textLight}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Mot de passe</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              placeholderTextColor={Colors.textLight}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
+          <Pressable
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.buttonText}>Se connecter</Text>
+            )}
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -150,10 +157,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     padding: 24,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   header: {
     marginTop: 60,
     marginBottom: 80,
     alignItems: "center",
+  },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 16,
   },
   logoPrimary: {
     fontSize: 32,

@@ -1,167 +1,177 @@
 // ============================================================
 // DÉTAIL D'UNE PRÉSENCE - Timeline d'une journée de travail
 // ============================================================
-// Affiche le détail complet d'une présence : timeline des
-// événements (entrée, pause, retour, sortie), temps travaillé,
-// commentaire et statut.
-//
-// ⚙️ Particularité (pour l'instant) :
-//   - Les données sont STATIQUES (valeurs en dur)
-//   - Le paramètre { id } est récupéré depuis l'URL mais pas utilisé
-//   - Dans une version future, on fera un appel API avec cet id
-//   - La bottom nav en bas est un doublon de la tab bar (à corriger)
-//
-// 📌 Concepts Expo Router :
-// - useLocalSearchParams() récupère les paramètres de l'URL
-// - [id].tsx est un fichier dynamique : /presence-detail/5 → { id: "5" }
-// - router.back() retourne à l'écran précédent
+// Affiche le détail complet d'une présence : heure d'arrivée,
+// heure de départ, temps travaillé et statut.
+// Les données sont chargées depuis l'API via l'ID passé en paramètre.
 // ============================================================
 
-import { StyleSheet, Text, View, Pressable, TextInput, ScrollView } from "react-native";
+import { StyleSheet, Text, View, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { getPresenceById } from "../../src/services/data";
 import { Colors } from "../../src/constants/Colors";
 
 export default function PresenceDetailScreen() {
   const router = useRouter();
-  // 📍 Récupération du paramètre dynamique "id" depuis l'URL
-  // Exemple : /presence-detail/42 → { id: "42" }
   const { id } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
+  const [presence, setPresence] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await getPresenceById(id as string);
+        setPresence(data);
+      } catch (err: any) {
+        setError(err?.message || "Impossible de charger les données");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [id]);
+
+  /**
+   * getWorkedTime : calcule le temps travaillé entre heure_entree et heure_sortie
+   */
+  const getWorkedTime = (arrival: string | null, departure: string | null) => {
+    if (!arrival) return "--";
+    if (!departure) {
+      // Si pas encore parti, calcul en temps réel
+      const [h, m] = arrival.split(":").map(Number);
+      const arrivee = new Date();
+      arrivee.setHours(h, m, 0, 0);
+      const diffMs = new Date().getTime() - arrivee.getTime();
+      if (diffMs <= 0) return "0h 00min";
+      const totalMin = Math.floor(diffMs / 60000);
+      const hours = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      return `${hours}h ${String(mins).padStart(2, "0")}min`;
+    }
+    const [ah, am] = arrival.split(":").map(Number);
+    const [dh, dm] = departure.split(":").map(Number);
+    const totalMin = (dh * 60 + dm) - (ah * 60 + am);
+    if (totalMin <= 0) return "0h 00min";
+    const hours = Math.floor(totalMin / 60);
+    const mins = totalMin % 60;
+    return `${hours}h ${String(mins).padStart(2, "0")}min`;
+  };
+
+  const getStatusColor = (statut: string | null) => {
+    switch (statut) {
+      case "Present":
+      case "Présent":
+        return Colors.success;
+      case "Retard":
+      case "En retard":
+        return Colors.warning;
+      default:
+        return Colors.textLight;
+    }
+  };
+
+  const getStatusLabel = (statut: string | null) => {
+    if (!statut) return "Absent";
+    if (statut === "Present") return "Présent";
+    if (statut === "Retard") return "En retard";
+    return statut;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.black} />
+      </View>
+    );
+  }
+
+  if (error || !presence) {
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={Colors.danger} />
+        <Text style={styles.errorText}>{error || "Présence introuvable"}</Text>
+        <Pressable style={styles.retryButton} onPress={() => router.back()}>
+          <Text style={styles.retryButtonText}>Retour</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  const dateFormatee = presence.date_presence
+    ? new Date(presence.date_presence + "T12:00:00").toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "Date inconnue";
 
   return (
     <View style={styles.container}>
-      {/* ============================================================ */}
-      {/* HEADER : Bouton retour + Date                                */}
-      {/* ============================================================ */}
-      {/* La date affichée est celle du jour (pas celle de la présence) */}
-      {/* À améliorer : afficher la date de la présence réelle          */}
-      {/* ============================================================ */}
-      <View style={styles.header}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>←</Text>
+          <Ionicons name="chevron-back" size={24} color={Colors.black} />
         </Pressable>
-        <Text style={styles.title}>
-          {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </Text>
+        <Text style={styles.title}>Détail</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* ============================================================ */}
-        {/* TIMELINE DES ÉVÉNEMENTS DE LA JOURNÉE                        */}
-        {/* ============================================================ */}
-        {/* Affiche une ligne verticale avec des points colorés :        */}
-        {/*   ● Entrée (vert)   08:02                                    */}
-        {/*   │                                                          */}
-        {/*   ● Pause (jaune)   12:00                                    */}
-        {/*   │                                                          */}
-        {/*   ● Retour (jaune)  13:05                                    */}
-        {/*   │                                                          */}
-        {/*   ● Sortie (vert)   17:01                                    */}
-        {/* ============================================================ */}
-        <View style={styles.timeline}>
-          <View style={styles.timelineItem}>
-            <View style={[styles.timelineDot, { backgroundColor: Colors.success }]} />
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineLabel}>Entrée</Text>
-              <Text style={styles.timelineTime}>08:02</Text>
-            </View>
+        {/* Date */}
+        <Text style={styles.dateTitle}>{dateFormatee}</Text>
+
+        {/* Carte récapitulative */}
+        <View style={styles.recapCard}>
+          <View style={styles.recapRow}>
+            <Ionicons name="log-in" size={22} color={Colors.success} />
+            <Text style={styles.recapLabel}>Arrivée</Text>
+            <Text style={styles.recapTime}>{presence.heure_entree || "--:--"}</Text>
           </View>
-          
-          {/* Ligne verticale de connexion entre les points */}
-          <View style={styles.timelineLine} />
-
-          <View style={styles.timelineItem}>
-            <View style={[styles.timelineDot, { backgroundColor: Colors.warning }]} />
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineLabel}>Pause</Text>
-              <Text style={styles.timelineTime}>12:00</Text>
-            </View>
-          </View>
-
-          <View style={styles.timelineLine} />
-
-          <View style={styles.timelineItem}>
-            <View style={[styles.timelineDot, { backgroundColor: Colors.warning }]} />
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineLabel}>Retour</Text>
-              <Text style={styles.timelineTime}>13:05</Text>
-            </View>
-          </View>
-
-          <View style={styles.timelineLine} />
-
-          <View style={styles.timelineItem}>
-            <View style={[styles.timelineDot, { backgroundColor: Colors.success }]} />
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineLabel}>Sortie</Text>
-              <Text style={styles.timelineTime}>17:01</Text>
-            </View>
+          <View style={styles.recapDivider} />
+          <View style={styles.recapRow}>
+            <Ionicons name="log-out" size={22} color={presence.heure_sortie ? Colors.danger : Colors.textLight} />
+            <Text style={styles.recapLabel}>Départ</Text>
+            <Text style={[styles.recapTime, { color: presence.heure_sortie ? Colors.black : Colors.textLight }]}>
+              {presence.heure_sortie || "En cours"}
+            </Text>
           </View>
         </View>
 
-        {/* ============================================================ */}
-        {/* TEMPS TRAVAILLÉ                                              */}
-        {/* ============================================================ */}
-        {/* Affiche "7h 59min / 8h" avec un format statique              */}
-        {/* Basé sur la différence entre entrée et sortie (- pause)      */}
-        {/* ============================================================ */}
-        <View style={styles.workedTimeContainer}>
-          <Text style={styles.workedTimeLabel}>Temps travaillé</Text>
-          <Text style={styles.workedTimeValue}>7h 59min</Text>
-          <Text style={styles.workedTimeGoal}>/ 8h</Text>
+        {/* Temps travaillé */}
+        <View style={styles.workedContainer}>
+          <Ionicons name="time-outline" size={24} color={Colors.black} />
+          <Text style={styles.workedLabel}>Temps travaillé</Text>
+          <Text style={styles.workedValue}>
+            {getWorkedTime(presence.heure_entree, presence.heure_sortie)}
+          </Text>
         </View>
 
-        {/* ============================================================ */}
-        {/* COMMENTAIRE (TextInput multiligne)                           */}
-        {/* ============================================================ */}
-        {/* L'utilisateur peut ajouter un commentaire sur sa journée.     */}
-        {/* Pour l'instant, la saisie n'est pas persistée (pas d'appel   */}
-        {/* API pour sauvegarder).                                       */}
-        {/* ============================================================ */}
-        <View style={styles.commentContainer}>
-          <Text style={styles.commentLabel}>Commentaire</Text>
-          <TextInput
-            style={styles.commentInput}
-            placeholder="Ajouter un commentaire..."
-            placeholderTextColor={Colors.textLight}
-            multiline
-          />
-        </View>
-
-        {/* ============================================================ */}
-        {/* STATUT DE LA PRÉSENCE                                        */}
-        {/* ============================================================ */}
-        {/* Badge avec un point coloré et le texte du statut              */}
-        {/* Couleurs : Présent=vert, Retard=jaune, Départ anticipé=rouge */}
-        {/* ============================================================ */}
+        {/* Statut */}
         <View style={styles.statusContainer}>
+          <Ionicons name="information-circle-outline" size={22} color={getStatusColor(presence.statut)} />
           <Text style={styles.statusLabel}>Statut</Text>
-          <View style={styles.statusBadge}>
-            <View style={[styles.statusDot, { backgroundColor: Colors.warning }]} />
-            <Text style={styles.statusText}>Retard</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(presence.statut) + "15" }]}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(presence.statut) }]} />
+            <Text style={[styles.statusText, { color: getStatusColor(presence.statut) }]}>
+              {getStatusLabel(presence.statut)}
+            </Text>
           </View>
         </View>
-      </ScrollView>
 
-      {/* ============================================================ */}
-      {/* BARRE DE NAVIGATION BASSE (doublon de la tab bar)            */}
-      {/* ⚠️ Cette barre duplique la tab bar déjà présente.            */}
-      {/*    À supprimer quand l'écran sera intégré correctement.      */}
-      {/* ============================================================ */}
-      <View style={styles.bottomNav}>
-        <Pressable style={styles.navItem}>
-          <Text>🏠</Text>
-        </Pressable>
-        <Pressable style={[styles.navItem, styles.navItemActive]}>
-          <Text style={styles.navItemActiveText}>📅</Text>
-        </Pressable>
-        <Pressable style={styles.navItem}>
-          <Text>🔔</Text>
-        </Pressable>
-        <Pressable style={styles.navItem}>
-          <Text>👤</Text>
-        </Pressable>
-      </View>
+        {/* Remarque si présente */}
+        {presence.remarque && (
+          <View style={styles.remarqueContainer}>
+            <Ionicons name="chatbubble-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.remarqueText}>{presence.remarque}</Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -169,25 +179,46 @@ export default function PresenceDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.bgLight,
+  },
+  centerContainer: {
+    flex: 1,
     backgroundColor: Colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    backgroundColor: Colors.black,
+  },
+  retryButtonText: {
+    color: Colors.white,
+    fontWeight: "600",
+    fontSize: 15,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
+    backgroundColor: Colors.white,
   },
   backButton: {
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
-  },
-  backText: {
-    fontSize: 24,
-    color: Colors.black,
   },
   title: {
     fontSize: 16,
@@ -199,124 +230,124 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    padding: 20,
   },
-  timeline: {
-    paddingVertical: 20,
+  dateTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    marginBottom: 16,
+    textAlign: "center",
   },
-  timelineItem: {
+  recapCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  recapRow: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 12,
   },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 16,
-  },
-  timelineContent: {
+  recapLabel: {
     flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  timelineLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.textSecondary,
+    marginLeft: 12,
   },
-  timelineTime: {
-    fontSize: 14,
+  recapTime: {
+    fontSize: 16,
+    fontWeight: "600",
     color: Colors.black,
-    fontWeight: "500",
   },
-  timelineLine: {
-    width: 2,
-    height: 30,
-    backgroundColor: Colors.lightGray,
-    marginLeft: 5,
+  recapDivider: {
+    height: 1,
+    backgroundColor: Colors.bgLight,
   },
-  workedTimeContainer: {
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderTopColor: Colors.bgLight,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.bgLight,
+  workedContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  workedTimeLabel: {
-    fontSize: 14,
+  workedLabel: {
+    flex: 1,
+    fontSize: 15,
     color: Colors.textSecondary,
-    marginBottom: 8,
+    marginLeft: 12,
   },
-  workedTimeValue: {
-    fontSize: 32,
+  workedValue: {
+    fontSize: 20,
     fontWeight: "700",
     color: Colors.black,
   },
-  workedTimeGoal: {
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  commentContainer: {
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.bgLight,
-  },
-  commentLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  commentInput: {
-    backgroundColor: Colors.bgLight,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 14,
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
   statusContainer: {
-    paddingVertical: 20,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   statusLabel: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 15,
     color: Colors.textSecondary,
+    marginLeft: 12,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
   },
   statusDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.warning,
+    marginRight: 8,
   },
   statusText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.warning,
-    marginLeft: 6,
   },
-  bottomNav: {
+  remarqueContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingVertical: 16,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: Colors.bgLight,
+    alignItems: "flex-start",
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  navItem: {
-    padding: 8,
-  },
-  navItemActive: {
-    backgroundColor: Colors.bgLight,
-    borderRadius: 20,
-  },
-  navItemActiveText: {
-    // Add any active text styles
+  remarqueText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontStyle: "italic",
+    lineHeight: 20,
   },
 });

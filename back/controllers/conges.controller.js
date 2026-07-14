@@ -12,6 +12,7 @@
 
 // congesModel contient les fonctions qui font les requetes SQL
 const congesModel = require("../models/conges.model");
+const notificationsModel = require("../models/notifications.model");
 
 // ----------------------------------------------------------------
 // GET /api/conges - Liste toutes les demandes de conges
@@ -94,12 +95,27 @@ const getCongeById = async (req, res) => {
 const appouverConge = async (req, res) => {
     try {
         const { id } = req.params;
+        const { commentaire } = req.body;
+
         // approve() change le statut de "En attente" a "Approuve"
-        const conge = await congesModel.approve(id);
+        const conge = await congesModel.approve(id, commentaire);
 
         if (!conge) {
             // Peut etre introuvable, ou deja traitee
             return res.status(404).json({ message: "Demande introuvable ou deja traitee", data: null });
+        }
+
+        // Créer une notification pour l'employé
+        try {
+            await notificationsModel.create({
+                employe_id: conge.employe_id,
+                titre: "Congé approuvé ✅",
+                message: `Votre demande de congé du ${conge.date_debut} au ${conge.date_fin} a été approuvée.`,
+                type: "success",
+                lien: "/(tabs)/conges",
+            });
+        } catch (notifError) {
+            console.error("Erreur création notification:", notifError);
         }
 
         res.json({ message: "Demande approuvee", data: conge });
@@ -124,6 +140,22 @@ const rejeterConge = async (req, res) => {
 
         if (!conge) {
             return res.status(404).json({ message: "Demande introuvable ou deja traitee", data: null });
+        }
+
+        // Créer une notification pour l'employé
+        try {
+            const notifMessage = commentaire
+                ? `Votre demande de congé du ${conge.date_debut} au ${conge.date_fin} a été refusée. Motif : ${commentaire}`
+                : `Votre demande de congé du ${conge.date_debut} au ${conge.date_fin} a été refusée.`;
+            await notificationsModel.create({
+                employe_id: conge.employe_id,
+                titre: "Congé refusé ❌",
+                message: notifMessage,
+                type: "warning",
+                lien: "/(tabs)/conges",
+            });
+        } catch (notifError) {
+            console.error("Erreur création notification:", notifError);
         }
 
         res.json({ message: "Demande rejetee", data: conge });

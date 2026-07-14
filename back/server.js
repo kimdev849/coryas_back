@@ -10,6 +10,14 @@
 // ================================================================
 
 // ================================================================
+// 0. CONFIGURATION DU FUSEAU HORAIRE (Afrique/Abidjan = UTC+0)
+// ================================================================
+// IMPORTANT : Ce réglage assure que new Date() et CURRENT_DATE
+// utilisent le bon fuseau horaire pour les pointages (check-in/out).
+// Sans cela, un décalage horaire peut bloquer les départs.
+process.env.TZ = "Africa/Brazzaville";
+
+// ================================================================
 // 1. CHARGEMENT DES VARIABLES D'ENVIRONNEMENT
 // ================================================================
 require("dotenv").config();
@@ -31,6 +39,7 @@ const departementsRoutes = require("./routes/departements.routes");
 const parametresRoutes = require("./routes/parametres.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const notificationsRoutes = require("./routes/notifications.routes");
+const statsRoutes = require("./routes/stats.routes");
 
 // ================================================================
 // 4. IMPORT DES MIDDLEWARES
@@ -73,6 +82,7 @@ app.use("/api/departements", departementsRoutes);
 app.use("/api/parametres", parametresRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationsRoutes);
+app.use("/api/stats", statsRoutes);
 
 // ================================================================
 // 7. ROUTE DE TEST (vérifier que le serveur répond)

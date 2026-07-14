@@ -34,5 +34,14 @@ pool.connect()
     console.error("Erreur de connexion :", err.message);
   });
 
+// Configure le fuseau horaire pour CHAQUE connexion du pool
+// Sans ça, CURRENT_DATE et NOW() dans les requêtes SQL peuvent
+// être décalés par rapport à l'heure du Congo (UTC+1).
+pool.on('connect', (client) => {
+    client.query("SET TIMEZONE TO 'Africa/Brazzaville'").catch((err) => {
+        console.warn("⚠️ Erreur SET TIMEZONE:", err.message);
+    });
+});
+
 // Exporte le pool pour qu'il soit utilisable dans les autres fichiers
 module.exports = pool;

@@ -22,7 +22,8 @@
 import { StyleSheet, Text, View, Pressable, Alert, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { useState, useCallback, useEffect } from "react";
-import { getActivePresence, checkIn, checkOut } from "../src/services/data";
+import { Ionicons } from "@expo/vector-icons";
+import { getActivePresence, getTodayPresences, checkIn, checkOut } from "../src/services/data";
 import { useFocusEffect } from "expo-router";
 import { Colors } from "../src/constants/Colors";
 
@@ -39,6 +40,7 @@ export default function PointerScreen() {
   const [loadingAction, setLoadingAction] = useState(false);       // Chargement pendant l'action (check-in/out)
   const [success, setSuccess] = useState(false);                   // Animation de succès visible ?
   const [successTime, setSuccessTime] = useState<string | null>(null); // Heure affichée dans l'écran de succès
+  const [alreadyPointedToday, setAlreadyPointedToday] = useState(false); // Déjà pointé aujourd'hui (même après départ)
   
   // Valeur animée pour l'effet de pression sur le bouton (scale 1 → 0.95 → 1)
   const scaleAnim = useState(new Animated.Value(1))[0];
@@ -59,13 +61,20 @@ export default function PointerScreen() {
         setIsCheckedIn(true);
         setCheckInTime(activePresence.heure_entree);
         setActivePresenceId(activePresence.id);
+        setAlreadyPointedToday(false);
       } else {
         setIsCheckedIn(false);
         setCheckInTime(null);
         setActivePresenceId(null);
-      }
-    } catch (error) {
+        
+        // Vérifier si l'employé a déjà pointé aujourd'hui (même après départ)
+        const todayPresences = await getTodayPresences();
+        setAlreadyPointedToday(todayPresences.length > 0);
+      }      } catch (error) {
       console.error("Erreur chargement pointer:", error);
+      // En cas d'erreur, on affiche quand même l'interface
+      setIsCheckedIn(false);
+      setAlreadyPointedToday(false);
     } finally {
       setLoading(false);
     }
@@ -87,7 +96,27 @@ export default function PointerScreen() {
   // ============================================================
   // handlePointer : gère le clic sur le bouton de pointage
   // ============================================================
+  // Vérification week-end
+  const estWeekend = (): boolean => {
+    const jour = new Date().getDay();
+    return jour === 0 || jour === 6;
+  };
+
   const handlePointer = async () => {
+    if (alreadyPointedToday && !isCheckedIn) {
+      Alert.alert(
+        "Déjà pointé aujourd'hui",
+        "Vous avez déjà effectué votre pointage aujourd'hui. Un seul pointage par jour est autorisé."
+      );
+      return;
+    }
+    if (estWeekend() && !isCheckedIn) {
+      Alert.alert(
+        "Jour non travaillé",
+        "Le pointage n'est pas disponible le week-end (samedi/dimanche)."
+      );
+      return;
+    }
     setLoadingAction(true);
     try {
       if (isCheckedIn && activePresenceId) {
@@ -109,8 +138,20 @@ export default function PointerScreen() {
           loadData();
         }, 2000);
       }
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible d'enregistrer le pointage");
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        // Token expiré ou invalide → redirection vers la connexion
+        Alert.alert(
+          "Session expirée",
+          "Votre session a expiré. Veuillez vous reconnecter pour continuer.",
+          [
+            { text: "OK", onPress: () => router.replace("/login") }
+          ]
+        );
+        return;
+      }
+      const message = error?.response?.data?.message || "Impossible d'enregistrer le pointage";
+      Alert.alert("Erreur", message);
       console.error(error);
     } finally {
       setLoadingAction(false);
@@ -187,25 +228,27 @@ export default function PointerScreen() {
               animatePress();
               handlePointer();
             }}
-            disabled={loading || loadingAction}
+            disabled={loading || loadingAction || (alreadyPointedToday && !isCheckedIn)}
           >
-            <Text style={styles.pointerIcon}>⏱</Text>
+            <Ionicons name="timer-outline" size={64} color={Colors.black} />
           </Pressable>
         </Animated.View>
         
         {/* Texte de statut : change selon check-in ou non */}
         <Text style={styles.statusText}>
-          {isCheckedIn ? "Vous êtes au travail" : "Prêt à pointer ?"}
+          {isCheckedIn ? "Vous êtes au travail" : alreadyPointedToday ? "Pointage déjà effectué" : "Prêt à pointer ?"}
         </Text>
-        <Text style={styles.subText}>
-          {isCheckedIn ? `Arrivé à ${checkInTime}` : "Appuyez pour pointer"}
+        <Text style={[styles.subText, alreadyPointedToday && !isCheckedIn && { color: Colors.textLight }]}>
+          {isCheckedIn ? `Arrivé à ${checkInTime}` : alreadyPointedToday ? "Retour à l'accueil" : "Appuyez pour pointer"}
         </Text>
       </View>
 
       {/* Bouton retour */}
       <View style={styles.footer}>
         <Pressable style={styles.backButton} onPress={goBack}>
-          <Text style={styles.backButtonText}>Retour</Text>
+          <Text style={styles.backButtonText}>
+            {alreadyPointedToday && !isCheckedIn ? "Voir mon accueil" : "Retour"}
+          </Text>
         </Pressable>
       </View>
     </View>

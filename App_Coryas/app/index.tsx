@@ -123,16 +123,14 @@ export default function SplashScreen() {
       {/* ============================================================ */}
       {/* LOGO                                                         */}
       {/* ============================================================ */}
-      {/* Animated.View : une View qui peut être animée                */}
-      {/* On applique les transformations scale (taille) et opacity    */}
-      {/* ============================================================ */}
       <View style={styles.logoContainer}>
-        <Animated.View style={[styles.logoCircle, {
-          transform: [{ scale: logoScale }],
-          opacity: logoOpacity,
-        }]}>
-          <Text style={styles.logoIcon}>👤</Text>
-        </Animated.View>
+        <Animated.Image
+          source={require("../assets/logo.png")}
+          style={[styles.logoImage, {
+            transform: [{ scale: logoScale }],
+            opacity: logoOpacity,
+          }]}
+        />
         
         <Animated.Text style={[styles.appName, { opacity: logoOpacity }]}>
           PRESENCE
@@ -166,20 +164,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 100,
   },
-  logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: Colors.white,
-    borderTopColor: "transparent",
-    alignItems: "center",
-    justifyContent: "center",
+  logoImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     marginBottom: 30,
-  },
-  logoIcon: {
-    fontSize: 48,
-    color: Colors.white,
   },
   appName: {
     color: Colors.white,

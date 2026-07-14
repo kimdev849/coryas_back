@@ -17,8 +17,9 @@
 // ============================================================
 
 import { StyleSheet, Text, View, ScrollView, Pressable } from "react-native";
-import { useState, useCallback } from "react";
-import { getActivePresence } from "../../src/services/data";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { getActivePresence, getTodayPresences, getUnreadNotificationsCount, getParametres } from "../../src/services/data";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Colors } from "../../src/constants/Colors";
@@ -35,46 +36,98 @@ export default function HomeScreen() {
   const [activePresenceId, setActivePresenceId] = useState<string | number | null>(null); // ID présence active
   const [loading, setLoading] = useState(true);
   const [loadingAction, setLoadingAction] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [todayCompleted, setTodayCompleted] = useState(false);
+  // Paramètres de l'entreprise (heures configurées)
+  const [heureOuverture, setHeureOuverture] = useState<string | null>(null);
+  const [heureFermeture, setHeureFermeture] = useState<string | null>(null);
+  const [nomEntreprise, setNomEntreprise] = useState("");
+  
+  // Temps travaillé calculé en continu
+  const [workedTime, setWorkedTime] = useState({ hours: 0, minutes: 0 });
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // ============================================================
-  // getTodayDate : retourne la date du jour formatée en français
+  // Fonctions utilitaires
   // ============================================================
-  // Exemple : "vendredi 10 juillet 2026"
-  // toLocaleDateString('fr-FR') utilise les conventions françaises
-  // ============================================================
+  
+  const getGreeting = (): string => {
+    const h = new Date().getHours();
+    if (h >= 6 && h < 12) return "Bonjour";
+    if (h >= 12 && h < 18) return "Bonjour";
+    return "Bonsoir";
+  };
+
   const getTodayDate = () => {
     const today = new Date();
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     return today.toLocaleDateString('fr-FR', options);
   };
 
+  const estWeekend = (): boolean => {
+    const jour = new Date().getDay(); // 0=Dim, 6=Sam
+    return jour === 0 || jour === 6;
+  };
+
+  /**
+   * calculeTemps : calcule le temps écoulé depuis l'heure d'arrivée
+   * Reçoit une heure au format "HH:MM" et retourne { hours, minutes }
+   */
+  const calculeTemps = (heureArrivee: string) => {
+    if (!heureArrivee || heureArrivee === "--:--") {
+      return { hours: 0, minutes: 0 };
+    }
+    const [h, m] = heureArrivee.split(":").map(Number);
+    const arrivee = new Date();
+    arrivee.setHours(h, m, 0, 0); // Met l'heure d'arrivée sur aujourd'hui
+    const maintenant = new Date();
+    const diffMs = maintenant.getTime() - arrivee.getTime();
+    if (diffMs <= 0) return { hours: 0, minutes: 0 };
+    const totalMinutes = Math.floor(diffMs / 60000);
+    return {
+      hours: Math.floor(totalMinutes / 60),
+      minutes: totalMinutes % 60,
+    };
+  };
+
   // ============================================================
-  // loadData : charge les données au focus de l'écran
+  // Chargement des données
   // ============================================================
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Récupération des données utilisateur depuis AsyncStorage
-      //    AsyncStorage est un stockage local persistant (comme localStorage)
-      //    Les données sont sauvegardées après le login réussi
       const userStr = await AsyncStorage.getItem("@user_data");
       if (userStr) {
         const user = JSON.parse(userStr);
         setUserName(`${user.prenom}`);
       }
 
-      // 2. Vérification de la présence active
-      //    getActivePresence() appelle GET /api/presences/active
-      //    Retourne la présence en cours si l'utilisateur a pointé ce matin
-      const activePresence = await getActivePresence();
+      const [activePresence, unread, todayPresences, parametres] = await Promise.all([
+        getActivePresence(),
+        getUnreadNotificationsCount(),
+        getTodayPresences(),
+        getParametres(),
+      ]);
+
+      // Charger les paramètres (heures configurées par le RH)
+      if (parametres) {
+        setNomEntreprise(parametres.nom_entreprise || "");
+        setHeureOuverture(parametres.heure_ouverture || null);
+        setHeureFermeture(parametres.heure_fermeture || null);
+      }
+
+      setUnreadCount(unread);
+
       if (activePresence) {
         setIsCheckedIn(true);
         setCheckInTime(activePresence.heure_entree || "--:--");
         setActivePresenceId(activePresence.id);
+        setTodayCompleted(false);
       } else {
         setIsCheckedIn(false);
         setCheckInTime("--:--");
         setActivePresenceId(null);
+        setTodayCompleted(todayPresences.length > 0);
       }
     } catch (error) {
       console.error("Erreur chargement home:", error);
@@ -84,8 +137,30 @@ export default function HomeScreen() {
   }, []);
 
   // ============================================================
-  // useFocusEffect : se déclenche à chaque fois que l'onglet
-  // "Accueil" devient visible (recharge les données)
+  // Mise à jour en continu du temps travaillé (chaque minute)
+  // ============================================================
+  useEffect(() => {
+    if (isCheckedIn && checkInTime !== "--:--") {
+      // Calcul immédiat
+      setWorkedTime(calculeTemps(checkInTime));
+      // Puis mise à jour toutes les 30 secondes
+      intervalRef.current = setInterval(() => {
+        setWorkedTime(calculeTemps(checkInTime));
+      }, 30000);
+    } else {
+      setWorkedTime({ hours: 0, minutes: 0 });
+    }
+    // Nettoyage à la sortie
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isCheckedIn, checkInTime]);
+
+  // ============================================================
+  // useFocusEffect : recharge au focus de l'onglet
   // ============================================================
   useFocusEffect(
     useCallback(() => {
@@ -102,84 +177,94 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* ============================================================ */}
-        {/* HEADER : Message de bienvenue + icône notification           */}
+        {/* HEADER : Message de bienvenue + nom entreprise + notification */}
         {/* ============================================================ */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Bonjour, {userName || "Utilisateur"}</Text>
+            <Text style={styles.greeting}>{getGreeting()}, {userName || "Utilisateur"}</Text>
             <Text style={styles.date}>{getTodayDate()}</Text>
+            {nomEntreprise ? (
+              <Text style={styles.companyName}>{nomEntreprise}</Text>
+            ) : null}
           </View>
-          <Pressable style={styles.notificationIcon}>
-            <Text>🔔</Text>
+          <Pressable style={styles.notificationIcon} onPress={() => router.push("/(tabs)/absences")}>
+            <Ionicons name="notifications-outline" size={24} color={Colors.black} />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+              </View>
+            )}
           </Pressable>
         </View>
 
         {/* ============================================================ */}
-        {/* CARTE DE STATUT (présent/absent)                             */}
-        {/* ============================================================ */}
-        {/* Fond noir avec :                                             */}
-        {/*   - Un point de couleur (vert = présent, gris = absent)      */}
-        {/*   - Le statut en texte                                       */}
-        {/*   - L'heure d'arrivée si présent                             */}
+        {/* CARTE DE STATUT + TEMPS TRAVAILLÉ                             */}
         {/* ============================================================ */}
         <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Text style={styles.statusLabel}>Statut actuel</Text>
-            <View style={[styles.statusDot, { backgroundColor: isCheckedIn ? Colors.success : Colors.gray }]} />
+          <View style={styles.statusRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.statusHeader}>
+                <View style={[styles.statusDot, { backgroundColor: isCheckedIn ? Colors.success : todayCompleted ? Colors.textLight : estWeekend() ? Colors.textLight : Colors.danger }]} />
+                <Text style={styles.statusLabel}>
+                  {isCheckedIn ? "Présent" : todayCompleted ? "Terminé" : estWeekend() ? "Repos" : "Absent"}
+                </Text>
+              </View>
+              {isCheckedIn ? (
+                <Text style={styles.statusTime}>Arrivé à {checkInTime}</Text>
+              ) : todayCompleted ? (
+                <Text style={styles.statusTime}>Pointage effectué</Text>
+              ) : null}
+            </View>
+            {/* Temps travaillé */}
+            {isCheckedIn && (
+              <View style={styles.timeBadge}>
+                <Ionicons name="time-outline" size={18} color={Colors.white} />
+                <Text style={styles.timeValue}>
+                  {workedTime.hours}h{String(workedTime.minutes).padStart(2, "0")}
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.statusValue}>{isCheckedIn ? "Présent" : "Absent"}</Text>
-          {isCheckedIn && (
-            <Text style={styles.statusSub}>depuis {checkInTime}</Text>
-          )}
         </View>
 
         {/* ============================================================ */}
-        {/* SECTION TEMPS TRAVAILLÉ (placeholder pour l'instant)          */}
+        {/* RÉSUMÉ DE LA JOURNÉE                                         */}
         {/* ============================================================ */}
-        {/* Affiche "0h 00min / 8h" avec une barre de progression.      */}
-        {/* Pour l'instant les valeurs sont statiques.                   */}
-        {/* ============================================================ */}
-        <View style={styles.timeSection}>
-          <Text style={styles.timeLabel}>Temps travaillé</Text>
-          <View style={styles.timeRow}>
-            <Text style={styles.timeValue}>0h 00min</Text>
-            <Text style={styles.timeGoal}>/ 8h</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: "0%" }]} />
-          </View>
-        </View>
-
-        {/* ============================================================ */}
-        {/* EMPLOI DU TEMPS DU JOUR                                      */}
-        {/* ============================================================ */}
-        {/* Timeline horizontale avec Entrée, Pause, Retour, Sortie      */}
-        {/* Les heures de pause (12:00-13:00) sont fixes pour l'instant  */}
+        {/* Montre les heures configurées (ouverture/fermeture) à côté    */}
+        {/* des heures réelles pointées par l'employé.                    */}
         {/* ============================================================ */}
         <View style={styles.scheduleSection}>
           <Text style={styles.scheduleTitle}>Aujourd'hui</Text>
           
+          {/* Heure d'ouverture configurée */}
+          {heureOuverture && (
+            <View style={styles.scheduleItem}>
+              <View style={[styles.scheduleDot, { backgroundColor: Colors.textLight }]} />
+              <Text style={styles.scheduleLabel}>Ouverture</Text>
+              <Text style={styles.scheduleTimeConfig}>{heureOuverture}</Text>
+            </View>
+          )}
+          
+          {/* Arrivée réelle */}
           <View style={styles.scheduleItem}>
             <View style={[styles.scheduleDot, { backgroundColor: Colors.success }]} />
-            <Text style={styles.scheduleLabel}>Entrée</Text>
+            <Text style={styles.scheduleLabel}>Arrivée</Text>
             <Text style={styles.scheduleTime}>{isCheckedIn ? checkInTime : "--:--"}</Text>
           </View>
           
-          <View style={styles.scheduleItem}>
-            <View style={[styles.scheduleDot, { backgroundColor: Colors.warning }]} />
-            <Text style={styles.scheduleLabel}>Pause</Text>
-            <Text style={styles.scheduleTime}>12:00</Text>
-          </View>
+          {/* Heure de fermeture configurée */}
+          {heureFermeture && (
+            <View style={styles.scheduleItem}>
+              <View style={[styles.scheduleDot, { backgroundColor: Colors.textLight }]} />
+              <Text style={styles.scheduleLabel}>Fermeture</Text>
+              <Text style={styles.scheduleTimeConfig}>{heureFermeture}</Text>
+            </View>
+          )}
           
+          {/* Départ réel */}
           <View style={styles.scheduleItem}>
-            <View style={[styles.scheduleDot, { backgroundColor: Colors.warning }]} />
-            <Text style={styles.scheduleLabel}>Retour</Text>
-            <Text style={styles.scheduleTime}>13:00</Text>
-          </View>
-          
-          <View style={styles.scheduleItem}>
-            <View style={[styles.scheduleDot, { backgroundColor: Colors.success }]} />
-            <Text style={styles.scheduleLabel}>Sortie</Text>
+            <View style={[styles.scheduleDot, { backgroundColor: isCheckedIn ? Colors.success : Colors.textLight }]} />
+            <Text style={styles.scheduleLabel}>Départ</Text>
             <Text style={styles.scheduleTime}>--:--</Text>
           </View>
         </View>
@@ -197,10 +282,10 @@ export default function HomeScreen() {
         <Pressable 
           style={styles.pointerButton} 
           onPress={goToPointer}
-          disabled={loadingAction}
+          disabled={loadingAction || todayCompleted}
         >
           <Text style={styles.pointerButtonText}>
-            {isCheckedIn ? "Pointer le départ" : "Pointer l'arrivée"}
+            {isCheckedIn ? "Pointer le départ" : todayCompleted ? "Déjà pointé" : "Pointer l'arrivée"}
           </Text>
         </Pressable>
       </View>
@@ -233,75 +318,79 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
   },
+  companyName: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
   notificationIcon: {
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: Colors.white,
   },
   statusCard: {
     backgroundColor: Colors.black,
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
+    padding: 20,
+    marginBottom: 20,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   statusHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   statusLabel: {
-    fontSize: 14,
-    color: Colors.textLight,
-    marginRight: 8,
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.white,
+    marginLeft: 8,
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  statusValue: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: Colors.white,
-    marginBottom: 4,
-  },
-  statusSub: {
-    fontSize: 14,
+  statusTime: {
+    fontSize: 13,
     color: Colors.textLight,
+    marginLeft: 18,
   },
-  timeSection: {
-    marginBottom: 28,
-  },
-  timeLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  timeRow: {
+  timeBadge: {
     flexDirection: "row",
-    alignItems: "baseline",
-    marginBottom: 12,
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
   },
   timeValue: {
-    fontSize: 32,
+    fontSize: 18,
     fontWeight: "700",
-    color: Colors.black,
-    marginRight: 8,
-  },
-  timeGoal: {
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: Colors.bgLight,
-    borderRadius: 4,
-  },
-  progressFill: {
-    height: 8,
-    backgroundColor: Colors.primary,
-    borderRadius: 4,
+    color: Colors.white,
   },
   scheduleSection: {
     marginBottom: 120, // Leave space for the floating button
@@ -332,6 +421,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: Colors.black,
+  },
+  scheduleTimeConfig: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: Colors.textLight,
   },
   pointerButtonContainer: {
     position: "absolute",

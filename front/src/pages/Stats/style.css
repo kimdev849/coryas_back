@@ -1,0 +1,191 @@
+/* ================================================================
+   FICHIER : src/pages/Stats/style.css
+   ============================================================ */
+
+/* Cartes de stats */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--color-white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+}
+
+.stats-card-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-100);
+  border-radius: 12px;
+}
+
+.stats-card-body {
+  flex: 1;
+}
+
+.stats-card-number {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-black);
+  line-height: 1.2;
+}
+
+.stats-card-label {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin-top: 2px;
+}
+
+/* Filtres période */
+.stats-periodes {
+  display: flex;
+  gap: 6px;
+  background: var(--color-gray-100);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.stats-periode-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stats-periode-btn.active {
+  background: var(--color-white);
+  color: var(--color-black);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stats-periode-btn:hover:not(.active) {
+  color: var(--color-black);
+}
+
+/* Deux colonnes */
+.stats-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stats-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-black);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-table-section {
+  margin-bottom: 0;
+}
+
+/* Rangs */
+.stats-rank {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.stats-rank-top {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.stats-rank-worst {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Barres de progression */
+.stats-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.stats-bar {
+  height: 8px;
+  border-radius: 4px;
+  transition: width 0.5s;
+  min-width: 4px;
+}
+
+.stats-bar-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  min-width: 32px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stats-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stats-card {
+    padding: 14px;
+  }
+
+  .stats-card-number {
+    font-size: 22px;
+  }
+
+  .stats-periodes {
+    flex-wrap: wrap;
+  }
+
+  .stats-periode-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+}

@@ -54,6 +54,9 @@ function Sidebar({ onClose }) {
             <NavLink to="/presences" className="sidebar-link" onClick={handleNavClick}>
               Présences
             </NavLink>
+            <NavLink to="/stats" className="sidebar-link" onClick={handleNavClick}>
+              Ponctualité
+            </NavLink>
             <NavLink to="/configuration" className="sidebar-link" onClick={handleNavClick}>
               Configuration
             </NavLink>

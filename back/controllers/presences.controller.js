@@ -288,6 +288,32 @@ const checkOut = async (req, res) => {
             return res.status(404).json({ message: "Presence non trouvee ou deja partie", data: null });
         }
 
+        // ============================================================
+        // 7b. CORRECTION DU STATUT : Si l'employé était "Retard" mais
+        //     a travaillé au moins 6h (360 min), on passe à "Present".
+        //     Exemple : arrivée 10h35, départ 19h = 8h25 de travail.
+        //     L'employé a fait sa journée → pas de raison d'être "Retard".
+        // ============================================================
+        try {
+            if (presenceActuelle.heure_entree) {
+                const [ah, am] = presenceActuelle.heure_entree.split(":").map(Number);
+                const [dh, dm] = heure_sortie.split(":").map(Number);
+                const minutesWorked = (dh * 60 + dm) - (ah * 60 + am);
+                
+                // Si l'employé a travaillé au moins 6h et son statut était "Retard"
+                if (minutesWorked >= 360 && presence.statut === "Retard") {
+                    const presenceCorrigee = await presencesModel.updateStatut(presenceId, "Present");
+                    if (presenceCorrigee) {
+                        presence.statut = "Present";
+                    }
+                }
+            }
+        } catch (correctionError) {
+            // En cas d'échec de la correction, on loggue mais on ne bloque pas
+            // la réponse de check-out (le départ a déjà été enregistré)
+            console.error("⚠️ Erreur correction statut (non bloquante):", correctionError.message);
+        }
+
         // Créer une notification pour l'employé
         try {
             await notificationsModel.create({

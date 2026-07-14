@@ -1,12 +1,6 @@
 // ============================================================
 // PAGE PARAMÈTRES
 // ============================================================
-// Permet à l'employé de :
-//   - Modifier son mot de passe
-//   - Activer / désactiver les notifications
-//   - Choisir le thème (clair / sombre)
-//   - Se déconnecter
-// ============================================================
 
 import { useState } from "react";
 import {
@@ -17,29 +11,23 @@ import {
   Pressable,
   TextInput,
   Alert,
-  Switch,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "../../src/constants/Colors";
+import { logout } from "../../src/services/auth";
+import { postChangerMdp } from "../../src/services/data";
 
-/**
- * ParametresPage : page des paramètres de l'application
- */
 export default function ParametresPage() {
   const router = useRouter();
-
-  // 📝 États des paramètres
-  const [notificationsActives, setNotificationsActives] = useState(true);
-  const [themeSombre, setThemeSombre] = useState(false);
   const [showMdpForm, setShowMdpForm] = useState(false);
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
   const [confirmerMdp, setConfirmerMdp] = useState("");
+  const [changementEnCours, setChangementEnCours] = useState(false);
 
-  /**
-   * handleChangerMdp : change le mot de passe
-   */
-  const handleChangerMdp = () => {
+  const handleChangerMdp = async () => {
     if (!ancienMdp || !nouveauMdp || !confirmerMdp) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs.");
       return;
@@ -52,57 +40,60 @@ export default function ParametresPage() {
       Alert.alert("Erreur", "Le mot de passe doit contenir au moins 6 caractères.");
       return;
     }
-
-    // ✅ Simulation de changement réussi
-    Alert.alert("Succès ✅", "Votre mot de passe a été modifié avec succès.");
-    setShowMdpForm(false);
-    setAncienMdp("");
-    setNouveauMdp("");
-    setConfirmerMdp("");
+    setChangementEnCours(true);
+    try {
+      const result = await postChangerMdp(ancienMdp, nouveauMdp);
+      if (result.success) {
+        Alert.alert("Succès", result.message);
+        setShowMdpForm(false);
+        setAncienMdp("");
+        setNouveauMdp("");
+        setConfirmerMdp("");
+      } else {
+        Alert.alert("Erreur", result.message);
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || "Impossible de changer le mot de passe";
+      Alert.alert("Erreur", msg);
+    } finally {
+      setChangementEnCours(false);
+    }
   };
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* ============================================ */}
-      {/* 📝 EN-TÊTE */}
-      {/* ============================================ */}
       <View style={styles.header}>
-        <Ionicons name="settings" size={40} color="#fff" />
         <Text style={styles.title}>Paramètres</Text>
-        <Text style={styles.subtitle}>Personnalisez votre expérience</Text>
       </View>
 
-      {/* ============================================ */}
-      {/* 🔑 SECTION : MOT DE PASSE */}
-      {/* ============================================ */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔑 Sécurité</Text>
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Ionicons name="lock-closed-outline" size={20} color={Colors.textSecondary} />
+          <Text style={styles.cardTitle}>Sécurité</Text>
+        </View>
 
-        {/* Bouton pour afficher le formulaire */}
         <Pressable
           style={styles.optionBtn}
           onPress={() => setShowMdpForm(!showMdpForm)}
         >
-          <Ionicons name="lock-closed" size={22} color="#D4890A" />
           <Text style={styles.optionText}>Modifier le mot de passe</Text>
           <Ionicons
             name={showMdpForm ? "chevron-up" : "chevron-forward"}
             size={20}
-            color="#999"
+            color={Colors.textLight}
           />
         </Pressable>
 
-        {/* Formulaire de changement de mot de passe */}
         {showMdpForm && (
           <View style={styles.mdpForm}>
             <TextInput
               style={styles.input}
               placeholder="Ancien mot de passe"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.textLight}
               secureTextEntry
               value={ancienMdp}
               onChangeText={setAncienMdp}
@@ -110,225 +101,179 @@ export default function ParametresPage() {
             <TextInput
               style={styles.input}
               placeholder="Nouveau mot de passe"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.textLight}
               secureTextEntry
               value={nouveauMdp}
               onChangeText={setNouveauMdp}
             />
             <TextInput
               style={styles.input}
-              placeholder="Confirmer le nouveau mot de passe"
-              placeholderTextColor="#999"
+              placeholder="Confirmer"
+              placeholderTextColor={Colors.textLight}
               secureTextEntry
               value={confirmerMdp}
               onChangeText={setConfirmerMdp}
             />
-            <Pressable style={styles.validerBtn} onPress={handleChangerMdp}>
-              <Text style={styles.validerBtnText}>Changer le mot de passe</Text>
+            <Pressable style={[styles.btn, changementEnCours && styles.btnDisabled]} onPress={handleChangerMdp} disabled={changementEnCours}>
+              {changementEnCours ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.btnText}>Changer le mot de passe</Text>
+              )}
             </Pressable>
           </View>
         )}
       </View>
 
-      {/* ============================================ */}
-      {/* 🔔 SECTION : NOTIFICATIONS */}
-      {/* ============================================ */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔔 Notifications</Text>
-
-        {/* Option : Activer/désactiver les notifications */}
-        <View style={styles.optionRow}>
-          <View style={styles.optionLeft}>
-            <Ionicons name="notifications" size={22} color="#D4890A" />
-            <Text style={styles.optionText}>Notifications push</Text>
-          </View>
-          {/*
-            Switch = interrupteur (toggle) ON/OFF
-            value = état actuel
-            onValueChange = fonction appelée quand on change
-            trackColor = couleurs de l'interrupteur
-          */}
-          <Switch
-            value={notificationsActives}
-            onValueChange={setNotificationsActives}
-            trackColor={{ false: "#ddd", true: "#D4890A" }}
-            thumbColor={notificationsActives ? "#fff" : "#f4f3f4"}
-          />
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Ionicons name="information-circle-outline" size={20} color={Colors.textSecondary} />
+          <Text style={styles.cardTitle}>Informations</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Version</Text>
+          <Text style={styles.infoValue}>1.0.0</Text>
         </View>
       </View>
 
-      {/* ============================================ */}
-      {/* 🎨 SECTION : THÈME */}
-      {/* ============================================ */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🎨 Apparence</Text>
-
-        {/* Option : Thème clair/sombre */}
-        <View style={styles.optionRow}>
-          <View style={styles.optionLeft}>
-            <Ionicons name={themeSombre ? "moon" : "sunny"} size={22} color="#D4890A" />
-            <Text style={styles.optionText}>Thème sombre</Text>
-          </View>
-          <Switch
-            value={themeSombre}
-            onValueChange={setThemeSombre}
-            trackColor={{ false: "#ddd", true: "#D4890A" }}
-            thumbColor={themeSombre ? "#fff" : "#f4f3f4"}
-          />
-        </View>
-      </View>
-
-      {/* ============================================ */}
-      {/* ℹ️ SECTION : INFORMATIONS */}
-      {/* ============================================ */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ℹ️ Informations</Text>
-
-        <View style={styles.optionRow}>
-          <Ionicons name="information-circle" size={22} color="#D4890A" />
-          <Text style={styles.optionText}>Version</Text>
-          <Text style={styles.versionText}>1.0.0</Text>
-        </View>
-      </View>
-
-      {/* ============================================ */}
-      {/* 🚪 DÉCONNEXION */}
-      {/* ============================================ */}
-      <Pressable
-        style={styles.logoutButton}
-        onPress={() => router.replace("/")}
-      >
-        <Ionicons name="log-out" size={20} color="#fff" />
+      <Pressable style={styles.logoutBtn} onPress={() => {
+        Alert.alert(
+          "Déconnexion",
+          "Êtes-vous sûr de vouloir vous déconnecter ?",
+          [
+            { text: "Annuler", style: "cancel" },
+            {
+              text: "Se déconnecter",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await logout();
+                  router.replace("/login");
+                } catch {
+                  Alert.alert("Erreur", "Impossible de se déconnecter");
+                }
+              },
+            },
+          ]
+        );
+      }}>
+        <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
         <Text style={styles.logoutText}>Déconnexion</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
-// ============================================================
-// STYLES
-// ============================================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#D4890A",
+    backgroundColor: Colors.bgLight,
   },
-  contentContainer: {
+  content: {
     padding: 20,
     paddingBottom: 40,
   },
-
-  // ========== EN-TÊTE ==========
   header: {
-    alignItems: "center",
-    marginBottom: 25,
+    paddingTop: 36,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginTop: 8,
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.black,
   },
-  subtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 4,
-  },
-
-  // ========== SECTIONS ==========
-  section: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: 14,
     padding: 16,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
   },
-  sectionTitle: {
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bgLight,
+  },
+  cardTitle: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#999",
+    fontWeight: "600",
+    color: Colors.textSecondary,
     textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 12,
+    letterSpacing: 0.5,
   },
-
-  // ========== OPTION (cliquable) ==========
   optionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-  },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-  },
-  optionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    paddingVertical: 12,
   },
   optionText: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
-    marginLeft: 12,
     flex: 1,
+    fontSize: 15,
+    color: Colors.textPrimary,
   },
-  versionText: {
-    fontSize: 14,
-    color: "#999",
-  },
-
-  // ========== FORMULAIRE MOT DE PASSE ==========
   mdpForm: {
-    marginTop: 15,
     gap: 10,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    paddingTop: 15,
+    borderTopColor: Colors.bgLight,
   },
   input: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: Colors.bgLight,
     borderRadius: 10,
     padding: 14,
     fontSize: 15,
-    color: "#333",
+    color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: Colors.lightGray,
   },
-  validerBtn: {
-    backgroundColor: "#D4890A",
+  btn: {
+    backgroundColor: Colors.black,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 4,
   },
-  validerBtnText: {
-    color: "#fff",
+  btnText: {
+    color: Colors.white,
     fontSize: 15,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
-
-  // ========== DÉCONNEXION ==========
-  logoutButton: {
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: 15,
+    color: Colors.textPrimary,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: Colors.textLight,
+  },
+  logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#000",
     paddingVertical: 14,
     borderRadius: 12,
     marginTop: 10,
+    borderWidth: 1,
+    borderColor: Colors.danger + "30",
   },
   logoutText: {
-    color: "#fff",
+    color: Colors.danger,
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
 });

@@ -26,13 +26,6 @@ export interface Presence {
   employe_id: number;
 }
 
-export interface Absence {
-  id: string;
-  date: string;
-  motif: string;
-  statut: "Justifié" | "Non justifié" | "En attente";
-}
-
 export interface Conge {
   id: string;
   date_debut: string;
@@ -57,36 +50,6 @@ export interface Employe {
 }
 
 // ============================================================
-// DONNÉES DE DÉMONSTRATION (mock)
-// ============================================================
-
-const MOCK_PRESENCES: Presence[] = [
-  { id: "1", date_presence: "2026-07-08", heure_entree: "08:12", heure_sortie: "17:30", statut: "Présent", employe_id: 1 },
-  { id: "2", date_presence: "2026-07-07", heure_entree: "08:05", heure_sortie: "17:45", statut: "Présent", employe_id: 1 },
-  { id: "3", date_presence: "2026-07-06", heure_entree: "08:30", heure_sortie: "17:15", statut: "En retard", employe_id: 1 },
-];
-
-const MOCK_ABSENCES: Absence[] = [
-  { id: "1", date: "15 juin 2026", motif: "Maladie", statut: "Justifié" },
-];
-
-const MOCK_CONGES: Conge[] = [
-  { id: "1", date_debut: "2026-07-01", date_fin: "2026-07-15", motif: "Congé annuel", statut: "Approuvé", employe_id: 1 },
-];
-
-const MOCK_EMPLOYE: Employe = {
-  id: 1,
-  matricule: "EMP001",
-  nom: "Dupont",
-  prenom: "Jean",
-  email: "jean.dupont@coryas.com",
-  telephone: "+33 6 12 34 56 78",
-  departement: "Développement",
-  date_embauche: "2024-01-01",
-  statut: "Actif",
-};
-
-// ============================================================
 // FONCTIONS API
 // ============================================================
 
@@ -109,17 +72,26 @@ const getEmployeId = async (): Promise<number | null> => {
 /**
  * getPresences : récupère la liste des présences de l'employé connecté
  */
-export const getPresences = async (): Promise<Presence[]> => {
+export const getPresences = async (params?: { date_debut?: string; date_fin?: string }): Promise<Presence[]> => {
   try {
     const employeId = await getEmployeId();
     const response = await api.get("/presences", {
-      params: { employe_id: employeId },
+      params: { employe_id: employeId, ...params },
     });
-    const data = response.data?.data || [];
-    return data;
-  } catch {
-    return MOCK_PRESENCES;
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Erreur getPresences:", error);
+    throw error;
   }
+};
+
+/**
+ * getTodayPresences : récupère les présences d'aujourd'hui
+ * Utilisée pour savoir si l'employé a déjà pointé aujourd'hui (même après départ)
+ */
+export const getTodayPresences = async (): Promise<Presence[]> => {
+  const today = new Date().toISOString().split('T')[0];
+  return getPresences({ date_debut: today, date_fin: today });
 };
 
 /**
@@ -139,12 +111,17 @@ export const getActivePresence = async (): Promise<Presence | null> => {
 
 /**
  * checkIn : pointe l'arrivée
+ * Envoie l'heure du téléphone pour éviter les décalages de fuseau horaire serveur.
  */
 export const checkIn = async (): Promise<Presence> => {
   try {
     const employeId = await getEmployeId();
+    const now = new Date();
+    const heure = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
     const response = await api.post("/presences/checkin", {
       employe_id: employeId,
+      heure_entree: `${heure}:${minutes}`,
     });
     return response.data.data;
   } catch (error) {
@@ -154,11 +131,16 @@ export const checkIn = async (): Promise<Presence> => {
 
 /**
  * checkOut : pointe le départ
+ * Envoie l'heure du téléphone pour éviter les décalages de fuseau horaire serveur.
  */
 export const checkOut = async (presenceId: string | number): Promise<Presence> => {
   try {
+    const now = new Date();
+    const heure = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
     const response = await api.post("/presences/checkout", {
       presenceId,
+      heure_sortie: `${heure}:${minutes}`,
     });
     return response.data.data;
   } catch (error) {
@@ -166,15 +148,96 @@ export const checkOut = async (presenceId: string | number): Promise<Presence> =
   }
 };
 
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+export interface Notification {
+  id: string;
+  employe_id: number;
+  titre: string;
+  message: string;
+  type: "info" | "success" | "warning" | "conges" | "pointage" | "absence";
+  lien?: string;
+  lu: boolean;
+  created_at: string;
+}
+
 /**
- * getAbsences : récupère la liste des absences
+ * getNotifications : récupère les notifications de l'employé connecté
  */
-export const getAbsences = async (): Promise<Absence[]> => {
+export const getNotifications = async (): Promise<{ data: Notification[]; nonLues: number }> => {
   try {
-    const response = await api.get("/employes/me/absences");
-    return response.data?.data || response.data || MOCK_ABSENCES;
+    const response = await api.get("/notifications");
+    return { data: response.data?.data || [], nonLues: response.data?.nonLues || 0 };
+  } catch (error) {
+    console.error("Erreur getNotifications:", error);
+    return { data: [], nonLues: 0 };
+  }
+};
+
+/**
+ * getUnreadNotificationsCount : nombre de notifications non lues
+ */
+export const getUnreadNotificationsCount = async (): Promise<number> => {
+  try {
+    const response = await api.get("/notifications/non-lues");
+    return response.data?.data || 0;
   } catch {
-    return MOCK_ABSENCES;
+    return 0;
+  }
+};
+
+/**
+ * markNotificationAsRead : marquer une notification comme lue
+ */
+export const markNotificationAsRead = async (id: string): Promise<void> => {
+  try {
+    await api.put(`/notifications/${id}/lire`);
+  } catch (error) {
+    console.error("Erreur markNotificationAsRead:", error);
+  }
+};
+
+/**
+ * markAllNotificationsAsRead : tout marquer comme lu
+ */
+export const markAllNotificationsAsRead = async (): Promise<void> => {
+  try {
+    await api.put("/notifications/tout-lire");
+  } catch (error) {
+    console.error("Erreur markAllNotificationsAsRead:", error);
+  }
+};
+
+// ============================================================
+// PARAMÈTRES (Configuration de l'entreprise)
+// ============================================================
+
+export interface Parametres {
+  nom_entreprise: string;
+  heure_ouverture: string;
+  heure_fermeture: string;
+  retard_apres: number;
+  depart_anticipe: number;
+  duree_pause: number;
+  email_entreprise: string;
+  telephone: string;
+  adresse: string;
+}
+
+/**
+ * getParametres : récupère les paramètres de l'entreprise
+ * (horaires, seuil de retard, etc.) depuis l'API.
+ * Utilisé par l'app mobile pour afficher les heures attendues.
+ */
+export const getParametres = async (): Promise<Parametres | null> => {
+  try {
+    const response = await api.get("/parametres");
+    return response.data?.data || null;
+  } catch (error) {
+    console.error("Erreur getParametres:", error);
+    return null;
   }
 };
 
@@ -184,17 +247,36 @@ export const getAbsences = async (): Promise<Absence[]> => {
 export const getConges = async (): Promise<Conge[]> => {
   try {
     const employeId = await getEmployeId();
+    if (!employeId) return [];
     const response = await api.get("/conges", {
       params: { employe_id: employeId },
     });
-    return response.data?.data || MOCK_CONGES;
-  } catch {
-    return MOCK_CONGES;
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Erreur getConges:", error);
+    return [];
   }
+};
+
+// ============================================================
+// Fonction utilitaire : convertit JJ/MM/AAAA → YYYY-MM-DD
+// ============================================================
+const convertirDateEnISO = (dateStr: string): string => {
+  if (!dateStr) return dateStr;
+  // Si la date est déjà en format YYYY-MM-DD, on la retourne telle quelle
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  // Si la date est en format DD/MM/AAAA, on la convertit
+  const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+  // Sinon on retourne la chaîne originale
+  return dateStr;
 };
 
 /**
  * postDemandeConge : envoie une demande de congé
+ * Accepte les dates en DD/MM/AAAA ou YYYY-MM-DD
  */
 export const postDemandeConge = async (
   dateDebut: string,
@@ -205,8 +287,8 @@ export const postDemandeConge = async (
     const employeId = await getEmployeId();
     const response = await api.post("/conges", {
       employe_id: employeId,
-      date_debut: dateDebut,
-      date_fin: dateFin,
+      date_debut: convertirDateEnISO(dateDebut),
+      date_fin: convertirDateEnISO(dateFin),
       motif,
     });
     return response.data.data;
@@ -216,9 +298,22 @@ export const postDemandeConge = async (
 };
 
 /**
+ * getPresenceById : récupère une présence par son ID
+ */
+export const getPresenceById = async (id: string): Promise<Presence> => {
+  try {
+    const response = await api.get(`/presences/${id}`);
+    return response.data?.data;
+  } catch (error) {
+    console.error("Erreur getPresenceById:", error);
+    throw error;
+  }
+};
+
+/**
  * getProfil : récupère les informations de l'employé
  */
-export const getProfil = async (): Promise<Employe> => {
+export const getProfil = async (): Promise<Employe | null> => {
   try {
     const userStr = await AsyncStorage.getItem("@user_data");
     if (userStr) {
@@ -226,9 +321,11 @@ export const getProfil = async (): Promise<Employe> => {
       const response = await api.get(`/employes/${user.employe_id}`);
       return response.data.data;
     }
-    return MOCK_EMPLOYE;
-  } catch {
-    return MOCK_EMPLOYE;
+    console.warn("getProfil: utilisateur non connecté");
+    return null;
+  } catch (error) {
+    console.error("Erreur getProfil:", error);
+    return null;
   }
 };
 
@@ -238,13 +335,16 @@ export const getProfil = async (): Promise<Employe> => {
 export const postChangerMdp = async (
   ancienMdp: string,
   nouveauMdp: string
-): Promise<void> => {
+): Promise<{ success: boolean; message: string }> => {
   try {
     await api.post("/auth/change-password", {
       ancien_mot_de_passe: ancienMdp,
       nouveau_mot_de_passe: nouveauMdp,
     });
-  } catch {
-    // Si l'API n'est pas dispo, on simule
+    return { success: true, message: "Mot de passe changé avec succès" };
+  } catch (error: any) {
+    const message = error?.response?.data?.message || "Impossible de changer le mot de passe. Veuillez réessayer.";
+    console.error("Erreur postChangerMdp:", error);
+    return { success: false, message };
   }
 };

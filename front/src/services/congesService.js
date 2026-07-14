@@ -37,9 +37,10 @@ const congesService = {
   // ================================================================
   // PUT /api/conges/:id/approve - APPROUVER une demande
   // ================================================================
-  appouverConge: async (id) => {
+  appouverConge: async (id, commentaire = "") => {
     const data = await fetchWithAuth(`/conges/${id}/approve`, {
       method: "PUT",
+      body: { commentaire },
     });
     return data;
   },

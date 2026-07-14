@@ -57,15 +57,17 @@ api.interceptors.request.use(
 // ============================================================
 // INTERCEPTEUR : Gère les erreurs de réponse
 // ============================================================
-// Si la réponse est une 401 (non autorisé), on vide le token.
-// Utile si le token a expiré.
+// Si la réponse est une 401 (non autorisé), on vide le token
+// ET les données utilisateur. L'utilisateur sera redirigé
+// vers la page de connexion au prochain clic.
 // ============================================================
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalide → on déconnecte l'utilisateur
+      // Token expiré ou invalide → on déconnecte complètement
       await AsyncStorage.removeItem(TOKEN_KEY);
+      await AsyncStorage.removeItem("@user_data");
     }
     return Promise.reject(error);
   }

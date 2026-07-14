@@ -9,6 +9,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Employes from "./pages/Employes";
@@ -18,6 +19,7 @@ import MonPointage from "./pages/MonPointage";
 import Configuration from "./pages/Configuration";
 import Profil from "./pages/Profil";
 import EmployeDetail from "./pages/EmployeDetail";
+import Stats from "./pages/Stats";
 import DashboardLayout from "./layouts/DashboardLayout";
 
 function ProtectedRoute({ children }) {
@@ -81,6 +83,7 @@ function AppRoutes() {
         <Route path="/employes" element={<AdminRoute><Employes /></AdminRoute>} />
         <Route path="/presences" element={<AdminRoute><Presences /></AdminRoute>} />
         <Route path="/configuration" element={<AdminRoute><Configuration /></AdminRoute>} />
+        <Route path="/stats" element={<AdminRoute><Stats /></AdminRoute>} />
       </Route>
     </Routes>
   );
@@ -90,7 +93,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

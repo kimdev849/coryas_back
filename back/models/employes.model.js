@@ -167,6 +167,9 @@ async function getEmployeStats(id) {
     const totalPresentMois = parseInt(m.total_jours) || 0;
     const tauxPresence = Math.round((totalPresentMois / totalJoursOuvrables) * 100);
 
+    const totalPresentsMois = (parseInt(m.presents) || 0) + (parseInt(m.retards) || 0);
+    const totalPresentsAnnee = (parseInt(a.presents) || 0) + (parseInt(a.retards) || 0);
+
     return {
         mois: {
             debut: debutMois,
@@ -176,12 +179,14 @@ async function getEmployeStats(id) {
             retards: parseInt(m.retards) || 0,
             oublis: parseInt(m.oublis) || 0,
             totalPresences: totalPresentMois,
+            totalPresents: totalPresentsMois,
             tauxPresence: Math.min(tauxPresence, 100),
         },
         annee: {
             totalPresences: parseInt(a.total_jours) || 0,
             presents: parseInt(a.presents) || 0,
             retards: parseInt(a.retards) || 0,
+            totalPresents: totalPresentsAnnee,
         },
         conges: {
             enAttente: parseInt(c.en_attente) || 0,

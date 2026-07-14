@@ -18,12 +18,20 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "../../src/constants/Colors";
 
 // 📦 Service API
 import { postDemandeConge } from "../../src/services/data";
+
+// 📅 Date picker natif (optionnel — si le package n'est pas installé, on garde le TextInput)
+let DateTimePicker: any = null;
+try {
+  DateTimePicker = require("@react-native-community/datetimepicker").default;
+} catch {}
 
 // ============================================================
 // TYPES DE CONGÉS disponibles
@@ -44,18 +52,139 @@ const TYPES_CONGE = [
 export default function DemandeCongePage() {
   const router = useRouter();
 
+  // ============================================================
+  // Fonctions de validation des dates (déclarées AVANT les états)
+  // ============================================================
+
+  const parseDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+    }
+    const frMatch = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (frMatch) {
+      return new Date(Number(frMatch[3]), Number(frMatch[2]) - 1, Number(frMatch[1]));
+    }
+    return null;
+  };
+
   // 📝 État du formulaire
-  const [typeConge, setTypeConge] = useState("");        // Type sélectionné
-  const [dateDebut, setDateDebut] = useState("");           // Date de début
-  const [dateFin, setDateFin] = useState("");               // Date de fin
-  const [commentaire, setCommentaire] = useState("");       // Commentaire optionnel
+  const [typeConge, setTypeConge] = useState("");
+  const aujourdhui = (() => {
+    const d = new Date();
+    const j = String(d.getDate()).padStart(2, "0");
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const a = d.getFullYear();
+    return `${j}/${m}/${a}`;
+  })();
+
+  const [dateDebut, setDateDebut] = useState(aujourdhui);
+  const [dateFin, setDateFin] = useState("");
+  const [commentaire, setCommentaire] = useState("");
   const [etape, setEtape] = useState<"type" | "dates" | "recap">("type");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const [erreurDates, setErreurDates] = useState("");
+
+  // États pour le date picker natif
+  const [showDateDebut, setShowDateDebut] = useState(false);
+  const [showDateFin, setShowDateFin] = useState(false);
+  const dateDebutObj = parseDate(dateDebut) || new Date();
+  const dateFinObj = parseDate(dateFin) || new Date();
+
+  // Utilise le date picker natif si disponible, sinon TextInput
+  const hasNativePicker = DateTimePicker !== null && (Platform.OS === "ios" || Platform.OS === "android");
+
+  const handleDateDebutChange = (_event: any, selectedDate?: Date) => {
+    setShowDateDebut(false);
+    if (selectedDate) {
+      const j = String(selectedDate.getDate()).padStart(2, "0");
+      const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const a = selectedDate.getFullYear();
+      setDateDebut(`${j}/${m}/${a}`);
+      setErreurDates("");
+    }
+  };
+
+  const handleDateFinChange = (_event: any, selectedDate?: Date) => {
+    setShowDateFin(false);
+    if (selectedDate) {
+      const j = String(selectedDate.getDate()).padStart(2, "0");
+      const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const a = selectedDate.getFullYear();
+      setDateFin(`${j}/${m}/${a}`);
+      setErreurDates("");
+    }
+  };
+
+  /**
+   * Vérifie si une chaîne est une date valide (DD/MM/AAAA ou YYYY-MM-DD)
+   */
+  const estDateValide = (dateStr: string): boolean => {
+    const date = parseDate(dateStr);
+    if (!date) return false;
+    // Vérifie que la date est cohérente (pas 32/13/2026)
+    const [jour, mois, annee] = dateStr.includes("-")
+      ? dateStr.split("-").map(Number).reverse() // YYYY-MM-DD → [DD, MM, YYYY]
+      : dateStr.split("/").map(Number);           // DD/MM/AAAA → [DD, MM, YYYY]
+    return date.getDate() === jour &&
+           date.getMonth() + 1 === mois &&
+           date.getFullYear() === annee;
+  };
+
+  /**
+   * Valide les dates du formulaire et retourne un message d'erreur ou ""
+   */
+  const validerDates = (): string => {
+    if (!dateDebut.trim() || !dateFin.trim()) {
+      return "Veuillez remplir les deux dates";
+    }
+
+    // Format attendu : DD/MM/AAAA (ou YYYY-MM-DD)
+    const formatOK = /^\d{2}\/\d{2}\/\d{4}$/.test(dateDebut) || /^\d{4}-\d{2}-\d{2}$/.test(dateDebut);
+    if (!formatOK) {
+      return "Format de date invalide. Utilisez JJ/MM/AAAA";
+    }
+
+    const debutValide = estDateValide(dateDebut);
+    const finValide = estDateValide(dateFin);
+
+    if (!debutValide || !finValide) {
+      return "La date saisie n'existe pas (ex: 32/13/2026)";
+    }
+
+    const debut = parseDate(dateDebut);
+    const fin = parseDate(dateFin);
+
+    // Vérifie que la date de début n'est pas avant aujourd'hui
+    const aujourdhuiDate = new Date();
+    aujourdhuiDate.setHours(0, 0, 0, 0);
+
+    if (debut && debut < aujourdhuiDate) {
+      return "La date de début ne peut pas être avant aujourd'hui";
+    }
+
+    if (fin && fin < aujourdhuiDate) {
+      return "La date de fin ne peut pas être avant aujourd'hui";
+    }
+
+    if (debut && fin && fin < debut) {
+      return "La date de fin doit être après la date de début";
+    }
+
+    return ""; // Pas d'erreur
+  };
 
   /**
    * handleEnvoyer : envoie la demande à l'API
    */
   const handleEnvoyer = async () => {
+    const erreur = validerDates();
+    if (erreur) {
+      setErreurDates(erreur);
+      return;
+    }
+    setErreurDates("");
     setEnvoiEnCours(true);
     try {
       await postDemandeConge(dateDebut, dateFin, typeConge);
@@ -69,8 +198,9 @@ export default function DemandeCongePage() {
           },
         ]
       );
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible d'envoyer la demande. Veuillez réessayer.");
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || "Impossible d'envoyer la demande. Veuillez réessayer.";
+      Alert.alert("Erreur", msg);
     } finally {
       setEnvoiEnCours(false);
     }
@@ -81,6 +211,15 @@ export default function DemandeCongePage() {
    */
   const isFormulaireValide = (): boolean => {
     return typeConge !== "" && dateDebut.trim() !== "" && dateFin.trim() !== "";
+  };
+
+  /**
+   * peutPasserEtapeSuivante : vérifie si les dates sont valides avant de passer au récap
+   */
+  const peutPasserEtapeSuivante = (): boolean => {
+    const erreur = validerDates();
+    setErreurDates(erreur);
+    return erreur === "";
   };
 
   return (
@@ -141,25 +280,77 @@ export default function DemandeCongePage() {
         <View>
           <Text style={styles.question}>Période souhaitée</Text>
 
+          {/* Message d'erreur des dates */}
+          {erreurDates !== "" && (
+            <View style={styles.erreurContainer}>
+              <Ionicons name="alert-circle" size={16} color="#fff" />
+              <Text style={styles.erreurTexte}>{erreurDates}</Text>
+            </View>
+          )}
+
           {/* Date de début */}
           <Text style={styles.label}>Date de début</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="JJ/MM/AAAA"
-            placeholderTextColor="#999"
-            value={dateDebut}
-            onChangeText={setDateDebut}
-          />
+          {hasNativePicker ? (
+            <>
+              <Pressable
+                style={[styles.datePickerBtn, erreurDates ? styles.inputErreur : null]}
+                onPress={() => setShowDateDebut(true)}
+              >
+                <Ionicons name="calendar-outline" size={20} color={Colors.textSecondary} />
+                <Text style={styles.datePickerText}>{dateDebut}</Text>
+              </Pressable>
+              {showDateDebut && (
+                <DateTimePicker
+                  value={dateDebutObj}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  minimumDate={new Date()}
+                  onChange={handleDateDebutChange}
+                />
+              )}
+            </>
+          ) : (
+            <TextInput
+              style={[styles.input, erreurDates ? styles.inputErreur : null]}
+              placeholder="JJ/MM/AAAA"
+              placeholderTextColor="#999"
+              value={dateDebut}
+              onChangeText={(txt) => { setDateDebut(txt); setErreurDates(""); }}
+            />
+          )}
 
           {/* Date de fin */}
           <Text style={styles.label}>Date de fin</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="JJ/MM/AAAA"
-            placeholderTextColor="#999"
-            value={dateFin}
-            onChangeText={setDateFin}
-          />
+          {hasNativePicker ? (
+            <>
+              <Pressable
+                style={[styles.datePickerBtn, erreurDates ? styles.inputErreur : null]}
+                onPress={() => setShowDateFin(true)}
+              >
+                <Ionicons name="calendar-outline" size={20} color={Colors.textSecondary} />
+                <Text style={styles.datePickerText}>
+                  {dateFin || "Sélectionner une date"}
+                </Text>
+              </Pressable>
+              {showDateFin && (
+                <DateTimePicker
+                  value={dateFinObj}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  minimumDate={new Date()}
+                  onChange={handleDateFinChange}
+                />
+              )}
+            </>
+          ) : (
+            <TextInput
+              style={[styles.input, erreurDates ? styles.inputErreur : null]}
+              placeholder="JJ/MM/AAAA"
+              placeholderTextColor="#999"
+              value={dateFin}
+              onChangeText={(txt) => { setDateFin(txt); setErreurDates(""); }}
+            />
+          )}
 
           {/* Commentaire optionnel */}
           <Text style={styles.label}>Commentaire (optionnel)</Text>
@@ -183,9 +374,9 @@ export default function DemandeCongePage() {
               <Text style={styles.btnPrecedentText}>Retour</Text>
             </Pressable>
             <Pressable
-              style={[styles.btnSuivant, !dateDebut || !dateFin ? styles.btnDisabled : null]}
-              onPress={() => dateDebut && dateFin && setEtape("recap")}
-              disabled={!dateDebut || !dateFin}
+              style={[styles.btnSuivant, !isFormulaireValide() ? styles.btnDisabled : null]}
+              onPress={() => peutPasserEtapeSuivante() && setEtape("recap")}
+              disabled={!isFormulaireValide()}
             >
               <Text style={styles.btnSuivantText}>Suivant</Text>
             </Pressable>
@@ -199,6 +390,14 @@ export default function DemandeCongePage() {
       {etape === "recap" && (
         <View>
           <Text style={styles.question}>Récapitulatif 📋</Text>
+
+          {/* Message d'erreur aussi présent au récap */}
+          {erreurDates !== "" && (
+            <View style={styles.erreurContainer}>
+              <Ionicons name="alert-circle" size={16} color="#fff" />
+              <Text style={styles.erreurTexte}>{erreurDates}</Text>
+            </View>
+          )}
 
           {/* Carte récapitulative */}
           <View style={styles.recapCard}>
@@ -245,7 +444,7 @@ export default function DemandeCongePage() {
               ) : (
                 <>
                   <Ionicons name="send" size={18} color="#fff" />
-                  <Text style={styles.btnEnvoyerText}>Envoyer la demande</Text>
+                  <Text style={styles.btnEnvoyerText}>Envoyer</Text>
                 </>
               )}
             </Pressable>
@@ -262,14 +461,15 @@ export default function DemandeCongePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#D4890A",
+    backgroundColor: Colors.white,
   },
   contentContainer: {
-    padding: 20,
+    padding: 24,
     paddingBottom: 40,
   },
 
   // ========== BARRE DE PROGRESSION ==========
+  progressStepActif: {},
   progressBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -280,36 +480,35 @@ const styles = StyleSheet.create({
   progressStep: {
     alignItems: "center",
   },
-  progressStepActif: {},
   progressNumber: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: Colors.bgLight,
     textAlign: "center",
     lineHeight: 32,
-    color: "rgba(255,255,255,0.6)",
+    color: Colors.textLight,
     fontWeight: "bold",
     fontSize: 14,
     overflow: "hidden",
   },
   progressNumberActif: {
-    backgroundColor: "#fff",
-    color: "#D4890A",
+    backgroundColor: Colors.black,
+    color: Colors.white,
   },
   progressLabel: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.6)",
+    color: Colors.textLight,
     marginTop: 4,
   },
   progressLabelActif: {
-    color: "#fff",
+    color: Colors.black,
     fontWeight: "600",
   },
   progressLine: {
     width: 40,
     height: 2,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: Colors.lightGray,
     marginHorizontal: 8,
   },
 
@@ -317,7 +516,7 @@ const styles = StyleSheet.create({
   question: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#fff",
+    color: Colors.black,
     marginBottom: 20,
   },
 
@@ -326,23 +525,23 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   typeBtn: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 14,
+    backgroundColor: Colors.bgLight,
+    borderRadius: 12,
     padding: 16,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "transparent",
   },
   typeBtnActif: {
-    backgroundColor: "#fff",
-    borderColor: "#fff",
+    backgroundColor: Colors.black,
+    borderColor: Colors.black,
   },
   typeText: {
     fontSize: 16,
-    color: "#fff",
+    color: Colors.textPrimary,
     fontWeight: "500",
   },
   typeTextActif: {
-    color: "#D4890A",
+    color: Colors.white,
     fontWeight: "bold",
   },
 
@@ -350,17 +549,55 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
+    color: Colors.textSecondary,
     marginBottom: 6,
     marginTop: 10,
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.bgLight,
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: "#333",
+    color: Colors.textPrimary,
     marginBottom: 5,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+  },
+  datePickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.bgLight,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+  },
+  datePickerText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  inputErreur: {
+    borderWidth: 2,
+    borderColor: Colors.danger,
+  },
+  erreurContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Colors.danger + "15",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    marginTop: 5,
+  },
+  erreurTexte: {
+    color: Colors.danger,
+    fontSize: 13,
+    fontWeight: "500",
+    flex: 1,
   },
   textArea: {
     minHeight: 100,
@@ -377,12 +614,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.5)",
+    borderWidth: 1.5,
+    borderColor: Colors.textLight,
     alignItems: "center",
   },
   btnPrecedentText: {
-    color: "#fff",
+    color: Colors.textSecondary,
     fontSize: 16,
     fontWeight: "600",
   },
@@ -390,16 +627,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#000",
+    backgroundColor: Colors.black,
     alignItems: "center",
   },
   btnSuivantText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
     fontWeight: "bold",
   },
   btnDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
 
   // ========== BOUTON ENVOYER ==========
@@ -411,24 +648,26 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#000",
+    backgroundColor: Colors.black,
   },
   btnEnvoyerText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
     fontWeight: "bold",
   },
 
   // ========== RÉCAPITULATIF ==========
   recapCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.bgLight,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
   },
   recapRow: {
     flexDirection: "row",
@@ -438,18 +677,18 @@ const styles = StyleSheet.create({
   },
   recapLabel: {
     fontSize: 14,
-    color: "#999",
+    color: Colors.textLight,
   },
   recapValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
+    color: Colors.textPrimary,
     textAlign: "right",
     flex: 1,
     marginLeft: 20,
   },
   recapSeparator: {
     height: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: Colors.bgLight,
   },
 });

@@ -17,30 +17,19 @@
 
 import { StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "expo-router";
 import { logout } from "../../src/services/auth";
 import { Colors } from "../../src/constants/Colors";
 
-// ============================================================
-// OPTIONS DU PROFIL (données mockées pour l'interface)
-// ============================================================
-// Chaque option a :
-//   - label : nom de l'option
-//   - value : valeur affichée (vide si non applicable)
-//   - icon : emoji représentatif
-// ============================================================
-const profileOptions = [
-  { label: "Mode de pointage", value: "Manuel", icon: "⏱️" },
-  { label: "Notifications", value: "Activées", icon: "🔔" },
-  { label: "Langue", value: "Français", icon: "🌍" },
-  { label: "Besoin d'aide ?", value: "", icon: "❓" },
-  { label: "À propos", value: "Version 1.0.0", icon: "ℹ️" },
-];
+
 
 export default function ProfilTab() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState<any>(null); // Données utilisateur (any car structure variable)
 
   // ============================================================
@@ -71,24 +60,36 @@ export default function ProfilTab() {
   // ============================================================
   // handleLogout : déconnexion de l'utilisateur
   // ============================================================
-  // logout() vient du service auth et :
-  //   1. Supprime le token JWT d'AsyncStorage
-  //   2. Supprime les données utilisateur d'AsyncStorage
-  //   3. Redirige vers l'écran splash avec router.replace("/")
+  // 1. Demande confirmation à l'utilisateur
+  // 2. logout() supprime le token JWT + données utilisateur
+  // 3. Redirige DIRECTEMENT vers /login (sans passer par le splash)
   // ============================================================
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.replace("/"); // Retour à l'écran splash (qui redirigera vers login)
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de se déconnecter");
-    }
+  const handleLogout = () => {
+    Alert.alert(
+      "Déconnexion",
+      "Êtes-vous sûr de vouloir vous déconnecter ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Se déconnecter",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace("/login");
+            } catch (error) {
+              Alert.alert("Erreur", "Impossible de se déconnecter");
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>Profil</Text>
       </View>
 
@@ -109,38 +110,69 @@ export default function ProfilTab() {
           <Text style={styles.userName}>
             {user ? `${user.prenom} ${user.nom}` : "Utilisateur"}
           </Text>
-          <Text style={styles.userRole}>
-            {user?.poste || "Développeur Fullstack"}
-          </Text>
-          <Text style={styles.userMatricule}>
-            {user?.matricule || "COR-2024-1025"}
-          </Text>
+          {user?.role && (
+            <Text style={styles.userRole}>
+              {user.role}
+            </Text>
+          )}
+          {user?.poste && (
+            <Text style={styles.userMatricule}>
+              {user.poste}
+            </Text>
+          )}
         </View>
       </View>
 
       {/* ============================================================ */}
-      {/* LISTE DES OPTIONS (mockées pour l'instant)                   */}
+      {/* INFORMATIONS SUPPLÉMENTAIRES                                 */}
       {/* ============================================================ */}
-      {/* Chaque ligne affiche : icône | label | valeur | chevron (›)  */}
-      {/* ============================================================ */}
-      <View style={styles.optionsList}>
-        {profileOptions.map((option, index) => (
-          <View key={index} style={styles.optionRow}>
-            <Text style={styles.optionIcon}>{option.icon}</Text>
-            <Text style={styles.optionLabel}>{option.label}</Text>
-            {option.value ? (
-              <Text style={styles.optionValue}>{option.value}</Text>
-            ) : null}
-            <Text style={styles.optionChevron}>›</Text>
+      {/* Mes congés */}
+      <Pressable style={styles.menuItem} onPress={() => router.push("/(tabs)/conges")}>
+        <Ionicons name="calendar-outline" size={22} color={Colors.black} />
+        <Text style={styles.menuItemLabel}>Mes congés</Text>
+        <Ionicons name="chevron-forward" size={20} color={Colors.textLight} />
+      </Pressable>
+
+      <Pressable style={styles.menuItem} onPress={() => router.push("/(tabs)/demande-conge")}>
+        <Ionicons name="add-circle-outline" size={22} color={Colors.black} />
+        <Text style={styles.menuItemLabel}>Demander un congé</Text>
+        <Ionicons name="chevron-forward" size={20} color={Colors.textLight} />
+      </Pressable>
+
+      <Pressable style={styles.menuItem} onPress={() => router.push("/(tabs)/parametres")}>
+        <Ionicons name="settings-outline" size={22} color={Colors.black} />
+        <Text style={styles.menuItemLabel}>Paramètres</Text>
+        <Ionicons name="chevron-forward" size={20} color={Colors.textLight} />
+      </Pressable>
+
+      {/* Section Administration - visible uniquement pour les admins/RH/Directeur */}
+      {(user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur") && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="shield-checkmark-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.sectionHeaderText}>Administration</Text>
           </View>
-        ))}
+
+          <Pressable style={styles.menuItem} onPress={() => router.push("/(tabs)/presences")}>
+            <Ionicons name="list-outline" size={22} color={Colors.black} />
+            <Text style={styles.menuItemLabel}>Toutes les présences</Text>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textLight} />
+          </Pressable>
+        </>
+      )}
+
+      <View style={styles.sectionSpacer} />
+
+      {/* Version */}
+      <View style={styles.optionRow}>
+        <Ionicons name="information-circle-outline" size={20} color={Colors.textSecondary} />
+        <Text style={styles.optionLabel}>Version</Text>
+        <Text style={styles.optionValue}>1.0.0</Text>
       </View>
 
-      {/* ============================================================ */}
-      {/* BOUTON DE DÉCONNEXION                                        */}
-      {/* ============================================================ */}
+      {/* Déconnexion */}
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutIcon}>🚪</Text>
+        <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
         <Text style={styles.logoutText}>Déconnexion</Text>
       </Pressable>
     </View>
@@ -151,7 +183,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
-    paddingTop: 50,
   },
   header: {
     paddingHorizontal: 20,
@@ -203,7 +234,40 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
   },
   optionsList: {
-    paddingTop: 16,
+    paddingTop: 8,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bgLight,
+    backgroundColor: Colors.white,
+  },
+  menuItemLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    marginLeft: 12,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  sectionSpacer: {
+    height: 20,
   },
   optionRow: {
     flexDirection: "row",
@@ -213,40 +277,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.bgLight,
   },
-  optionIcon: {
-    fontSize: 20,
-    marginRight: 16,
-  },
   optionLabel: {
     flex: 1,
     fontSize: 14,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
+    marginLeft: 10,
   },
   optionValue: {
     fontSize: 14,
     color: Colors.textSecondary,
-    marginRight: 8,
-  },
-  optionChevron: {
-    fontSize: 20,
-    color: Colors.textLight,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 40,
+    marginTop: 24,
     paddingVertical: 16,
     marginHorizontal: 20,
     borderRadius: 12,
-  },
-  logoutIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    borderWidth: 1,
+    borderColor: Colors.danger + "30",
   },
   logoutText: {
     fontSize: 16,
     fontWeight: "600",
     color: Colors.danger,
+    marginLeft: 8,
   },
 });

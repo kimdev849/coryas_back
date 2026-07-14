@@ -65,10 +65,11 @@ export const login = async (
     // ✅ On stocke le token et le user dans AsyncStorage
     await setToken(token);
     await AsyncStorage.setItem("@user_data", JSON.stringify(user));
+    return data;
   }
 
-  // 4️⃣ On retourne les données de la réponse
-  return data;
+  // 4️⃣ Si pas de token (ex: API a retourné une 200 avec data: null)
+  throw new Error(data?.message || "Email ou mot de passe incorrect");
 };
 
 /**
@@ -84,11 +85,15 @@ export const logout = async (): Promise<void> => {
 /**
  * checkAuth : vérifie si l'utilisateur est déjà connecté
  * 
+ * Utilise la MÊME clé que le service api.ts (TOKEN_KEY = "@auth_token")
+ * pour que le splash screen puisse détecter correctement
+ * si l'utilisateur est connecté.
+ * 
  * @returns true si un token est stocké, false sinon
  */
 export const checkAuth = async (): Promise<boolean> => {
   try {
-    const token = await AsyncStorage.getItem("@token");
+    const token = await AsyncStorage.getItem("@auth_token");
     return !!token;
   } catch {
     return false;

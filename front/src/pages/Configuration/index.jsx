@@ -7,9 +7,12 @@
 
 import { useState, useEffect } from "react";
 import parametresService from "../../services/parametresService";
+import { useTheme } from "../../contexts/ThemeContext";
 import "./style.css";
 
 function Configuration() {
+  const { currentTheme, themes, changeTheme } = useTheme();
+
   // État des paramètres (correspond aux colonnes de la table parametres)
   const [settings, setSettings] = useState({
     nom_entreprise: "",
@@ -21,6 +24,7 @@ function Configuration() {
     email_entreprise: "",
     telephone: "",
     adresse: "",
+    theme: "coryas",
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +54,7 @@ function Configuration() {
           email_entreprise: result.data.email_entreprise || "",
           telephone: result.data.telephone || "",
           adresse: result.data.adresse || "",
+          theme: result.data.theme || "coryas",
         });
       }
     } catch (err) {
@@ -152,6 +157,54 @@ function Configuration() {
               value={settings.adresse} onChange={handleChange}
               placeholder="Abidjan, Cocody..." rows={2}
               style={{ resize: "vertical", fontFamily: "inherit" }} />
+          </div>
+        </div>
+
+        {/* ===== THÈME ===== */}
+        <div className="config-section">
+          <h3 className="config-section-title">Thème</h3>
+          <p style={{ fontSize: "13px", color: "#888", marginBottom: "16px" }}>
+            Choisissez la couleur principale de l'interface
+          </p>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            {Object.entries(themes).map(([key, theme]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  changeTheme(key);
+                  setSettings(prev => ({ ...prev, theme: key }));
+                }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "16px",
+                  borderRadius: "12px",
+                  border: currentTheme === key ? `3px solid ${theme.colors["--color-primary"]}` : "2px solid #e5e7eb",
+                  background: currentTheme === key ? theme.colors["--color-primary-bg"] : "#fff",
+                  cursor: "pointer",
+                  minWidth: "90px",
+                  transition: "all 0.2s",
+                }}
+              >
+                <div style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  background: theme.colors["--color-primary"],
+                  boxShadow: currentTheme === key ? `0 0 12px ${theme.colors["--color-primary"]}60` : "none",
+                }} />
+                <span style={{
+                  fontSize: "13px",
+                  fontWeight: currentTheme === key ? "700" : "500",
+                  color: currentTheme === key ? theme.colors["--color-primary-dark"] : "#555",
+                }}>
+                  {theme.name}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
 

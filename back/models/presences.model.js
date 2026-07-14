@@ -174,6 +174,23 @@ async function rattrapage(id, { heure_sortie, remarque }) {
 }
 
 // ----------------------------------------------------------------
+// updateStatut(id, statut) - Met à jour le statut d'une présence
+// ----------------------------------------------------------------
+// Utilisé par checkOut pour corriger le statut "Retard" en "Present"
+// si l'employé a travaillé assez longtemps.
+// ----------------------------------------------------------------
+async function updateStatut(id, statut) {
+    const result = await pool.query(`
+        UPDATE presences SET
+            statut = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+    `, [id, statut]);
+    return result.rows[0];
+}
+
+// ----------------------------------------------------------------
 // getTodayStats() - Stats du jour
 // ----------------------------------------------------------------
 // Retourne : total, presents, retards, absents, actifs (pas encore partis)
@@ -266,4 +283,4 @@ async function autoCloseStalePresences(employe_id) {
     return result.rows;
 }
 
-module.exports = { getAll, getById, getActivePresence, getTodayPresence, checkIn, checkOut, rattrapage, getTodayStats, autoCloseStalePresences };
+module.exports = { getAll, getById, getActivePresence, getTodayPresence, checkIn, checkOut, rattrapage, updateStatut, getTodayStats, autoCloseStalePresences };

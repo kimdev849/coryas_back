@@ -27,15 +27,16 @@ async function save(data) {
     const {
         nom_entreprise, heure_ouverture, heure_fermeture,
         retard_apres, depart_anticipe, duree_pause,
-        email_entreprise, telephone, adresse
+        email_entreprise, telephone, adresse,
+        theme
     } = data;
 
     const result = await pool.query(`
         INSERT INTO parametres (id, nom_entreprise, heure_ouverture, heure_fermeture,
                                 retard_apres, depart_anticipe, duree_pause,
                                 email_entreprise, telephone, adresse,
-                                updated_at)
-        VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                                theme, updated_at)
+        VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
         ON CONFLICT (id) DO UPDATE SET
             nom_entreprise = COALESCE($1, parametres.nom_entreprise),
             heure_ouverture = COALESCE($2, parametres.heure_ouverture),
@@ -46,11 +47,13 @@ async function save(data) {
             email_entreprise = COALESCE($7, parametres.email_entreprise),
             telephone = COALESCE($8, parametres.telephone),
             adresse = COALESCE($9, parametres.adresse),
+            theme = COALESCE($10, parametres.theme),
             updated_at = NOW()
         RETURNING *
     `, [nom_entreprise, heure_ouverture, heure_fermeture,
         retard_apres, depart_anticipe, duree_pause,
-        email_entreprise, telephone, adresse]);
+        email_entreprise, telephone, adresse,
+        theme || 'coryas']);
     return result.rows[0];
 }
 

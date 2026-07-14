@@ -138,12 +138,12 @@ function EmployeDetail() {
           </h2>
           <div className="ed-cards">
             <div className="ed-card ed-card-stat">
-              <div className="ed-stat-number" style={{ color: "#22c55e" }}>{stats.mois.presents}</div>
-              <div className="ed-card-label">Présent(s)</div>
+              <div className="ed-stat-number" style={{ color: "#22c55e" }}>{stats.mois.totalPresents}</div>
+              <div className="ed-card-label">Jours travaillés</div>
             </div>
             <div className="ed-card ed-card-stat">
               <div className="ed-stat-number" style={{ color: "#f59e0b" }}>{stats.mois.retards}</div>
-              <div className="ed-card-label">Retard(s)</div>
+              <div className="ed-card-label">Dont en retard</div>
             </div>
             <div className="ed-card ed-card-stat">
               <div className="ed-stat-number" style={{ color: "#ef4444" }}>{stats.mois.oublis}</div>
@@ -155,18 +155,22 @@ function EmployeDetail() {
               </div>
               <div className="ed-card-label">Taux présence</div>
             </div>
+            <div className="ed-card ed-card-stat">
+              <div className="ed-stat-number" style={{ color: "#8b5cf6" }}>{stats.mois.joursOuvrables}</div>
+              <div className="ed-card-label">Jours ouvrés</div>
+            </div>
           </div>
 
           {/* === STATS ANNÉE === */}
           <h2 className="ed-section-title">{new Date().getFullYear()}</h2>
           <div className="ed-cards">
             <div className="ed-card ed-card-stat">
-              <div className="ed-stat-number" style={{ color: "#22c55e" }}>{stats.annee.totalPresences}</div>
+              <div className="ed-stat-number" style={{ color: "#22c55e" }}>{stats.annee.totalPresents}</div>
               <div className="ed-card-label">Jours travaillés</div>
             </div>
             <div className="ed-card ed-card-stat">
               <div className="ed-stat-number" style={{ color: "#f59e0b" }}>{stats.annee.retards}</div>
-              <div className="ed-card-label">Retard(s)</div>
+              <div className="ed-card-label">Dont en retard</div>
             </div>
             <div className="ed-card ed-card-stat">
               <div className="ed-stat-number" style={{ color: "#3b82f6" }}>{stats.conges.approuves}</div>
