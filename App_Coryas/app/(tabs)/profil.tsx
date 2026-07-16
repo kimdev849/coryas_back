@@ -76,6 +76,11 @@ export default function ProfilTab() {
           onPress: async () => {
             try {
               await logout();
+              // ✅ Navigation directe vers la page de connexion
+              // Ne PAS utiliser router.replace("/") car le splash screen
+              // (app/index.tsx) a un useEffect avec [router] comme dépendance :
+              // si router ne change pas, l'effet ne se ré-exécute PAS et
+              // l'utilisateur reste bloqué sur le splash.
               router.replace("/login");
             } catch (error) {
               Alert.alert("Erreur", "Impossible de se déconnecter");
