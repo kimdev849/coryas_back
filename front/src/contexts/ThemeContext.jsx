@@ -8,6 +8,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import parametresService from "../services/parametresService";
+import { getValidToken } from "../services/api";
 
 // Définition des thèmes disponibles
 const THEMES = {
@@ -85,6 +86,15 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const loadTheme = async () => {
       try {
+        // ⚠️ Si l'utilisateur n'est pas connecté (pas de token valide), on ne fait PAS
+        // d'appel API. Sinon, le 401 déclencherait l'événement "auth:unauthorized"
+        // et déconnecterait l'utilisateur !
+        // getValidToken() vérifie aussi l'expiration du JWT.
+        if (!getValidToken()) {
+          applyTheme("coryas");
+          return;
+        }
+        
         const result = await parametresService.get();
         if (result?.data?.theme) {
           applyTheme(result.data.theme);
