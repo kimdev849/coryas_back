@@ -62,5 +62,18 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    // ⚡ Évite les rechargements intempestifs sur Windows
+    watch: {
+      usePolling: true,      // Utilise le polling au lieu des events filesystem
+      interval: 1000,        // Vérifie les changements toutes les 1s (pas en boucle)
+      ignored: [             // Ignore les fichiers temporaires
+        "**/*.tmp",
+        "**/*~",
+        "**/*.swp",
+        "**/.git/**",
+        "**/node_modules/**",
+        "**/dist/**",
+      ],
+    },
   },
 });

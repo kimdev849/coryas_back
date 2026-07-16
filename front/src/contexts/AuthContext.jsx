@@ -20,6 +20,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import authService from "../services/authService";
+import { isTokenExpired, resetRedirectCount } from "../services/api";
 
 // ================================================================
 // Création du contexte
@@ -43,17 +44,62 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // ================================================================
+  // 🚨 NETTOYAGE D'URGENCE : Détecte et casse les boucles de redirection
+  // ================================================================
+  // Si le compteur de redirection (dans sessionStorage) est anormalement
+  // élevé, on efface TOUTES les données stockées pour forcer un arrêt
+  // de la boucle.
+  // ================================================================
+  const emergencyCleanup = () => {
+    const redirectCount = parseInt(sessionStorage.getItem("_redirect_count") || "0", 10);
+    const loadCount = parseInt(sessionStorage.getItem("_app_load_count") || "0", 10);
+    
+    // Si on a déjà chargé 10+ fois, on force le nettoyage
+    if (redirectCount >= 3 || loadCount >= 8) {
+      console.warn("🚨 Nettoyage d'urgence : boucle de rechargement détectée !");
+      // ⚠️ NE PAS clear() le sessionStorage ! Cela effacerait les compteurs
+      // et la boucle pourrait redémarrer. On supprime seulement les données d'auth.
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      return true;
+    }
+    
+    sessionStorage.setItem("_app_load_count", String(loadCount + 1));
+    return false;
+  };
+
+  // ================================================================
   // useEffect : Vérifier le token au démarrage de l'application
-  // Si un token existe dans localStorage, on restaure la session
+  // 1. NETTOYAGE D'URGENCE en premier (casse les boucles)
+  // 2. Puis restaure la session si token valide
   // ================================================================
   useEffect(() => {
     try {
+      // 🚨 ÉTAPE 1 : Nettoyage d'urgence (casse les boucles)
+      const cleaned = emergencyCleanup();
+      if (cleaned) {
+        // Si on a nettoyé, on ne restaure RIEN et on reste sur la page de login
+        console.warn("✅ Session nettoyée, page de connexion affichée");
+        setLoading(false);
+        return;
+      }
+
+      // ÉTAPE 2 : Restauration normale de la session
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
 
       if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        // 🔒 Vérifie si le token JWT est expiré AVANT de restaurer la session
+        // Cela évite les boucles de redirection : si le token est expiré,
+        // on ne redirige PAS vers /dashboard (car isAuthenticated = false)
+        if (isTokenExpired(storedToken)) {
+          console.warn("⏰ Token expiré, nettoyage de la session");
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        } else {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la restauration de la session:", error);
@@ -62,6 +108,25 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // ================================================================
+  // 🚨 Écoute l'événement "auth:unauthorized" dispatché par api.js
+  // quand un appel API retourne 401. Sans cette écoute, le contexte
+  // React garderait l'ancien token en mémoire même après sa suppression
+  // du localStorage, et l'utilisateur resterait isAuthenticated = true.
+  // Ce qui forçait un window.location.href = "/" (rechargement complet)
+  // et créait une boucle infinie.
+  // ================================================================
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      console.warn("🔒 Session expirée, déconnexion...");
+      setToken(null);
+      setUser(null);
+    };
+    
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
   }, []);
 
   // ================================================================
@@ -77,6 +142,9 @@ export function AuthProvider({ children }) {
       // Stocker dans localStorage (persiste après fermeture du navigateur)
       localStorage.setItem("token", newToken);
       localStorage.setItem("user", JSON.stringify(userData));
+
+      // ✅ Réinitialise le compteur anti-boucle
+      resetRedirectCount();
 
       // Mettre à jour l'état React
       setToken(newToken);

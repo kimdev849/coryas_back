@@ -21,8 +21,17 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ================================================================
+  // handleLogin - Fonction appelée au clic sur le bouton
+  // IMPORTANT : on utilise onClick sur le bouton (pas onSubmit sur
+  // le formulaire) pour éviter tout rechargement intempestif de
+  // la page. Certains navigateurs peuvent soumettre le formulaire
+  // de manière native (avec autofill par ex.) et provoquer un
+  // rechargement complet de la page.
+  // ================================================================
+  const handleLogin = async () => {
+    if (isLoading || !email || !password) return;
+    
     setError("");
     setIsLoading(true);
 
@@ -41,6 +50,17 @@ function Login() {
     }
   };
 
+  // ================================================================
+  // handleKeyDown - Empêche la touche Entrée de soumettre le
+  // formulaire de manière native (ce qui rechargerait la page).
+  // ================================================================
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleLogin();
+    }
+  };
+
   return (
     <div className="login-page">
       <div className="login-card">
@@ -55,12 +75,15 @@ function Login() {
         </div>
 
         {error && (
-          <div className="login-error">
+          <div className="login-error" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="login-form">
+        {/* ⚠️ On utilise <div> au lieu de <form> pour éviter
+            tout rechargement intempestif de la page lié à une
+            soumission native du formulaire par le navigateur */}
+        <div className="login-form">
           <div className="login-field">
             <label className="login-label" htmlFor="email">
               Email
@@ -72,8 +95,9 @@ function Login() {
               placeholder="votre@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={isLoading}
-              required
+              autoComplete="email"
             />
           </div>
 
@@ -88,19 +112,21 @@ function Login() {
               placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={isLoading}
-              required
+              autoComplete="current-password"
             />
           </div>
 
           <button
-            type="submit"
+            type="button"
             className="login-btn"
             disabled={isLoading}
+            onClick={handleLogin}
           >
             {isLoading ? "Connexion en cours..." : "Se connecter"}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
