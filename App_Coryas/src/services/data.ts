@@ -230,9 +230,17 @@ export interface Parametres {
  * getParametres : récupère les paramètres de l'entreprise
  * (horaires, seuil de retard, etc.) depuis l'API.
  * Utilisé par l'app mobile pour afficher les heures attendues.
+ * 
+ * ⚠️ IMPORTANT : on vérifie d'abord si un token existe.
+ * Si l'utilisateur n'est pas connecté (pas de token), on ne fait PAS
+ * d'appel API. Sinon, le 401 déclencherait la déconnexion.
  */
 export const getParametres = async (): Promise<Parametres | null> => {
   try {
+    const token = await getToken();
+    if (!token) {
+      return null; // Pas connecté → valeurs par défaut
+    }
     const response = await api.get("/parametres");
     return response.data?.data || null;
   } catch (error) {
