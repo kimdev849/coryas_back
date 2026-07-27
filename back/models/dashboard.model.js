@@ -28,35 +28,40 @@ async function getStats(entrepriseId = null) {
     const estWeekend = jourSemaine === 0 || jourSemaine === 6;
 
     // Helper pour ajouter le filtre entreprise_id
-    const entrepriseFilter = entrepriseId ? ` WHERE entreprise_id = $1` : '';
-    const entrepriseFilterEmp = entrepriseId ? ` AND e.entreprise_id = $1` : '';
-    const entrepriseFilterPres = entrepriseId ? ` AND p.entreprise_id = $1` : '';
-    const entrepriseFilterConge = entrepriseId ? ` AND c.entreprise_id = $1` : '';
     const entrepriseParams = entrepriseId ? [entrepriseId] : [];
 
     // On lance 5 requetes SQL en parallele
     const [totalEmployes, presencesAujourdhui, congesEnAttente, congesApprouves, employesEnConge] = await Promise.all([
 
-        // Requete 1 : compte les employes avec statut 'Actif'
-        pool.query(`SELECT COUNT(*) AS total FROM employes WHERE statut = 'Actif'${entrepriseFilterEmp}`, entrepriseParams),
-
-        // Requete 2 : compte les presences d'aujourd'hui
+        // Requete 1 : compte les employes actifs (avec alias e pour le filtre)
         pool.query(`
-            SELECT COUNT(*) AS total,
-                   COUNT(*) FILTER (WHERE statut = 'Present') AS presents,
-                   COUNT(*) FILTER (WHERE statut = 'Retard') AS retards
-            FROM presences p
-            WHERE date_presence = CURRENT_DATE${entrepriseFilterPres}
+            SELECT COUNT(*) AS total FROM employes e
+            WHERE e.statut = 'Actif'${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
         `, entrepriseParams),
 
-        // Requete 3 : compte les conges en attente
-        pool.query(`SELECT COUNT(*) AS total FROM conges c WHERE statut = 'En attente'${entrepriseFilterConge}`, entrepriseParams),
+        // Requete 2 : compte les presences d'aujourd'hui (via JOIN employes pour filtre entreprise)
+        pool.query(`
+            SELECT COUNT(*) AS total,
+                   COUNT(*) FILTER (WHERE p.statut = 'Present') AS presents,
+                   COUNT(*) FILTER (WHERE p.statut = 'Retard') AS retards
+            FROM presences p
+            JOIN employes e ON e.id = p.employe_id
+            WHERE p.date_presence = CURRENT_DATE${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
+        `, entrepriseParams),
 
-        // Requete 4 : compte les conges approuves ce mois-ci
+        // Requete 3 : compte les conges en attente (via JOIN employes pour filtre entreprise)
         pool.query(`
             SELECT COUNT(*) AS total FROM conges c
-            WHERE statut = 'Approuve'
-              AND EXTRACT(MONTH FROM c.created_at) = EXTRACT(MONTH FROM CURRENT_DATE)${entrepriseFilterConge}
+            JOIN employes e ON e.id = c.employe_id
+            WHERE c.statut = 'En attente'${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
+        `, entrepriseParams),
+
+        // Requete 4 : compte les conges approuves ce mois-ci (via JOIN employes)
+        pool.query(`
+            SELECT COUNT(*) AS total FROM conges c
+            JOIN employes e ON e.id = c.employe_id
+            WHERE c.statut = 'Approuve'
+              AND EXTRACT(MONTH FROM c.created_at) = EXTRACT(MONTH FROM CURRENT_DATE)${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
         `, entrepriseParams),
 
         // Requete 5 : compte les employés EN CONGÉ AUJOURD'HUI
@@ -66,7 +71,7 @@ async function getStats(entrepriseId = null) {
             JOIN employes e ON e.id = c.employe_id
             WHERE c.statut = 'Approuve'
               AND c.date_debut <= CURRENT_DATE
-              AND c.date_fin >= CURRENT_DATE${entrepriseFilterEmp}
+              AND c.date_fin >= CURRENT_DATE${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
         `, entrepriseParams),
     ]);
 
