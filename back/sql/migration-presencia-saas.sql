@@ -146,8 +146,10 @@ CREATE INDEX IF NOT EXISTS idx_heures_sup_entreprise ON heures_sup(entreprise_id
 -- ================================================================
 -- 8. CRÉATION DU SUPER ADMIN PRÉSENCIA
 -- ================================================================
-INSERT INTO employes (matricule, nom, prenom, statut)
-SELECT 'SUPER001', 'Super', 'Présencia', 'Actif'
+-- ⚠️ On fournit TOUS les champs obligatoires (date_embauche notamment)
+-- pour éviter les erreurs NOT NULL si la contrainte a été modifiée.
+INSERT INTO employes (matricule, nom, prenom, statut, date_embauche)
+SELECT 'SUPER001', 'Super', 'Présencia', 'Actif', CURRENT_DATE
 WHERE NOT EXISTS (SELECT 1 FROM employes WHERE matricule = 'SUPER001');
 
 INSERT INTO utilisateurs (employe_id, role_id, email, mot_de_passe, actif)
