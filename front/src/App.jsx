@@ -28,6 +28,7 @@ import Sites from "./pages/Sites";
 import Equipes from "./pages/Equipes";
 import HeuresSup from "./pages/HeuresSup";
 import AuditLog from "./pages/AuditLog";
+import SuperAdmin from "./pages/SuperAdmin";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -65,6 +66,16 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function SuperAdminRoute({ children }) {
+  const { user } = useAuth();
+
+  if (!user || user?.role !== "SuperAdmin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
@@ -96,6 +107,7 @@ function AppRoutes() {
         <Route path="/equipes" element={<AdminRoute><Equipes /></AdminRoute>} />
         <Route path="/heures-sup" element={<HeuresSup />} />
         <Route path="/audit" element={<AdminRoute><AuditLog /></AdminRoute>} />
+        <Route path="/super-admin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
       </Route>
     </Routes>
   );

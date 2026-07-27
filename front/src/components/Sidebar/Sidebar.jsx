@@ -14,6 +14,7 @@ function Sidebar({ onClose }) {
   const navigate = useNavigate();
 
   const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
+  const isSuperAdmin = user?.role === "SuperAdmin";
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -82,6 +83,15 @@ function Sidebar({ onClose }) {
             </NavLink>
             <NavLink to="/configuration" className="sidebar-link" onClick={handleNavClick}>
               Configuration
+            </NavLink>
+          </>
+        )}
+
+        {isSuperAdmin && (
+          <>
+            <div className="sidebar-section">Super Admin</div>
+            <NavLink to="/super-admin" className="sidebar-link" onClick={handleNavClick}>
+              🏢 Entreprises
             </NavLink>
           </>
         )}

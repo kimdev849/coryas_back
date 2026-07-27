@@ -1,0 +1,107 @@
+/* ================================================================
+   SuperAdmin Dashboard — Bleu/Blanc Présencia
+   ============================================================ */
+
+.superadmin {
+  animation: fadeIn 0.3s ease;
+}
+
+/* ------ STATS CARDS ------ */
+.superadmin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.superadmin-stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-100);
+  transition: all var(--transition-base);
+}
+
+.superadmin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.superadmin-stat-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-lighter);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.superadmin-stat-active .superadmin-stat-icon {
+  background: #D1FAE5;
+}
+
+.superadmin-stat-waiting .superadmin-stat-icon {
+  background: #FEF3C7;
+}
+
+.superadmin-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.superadmin-stat-number {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-black);
+  line-height: 1.1;
+}
+
+.superadmin-stat-label {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  font-weight: 500;
+}
+
+/* ------ TABLE CUSTOM ------ */
+.superadmin .table td strong {
+  color: var(--color-gray-900);
+}
+
+/* ------ BADGES ------ */
+.superadmin .badge-success {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.superadmin .badge-error {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.superadmin .badge-warning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .superadmin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .superadmin-stat-number {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .superadmin-stats {
+    grid-template-columns: 1fr;
+  }
+}

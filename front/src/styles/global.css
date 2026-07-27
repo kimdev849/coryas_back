@@ -1,7 +1,7 @@
 /* ===============================================================
-   📄 global.css — Design Professionnel
+   📄 global.css — Design Professionnel Présencia
    ===============================================================
-   🎨 Palette premium : Jaune Coryas #F5A623 | Noir profond #0F0F1A
+   🎨 Palette premium : Bleu Présencia #2563EB | Blanc pur #FFFFFF
    🔤 Police : Inter (Google Fonts)
    ✨ Glassmorphism • Animations fluides • Micro-interactions
    📱 Responsive : Desktop → Tablet → Mobile
@@ -13,14 +13,14 @@
    VARIABLES CSS — Design System
    ============================================================ */
 :root {
-  /* === COULEURS PRINCIPALES === */
-  --color-primary: #F5A623;
-  --color-primary-dark: #D4890A;
-  --color-primary-darker: #B8730A;
-  --color-primary-light: #FFF3D6;
-  --color-primary-lighter: #FFFAF0;
-  --color-primary-gradient: linear-gradient(135deg, #F5A623 0%, #FF8A00 100%);
-  --color-primary-glow: rgba(245, 166, 35, 0.3);
+  /* === COULEURS PRINCIPALES - Bleu Présencia === */
+  --color-primary: #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-darker: #1E40AF;
+  --color-primary-light: #DBEAFE;
+  --color-primary-lighter: #EFF6FF;
+  --color-primary-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  --color-primary-glow: rgba(37, 99, 235, 0.3);
 
   /* === NOIRS PROFESSIONNELS === */
   --color-black: #0F0F1A;
@@ -60,7 +60,7 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
-  --shadow-glow: 0 4px 20px rgba(245, 166, 35, 0.3);
+  --shadow-glow: 0 4px 20px rgba(37, 99, 235, 0.3);
 
   /* === RAYONS === */
   --radius-sm: 6px;
@@ -291,8 +291,8 @@ img { max-width: 100%; height: auto; }
 
 .btn-primary {
   background: var(--color-primary-gradient);
-  color: var(--color-black);
-  box-shadow: 0 2px 8px rgba(245, 166, 35, 0.3);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-primary:hover {
@@ -394,7 +394,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .table tbody tr:hover {
-  background: linear-gradient(135deg, var(--color-primary-lighter), rgba(245, 166, 35, 0.05));
+  background: linear-gradient(135deg, var(--color-primary-lighter), rgba(37, 99, 235, 0.05));
 }
 
 .table tbody tr:last-child td {
@@ -443,7 +443,7 @@ img { max-width: 100%; height: auto; }
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.12);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .form-input:hover,
@@ -634,7 +634,7 @@ img { max-width: 100%; height: auto; }
 
 .config-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.12);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
   background: var(--color-white);
 }
 
