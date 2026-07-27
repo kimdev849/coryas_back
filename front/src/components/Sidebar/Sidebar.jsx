@@ -76,6 +76,9 @@ function Sidebar({ onClose }) {
             <NavLink to="/types-conges" className="sidebar-link" onClick={handleNavClick}>
               Types congés
             </NavLink>
+            <NavLink to="/departements" className="sidebar-link" onClick={handleNavClick}>
+              Départements
+            </NavLink>
             <NavLink to="/equipes" className="sidebar-link" onClick={handleNavClick}>
               Équipes
             </NavLink>

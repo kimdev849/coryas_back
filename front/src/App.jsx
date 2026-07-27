@@ -28,6 +28,7 @@ import Sites from "./pages/Sites";
 import Equipes from "./pages/Equipes";
 import HeuresSup from "./pages/HeuresSup";
 import AuditLog from "./pages/AuditLog";
+import Departements from "./pages/Departements";
 import SuperAdmin from "./pages/SuperAdmin";
 import EntrepriseDetail from "./pages/SuperAdmin/EntrepriseDetail";
 
@@ -104,6 +105,7 @@ function AppRoutes() {
         <Route path="/stats" element={<AdminRoute><Stats /></AdminRoute>} />
         <Route path="/types-conges" element={<AdminRoute><TypeConges /></AdminRoute>} />
         <Route path="/contrats" element={<AdminRoute><Contrats /></AdminRoute>} />
+        <Route path="/departements" element={<AdminRoute><Departements /></AdminRoute>} />
         <Route path="/sites" element={<AdminRoute><Sites /></AdminRoute>} />
         <Route path="/equipes" element={<AdminRoute><Equipes /></AdminRoute>} />
         <Route path="/heures-sup" element={<HeuresSup />} />

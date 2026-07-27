@@ -182,5 +182,35 @@ const fetchWithAuth = async (endpoint, options = {}) => {
   }
 };
 
-export { API_URL, getToken, getValidToken, getHeaders, fetchWithAuth, isTokenExpired, resetRedirectCount };
-export default fetchWithAuth;
+// ================================================================
+// Client API axios-like (wrapper autour de fetchWithAuth)
+// Permet d'utiliser api.get(), api.post(), api.put(), api.delete()
+// comme avec Axios, mais basé sur fetchWithAuth.
+// ================================================================
+const api = {
+    get: async (url, config = {}) => {
+        let fullUrl = url;
+        if (config.params) {
+            const query = new URLSearchParams();
+            for (const [key, val] of Object.entries(config.params)) {
+                if (val !== undefined && val !== null) query.set(key, val);
+            }
+            const qs = query.toString();
+            if (qs) fullUrl += "?" + qs;
+        }
+        // Retourne directement le résultat de fetchWithAuth (pas de double wrapping)
+        return await fetchWithAuth(fullUrl, { method: "GET" });
+    },
+    post: async (url, body = null) => {
+        return await fetchWithAuth(url, { method: "POST", body });
+    },
+    put: async (url, body = null) => {
+        return await fetchWithAuth(url, { method: "PUT", body });
+    },
+    delete: async (url) => {
+        return await fetchWithAuth(url, { method: "DELETE" });
+    },
+};
+
+export { API_URL, getToken, getValidToken, getHeaders, fetchWithAuth, isTokenExpired, resetRedirectCount, api };
+export default api;
