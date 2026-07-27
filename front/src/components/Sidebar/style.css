@@ -1,21 +1,20 @@
 /* ================================================================
-   📄 FICHIER : src/components/Sidebar/style.css
-   Thème : Jaune Coryas 🔶 | Noir ⚫ | Blanc ⚪
+   Sidebar — Design Premium
    ============================================================ */
 
 .sidebar {
-  width: 240px;
-  background: var(--color-white);
-  border-right: 1px solid var(--color-gray-200);
-  padding: 20px;
+  width: 250px;
+  background: linear-gradient(180deg, var(--color-white), var(--color-gray-50));
+  border-right: 1px solid var(--color-gray-100);
+  padding: 20px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
   position: relative;
+  overflow-y: auto;
 }
 
-/* Bouton fermer (mobile) */
 .sidebar-close {
   display: none;
   position: absolute;
@@ -25,69 +24,122 @@
   height: 32px;
   border: none;
   background: var(--color-gray-100);
-  border-radius: 8px;
+  border-radius: 50%;
   font-size: 16px;
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all var(--transition-fast);
+  color: var(--color-gray-500);
 }
 
 .sidebar-close:hover {
   background: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.sidebar-brand {
+  padding: 12px 16px 24px;
+  border-bottom: 1px solid var(--color-gray-100);
+  margin-bottom: 16px;
+}
+
+.sidebar-brand-text {
+  font-size: 20px;
+  font-weight: 800;
+  background: var(--color-primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.sidebar-brand-sub {
+  font-size: 11px;
+  color: var(--color-gray-400);
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 2px;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidebar-section {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--color-gray-400);
+  padding: 16px 16px 8px;
 }
 
 .sidebar-link {
-  display: block;
-  padding: 12px 16px;
-  border-radius: 8px;
-  color: var(--color-gray-900);
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-gray-700);
+  font-size: 13px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
+  position: relative;
 }
 
 .sidebar-link:hover {
-  background: var(--color-primary-light);
+  background: var(--color-primary-lighter);
   color: var(--color-primary-dark);
+  transform: translateX(2px);
 }
 
 .sidebar a.active {
-  background: var(--color-primary);
-  color: var(--color-black);
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.12), rgba(245, 166, 35, 0.06));
+  color: var(--color-primary-dark);
   font-weight: 600;
+  border-right: 3px solid var(--color-primary);
 }
 
 .sidebar-footer {
   margin-top: auto;
-  border-top: 1px solid var(--color-gray-200);
+  border-top: 1px solid var(--color-gray-100);
   padding-top: 12px;
 }
 
 .sidebar-logout {
-  color: var(--color-danger);
+  color: var(--color-error) !important;
 }
 
 .sidebar-logout:hover {
-  background: #fde8e8 !important;
-  color: var(--color-danger) !important;
+  background: var(--color-error-light) !important;
+  color: var(--color-error) !important;
+  transform: none !important;
+}
+
+/* Badge pour compter les éléments */
+.sidebar-badge {
+  margin-left: auto;
+  background: var(--color-primary);
+  color: var(--color-black);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  min-width: 20px;
+  text-align: center;
 }
 
 /* ================================================================
-   SIDEBAR WRAPPER (gère l'affichage desktop/mobile)
+   SIDEBAR WRAPPER
    ============================================================ */
-.sidebar-wrapper {
-  /* Desktop : normal flow dans le flex parent */
-  flex-shrink: 0;
-}
+.sidebar-wrapper { flex-shrink: 0; }
 
-/* ===== RESPONSIVE SIDEBAR ===== */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .sidebar-wrapper {
     position: fixed;
@@ -96,38 +148,27 @@
     bottom: 0;
     z-index: 200;
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
   }
 
-  .sidebar-wrapper.sidebar-open {
-    transform: translateX(0);
-  }
+  .sidebar-wrapper.sidebar-open { transform: translateX(0); }
 
   .sidebar {
     width: 280px;
     border-right: none;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-    padding-top: 60px;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+    padding-top: 16px;
   }
 
-  .sidebar-close {
-    display: flex;
-  }
+  .sidebar-close { display: flex; }
 
   .sidebar-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
     z-index: 199;
     animation: fadeIn 0.2s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
   }
 }
