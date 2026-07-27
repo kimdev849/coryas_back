@@ -1,7 +1,7 @@
 {
   "name": "coryas-backend",
   "version": "1.0.0",
-  "description": "Présence Coryas - Backend API",
+  "description": "Gestion des Présences - Backend API RH",
   "main": "back/server.js",
   "scripts": {
     "start": "node back/server.js",

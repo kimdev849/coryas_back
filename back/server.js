@@ -102,7 +102,7 @@ app.use("/api/export", exportRoutes);
 // 7. ROUTE DE TEST (vérifier que le serveur répond)
 // ================================================================
 app.get("/api/health", (req, res) => {
-    res.json({ status: "OK", message: "Serveur Présence Coryas opérationnel 💪" });
+    res.json({ status: "OK", message: "Serveur Gestion des Présences opérationnel 💪" });
 });
 
 // ================================================================
@@ -122,7 +122,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log("");
     console.log("🚀 ====================================");
-    console.log(`   Présence Coryas API en ligne !`);
+    console.log(`   Gestion des Présences API en ligne !`);
     console.log(`   📡 Port : ${PORT}`);
     console.log(`   🌍 http://localhost:${PORT}/api/health`);
     console.log("====================================");

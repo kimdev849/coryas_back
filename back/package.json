@@ -1,7 +1,7 @@
 {
   "name": "back",
   "version": "1.0.0",
-  "description": "",
+  "description": "Gestion des Présences - API Backend",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",

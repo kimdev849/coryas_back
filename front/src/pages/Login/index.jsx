@@ -66,9 +66,9 @@ function Login() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <img src="/logo.png" alt="Logo Presence Coryas" className="login-logo-img" />
+            <img src="/logo.png" alt="Logo Gestion des Présences" className="login-logo-img" />
           </div>
-          <h1 className="login-title">PRÉSENCE CORYAS</h1>
+          <h1 className="login-title">GESTION DES PRÉSENCES</h1>
           <p className="login-subtitle">
             Connectez-vous à votre compte
           </p>
