@@ -1,6 +1,6 @@
 /* ================================================================
    FICHIER : src/pages/Configuration/style.css
-   Thème : Jaune Coryas 🔶 | Noir ⚫
+   Thème : Bleu Présencia 🔵 | Blanc ⚪
    ============================================================ */
 
 .config-section {
@@ -52,7 +52,7 @@
 
 .config-input:focus {
   border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
 .config-input:disabled {

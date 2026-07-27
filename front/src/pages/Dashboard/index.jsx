@@ -1,21 +1,27 @@
 // ================================================================
-// Page Dashboard - Tableau de bord
+// Page Dashboard - Tableau de bord Présencia
 // ================================================================
-// Affiche les statistiques du jour : nombre d'employes, presents,
-// absents, retards, taux de presence, conges en attente.
-// Les donnees viennent de l'API /api/dashboard/stats.
+// Vue employé : statut, pointage, actions rapides
+// Vue admin/RH : statistiques globales
+// Design moderne avec icônes Lucide React
 // ================================================================
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import dashboardService from "../../services/dashboardService";
 import presencesService from "../../services/presencesService";
+import {
+  Users, UserCheck, UserX, Clock, CalendarCheck, AlertTriangle,
+  LogIn, LogOut, Bell, ArrowRight, RefreshCw, BarChart3
+} from "lucide-react";
 import "./style.css";
 
 function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isEmploye = user?.role === "Employé";
+  const isAdmin = !isEmploye;
 
   const [stats, setStats] = useState(null);
   const [activePresence, setActivePresence] = useState(null);
@@ -24,6 +30,7 @@ function Dashboard() {
   const [error, setError] = useState("");
 
   const todayStr = new Date().toISOString().split("T")[0];
+  const greeting = new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour";
 
   useEffect(() => {
     if (isEmploye) {
@@ -37,16 +44,13 @@ function Dashboard() {
     setIsLoading(true);
     try {
       const [presenceRes, todayRes] = await Promise.all([
-        presencesService.getActivePresence(user.employe_id),
-        presencesService.getAll({ employe_id: user.employe_id, date_debut: todayStr, date_fin: todayStr }),
+        presencesService.getActivePresence(user?.employe_id),
+        presencesService.getAll({ employe_id: user?.employe_id, date_debut: todayStr, date_fin: todayStr }),
       ]);
       setActivePresence(presenceRes.data || null);
       setTodayPresences(todayRes.data || []);
-    } catch {
-      // silencieux
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { /* silent */ }
+      finally { setIsLoading(false); }
   };
 
   const loadStats = async () => {
@@ -56,131 +60,162 @@ function Dashboard() {
       const result = await dashboardService.getStats();
       setStats(result.data);
     } catch (err) {
-      setError(err.message || "Erreur lors du chargement des statistiques");
-    } finally {
-      setIsLoading(false);
-    }
+      setError(err.message || "Erreur de chargement");
+    } finally { setIsLoading(false); }
   };
 
   if (isLoading) {
     return (
-      <div>
-        <h1 className="page-title">Tableau de bord</h1>
-        <div className="loading-spinner">
-          <span className="loading-spinner-text">Chargement...</span>
+      <div className="dash">
+        <div className="dash-loading">
+          <div className="dash-spinner" />
+          <p>Chargement...</p>
         </div>
       </div>
     );
   }
 
-  // ======================= VUE EMPLOYÉ =======================
+  // ============================ VUE EMPLOYÉ ============================
   if (isEmploye) {
+    const hasActivePresence = !!activePresence;
+    const hasCheckedOut = !hasActivePresence && todayPresences.length > 0;
+    const status = hasActivePresence ? "present"
+      : hasCheckedOut ? "depart" : "absent";
+
     return (
-      <div>
-        <h1 className="page-title">
-          {new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour"}, {user?.prenom || "Utilisateur"}
-        </h1>
-        <p className="page-description">
-          {new Date().toLocaleDateString("fr-FR", {
-            weekday: "long", year: "numeric", month: "long", day: "numeric",
-          })}
-        </p>
-
-        <div className="dashboard-cards">
-          <div className="dashboard-card">
-            <h3 className="dashboard-card-title">Statut</h3>
-            <p className="dashboard-number" style={{ color: activePresence ? "#22c55e" : todayPresences.length > 0 ? "#f59e0b" : "#808080" }}>
-              {activePresence ? "Présent" : todayPresences.length > 0 ? "Départ enregistré" : "Absent"}
+      <div className="dash">
+        {/* Header */}
+        <div className="dash-header">
+          <div>
+            <h1 className="dash-title">
+              {greeting}, {user?.prenom || "Utilisateur"}
+            </h1>
+            <p className="dash-date">
+              {new Date().toLocaleDateString("fr-FR", {
+                weekday: "long", year: "numeric", month: "long", day: "numeric",
+              })}
             </p>
-            {activePresence ? (
-              <p className="dashboard-card-desc">Arrivé à {activePresence.heure_entree}</p>
-            ) : todayPresences.length > 0 ? (
-              <p className="dashboard-card-desc">Arrivé à {todayPresences[0]?.heure_entree} - Départ à {todayPresences[0]?.heure_sortie}</p>
-            ) : null}
           </div>
-
-          <div className="dashboard-card">
-            <h3 className="dashboard-card-title">Rôle</h3>
-            <p className="dashboard-number" style={{ fontSize: 20 }}>{user?.role || "-"}</p>
-            <p className="dashboard-card-desc">{user?.email || ""}</p>
+          <div className={`dash-badge dash-badge-${status}`}>
+            <span className="dash-badge-dot" />
+            {hasActivePresence ? "Présent" : hasCheckedOut ? "Départ enregistré" : "Absent"}
           </div>
         </div>
 
-        <div className="dashboard-recent">
-          <h2 className="dashboard-recent-title">Actions rapides</h2>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
-            <Link to="/mon-pointage" className="employes-btn employes-btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
-              {activePresence ? "Pointer le départ" : "Pointer l'arrivée"}
-            </Link>
-            <Link to="/conges" className="employes-btn employes-btn-primary" style={{ textDecoration: "none", display: "inline-block", background: "#6c757d" }}>
-              Demander un congé
-            </Link>
+        {/* Statut card */}
+        <div className="dash-status-card">
+          <div className="dash-status-info">
+            <div className={`dash-status-icon dash-status-icon-${status}`}>
+              {hasActivePresence ? <UserCheck size={28} /> : hasCheckedOut ? <Clock size={28} /> : <UserX size={28} />}
+            </div>
+            <div>
+              <p className="dash-status-label">Statut</p>
+              <p className="dash-status-value">
+                {hasActivePresence ? "Vous êtes présent" : hasCheckedOut ? "Journée terminée" : "Pas encore pointé"}
+              </p>
+              {hasActivePresence && (
+                <p className="dash-status-time">Arrivée à {activePresence.heure_entree}</p>
+              )}
+              {hasCheckedOut && (
+                <p className="dash-status-time">
+                  {todayPresences[0]?.heure_entree} → {todayPresences[0]?.heure_sortie}
+                </p>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Actions */}
+        <div className="dash-actions">
+          <Link to="/mon-pointage" className="dash-action-btn dash-action-primary">
+            {hasActivePresence ? <LogOut size={20} /> : <LogIn size={20} />}
+            <span>{hasActivePresence ? "Pointer le départ" : "Pointer l'arrivée"}</span>
+          </Link>
+          <Link to="/conges" className="dash-action-btn dash-action-secondary">
+            <CalendarCheck size={20} />
+            <span>Demander un congé</span>
+          </Link>
+        </div>
+
+        {/* Timeline */}
+        {todayPresences.length > 0 && (
+          <div className="dash-timeline">
+            <h3 className="dash-section-title">Aujourd'hui</h3>
+            <div className="dash-timeline-list">
+              {todayPresences.map((p, i) => (
+                <div key={p.id || i} className="dash-timeline-item">
+                  <div className="dash-timeline-dot" />
+                  <div className="dash-timeline-line" />
+                  <div className="dash-timeline-content">
+                    <span className="dash-timeline-label">Arrivée</span>
+                    <span className="dash-timeline-time">{p.heure_entree || "--:--"}</span>
+                  </div>
+                  {p.heure_sortie && (
+                    <>
+                      <div className="dash-timeline-dot dash-timeline-dot-out" />
+                      <div className="dash-timeline-content" style={{ marginLeft: 0 }}>
+                        <span className="dash-timeline-label">Départ</span>
+                        <span className="dash-timeline-time">{p.heure_sortie}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  // ======================= VUE ADMIN / RH =======================
+  // ============================ VUE ADMIN / RH ============================
   if (error) {
     return (
-      <div>
-        <h1 className="page-title">Tableau de bord</h1>
-        <div className="dashboard-error" style={{
-          background: "#f8d7da", color: "#721c24", padding: "20px",
-          borderRadius: "12px", textAlign: "center", marginBottom: "24px"
-        }}>
+      <div className="dash">
+        <h1 className="dash-title">Tableau de bord</h1>
+        <div className="dash-error">
           {error}
         </div>
-        <button onClick={loadStats} className="employes-btn employes-btn-primary">
-          Réessayer
+        <button onClick={loadStats} className="dash-btn dash-btn-secondary">
+          <RefreshCw size={16} /> Réessayer
         </button>
       </div>
     );
   }
 
-  return (
-    <div>
-      <h1 className="page-title">Tableau de bord</h1>
-      <p className="page-description">Résumé du jour</p>
+  const statCards = [
+    { icon: Users, label: "Employés", value: stats?.totalEmployes || 0, color: "#2563EB" },
+    { icon: UserCheck, label: "Présents", value: stats?.presents || 0, color: "#059669" },
+    { icon: UserX, label: "Absents", value: stats?.absents || 0, color: "#DC2626" },
+    { icon: Clock, label: "Retards", value: stats?.retards || 0, color: "#D97706" },
+    { icon: BarChart3, label: "Taux présence", value: `${stats?.tauxPresence || 0}%`, color: "#7C3AED" },
+    { icon: AlertTriangle, label: "Congés en attente", value: stats?.congesEnAttente || 0, color: "#2563EB" },
+  ];
 
-      <div className="dashboard-cards">
-        <div className="dashboard-card">
-          <h3 className="dashboard-card-title">Employés</h3>
-          <p className="dashboard-number">{stats?.totalEmployes || 0}</p>
-          <p className="dashboard-card-desc">Total des employés actifs</p>
+  return (
+    <div className="dash">
+      <div className="dash-header">
+        <div>
+          <h1 className="dash-title">Tableau de bord</h1>
+          <p className="dash-date">Résumé du jour</p>
         </div>
-        <div className="dashboard-card">
-          <h3 className="dashboard-card-title">Présent(s)</h3>
-          <p className="dashboard-number">{stats?.presents || 0}</p>
-          <p className="dashboard-card-desc">Présent(s) aujourd'hui</p>
-        </div>
-        <div className="dashboard-card">
-          <h3 className="dashboard-card-title">Absent(s)</h3>
-          <p className="dashboard-number">{stats?.absents || 0}</p>
-          <p className="dashboard-card-desc">Absent(s) aujourd'hui</p>
-        </div>
-        <div className="dashboard-card">
-          <h3 className="dashboard-card-title">Retard(s)</h3>
-          <p className="dashboard-number">{stats?.retards || 0}</p>
-          <p className="dashboard-card-desc">En retard ce matin</p>
-        </div>
-        <div className="dashboard-card">
-          <h3 className="dashboard-card-title">Taux présence</h3>
-          <p className="dashboard-number">{stats?.tauxPresence || 0}%</p>
-          <p className="dashboard-card-desc">Taux de présence global</p>
-        </div>
-        <div className="dashboard-card">
-          <h3 className="dashboard-card-title">Congés</h3>
-          <p className="dashboard-number">{stats?.congesEnAttente || 0}</p>
-          <p className="dashboard-card-desc">Demande(s) en attente</p>
-        </div>
+        <button onClick={loadStats} className="dash-btn dash-btn-secondary dash-btn-sm" title="Actualiser">
+          <RefreshCw size={16} />
+        </button>
       </div>
 
-      <div>
-        <button onClick={loadStats} className="employes-btn employes-btn-primary" style={{ background: "#6c757d" }}>
-          Actualiser les données
-        </button>
+      <div className="dash-stats-grid">
+        {statCards.map((card, i) => (
+          <div key={i} className="dash-stat-card">
+            <div className="dash-stat-icon" style={{ background: `${card.color}15`, color: card.color }}>
+              <card.icon size={22} />
+            </div>
+            <div className="dash-stat-info">
+              <span className="dash-stat-value">{card.value}</span>
+              <span className="dash-stat-label">{card.label}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

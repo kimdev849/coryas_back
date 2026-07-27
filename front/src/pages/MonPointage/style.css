@@ -115,15 +115,15 @@
 }
 
 .mp-pointer-btn.checkin {
-  background: #ffd700;
-  color: #111;
-  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
 }
 
 .mp-pointer-btn.checkout {
-  background: #ffd700;
-  color: #111;
-  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
 }
 
 .mp-pointer-btn:hover {
