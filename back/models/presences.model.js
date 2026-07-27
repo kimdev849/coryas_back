@@ -207,8 +207,7 @@ async function getTodayStats(entrepriseId = null) {
     const jourSemaine = aujourdhui.getDay(); // 0=Dimanche, 6=Samedi
     const estWeekend = jourSemaine === 0 || jourSemaine === 6;
 
-    const entrepriseFilterEmp = entrepriseId ? ` WHERE e.entreprise_id = $1` : '';
-    const entrepriseFilterConges = entrepriseId ? ` AND c.entreprise_id = $1` : '';
+    const entrepriseFilterEmp = entrepriseId ? ` AND e.entreprise_id = $1` : '';
     const entrepriseParams = entrepriseId ? [entrepriseId] : [];
 
     const [totalEmployes, presencesAujourdhui, employesEnConge] = await Promise.all([
