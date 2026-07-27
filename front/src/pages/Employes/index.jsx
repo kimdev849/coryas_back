@@ -55,9 +55,8 @@ function Employes() {
       if (result.data && result.data.length > 0) {
         setDepartements(result.data);
       } else {
-        // Si la table departements existe mais est vide
-        console.warn("Aucun departement trouve dans la base");
-        setMessage("Aucun departement trouve ! Ajoutez-en dans Supabase (table 'departements').");
+        console.warn("Aucun departement trouve");
+        setMessage("Aucun departement trouve ! Ajoutez-en depuis la page Departements.");
         setMessageType("error");
         setTimeout(() => setMessage(""), 6000);
       }

@@ -23,6 +23,8 @@ const getDashboardStats = async (req, res) => {
         res.json({ message: "Statistiques du dashboard", data: stats });
     } catch (error) {
         // Si la base de donnees est indisponible, on renvoie 500
+        console.error("❌ Dashboard getStats error:", error.message);
+        console.error("   Stack:", error.stack?.split('\n').slice(0, 5).join('\n'));
         res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
 };
