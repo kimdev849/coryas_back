@@ -111,7 +111,7 @@ export const getActivePresence = async (): Promise<Presence | null> => {
 
 /**
  * checkIn : pointe l'arrivée
- * Envoie l'heure du téléphone pour éviter les décalages de fuseau horaire serveur.
+ * Envoie l'heure du téléphone + position GPS pour éviter la triche.
  */
 export const checkIn = async (): Promise<Presence> => {
   try {
@@ -119,9 +119,28 @@ export const checkIn = async (): Promise<Presence> => {
     const now = new Date();
     const heure = String(now.getHours()).padStart(2, "0");
     const minutes = String(now.getMinutes()).padStart(2, "0");
+    
+    // Tentative de récupération de la position GPS
+    let latitude = null;
+    let longitude = null;
+    try {
+      const { getCurrentPositionAsync } = await import("expo-location");
+      const { requestForegroundPermissionsAsync } = await import("expo-location");
+      const { status } = await requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const pos = await getCurrentPositionAsync({ accuracy: 6 });
+        latitude = pos.coords.latitude;
+        longitude = pos.coords.longitude;
+      }
+    } catch {
+      // GPS non disponible ou permission refusée
+    }
+    
     const response = await api.post("/presences/checkin", {
       employe_id: employeId,
       heure_entree: `${heure}:${minutes}`,
+      latitude,
+      longitude,
     });
     return response.data.data;
   } catch (error) {

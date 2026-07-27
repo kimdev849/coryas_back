@@ -5,6 +5,21 @@
 const presencesModel = require("../models/presences.model");
 const parametresModel = require("../models/parametres.model");
 const notificationsModel = require("../models/notifications.model");
+const pool = require("../config/database");
+
+// ----------------------------------------------------------------
+// Calcule la distance entre deux points GPS (formule de Haversine)
+// ----------------------------------------------------------------
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Rayon de la Terre en mètres
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance en mètres
+}
 
 // ----------------------------------------------------------------
 // GET /api/presences - Liste toutes les presences (avec filtres)
@@ -39,36 +54,41 @@ const getAllPresences = async (req, res) => {
 // ----------------------------------------------------------------
 const checkIn = async (req, res) => {
     try {
-        const { employe_id, heure_entree: frontHeure } = req.body;
+        const { employe_id, heure_entree: frontHeure, latitude: gpsLat, longitude: gpsLng } = req.body;
 
         if (!employe_id) {
             return res.status(400).json({ message: "employe_id obligatoire", data: null });
         }
 
         // ============================================================
-        // 1. VÉRIFICATION : Un seul pointage par jour
+        // 1. RÉCUPÉRER L'EMPLOYÉ (entreprise_id + site_id)
+        // ============================================================
+        const empRes = await pool.query(`
+            SELECT e.entreprise_id, e.site_id FROM employes e WHERE e.id = $1
+        `, [employe_id]);
+        const emp = empRes.rows[0];
+        if (!emp) {
+            return res.status(404).json({ message: "Employé introuvable", data: null });
+        }
+        const entrepriseId = emp.entreprise_id;
+
+        // ============================================================
+        // 2. VÉRIFICATION : Un seul pointage par jour
         // ============================================================
         const todayPresence = await presencesModel.getTodayPresence(employe_id);
         if (todayPresence) {
             if (!todayPresence.heure_sortie) {
-                // L'employé est déjà arrivé mais n'est pas encore parti
                 return res.status(400).json({
-                    message: "Vous avez déjà pointé votre arrivée aujourd'hui. Un seul pointage par jour.",
+                    message: "Vous avez déjà pointé votre arrivée aujourd'hui.",
                     data: null
                 });
             } else {
-                // L'employé a déjà fait sa journée complète
                 return res.status(400).json({
-                    message: "Vous avez déjà pointé aujourd'hui. Un seul pointage par jour est autorisé.",
+                    message: "Vous avez déjà pointé aujourd'hui.",
                     data: null
                 });
             }
         }
-
-        // ============================================================
-        // 2. RÉCUPÉRER LES PARAMÈTRES DE L'ENTREPRISE
-        // ============================================================
-        const params = await parametresModel.get();
 
         // ============================================================
         // 3. DÉTERMINER L'HEURE D'ARRIVÉE
@@ -84,16 +104,15 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 4. VALIDATION : Horaires de l'entreprise
+        // 4. RÉCUPÉRER LES PARAMÈTRES DE L'ENTREPRISE
         // ============================================================
-        // L'employé peut arriver à tout moment (même avant l'ouverture).
-        // On vérifie juste qu'il n'arrive pas après la fermeture.
-        // Le statut "Retard" est déterminé à l'étape suivante
-        // en fonction de l'heure d'ouverture + la tolérance.
-        // ============================================================
+        const params = await parametresModel.get(entrepriseId);
         const heureOuverture = params?.heure_ouverture || "07:00";
         const heureFermeture = params?.heure_fermeture || "19:00";
 
+        // ============================================================
+        // 5. VALIDATION : Heure de fermeture
+        // ============================================================
         if (heure_entree > heureFermeture) {
             return res.status(400).json({
                 message: `L'entreprise ferme à ${heureFermeture}. Vous ne pouvez plus pointer.`,
@@ -102,12 +121,41 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 5. Auto-fermeture des présences des jours précédents oubliées
+        // 6. Auto-fermeture des présences des jours précédents oubliées
         // ============================================================
         const closedPresences = await presencesModel.autoCloseStalePresences(employe_id);
 
         // ============================================================
-        // 6. DÉTERMINER LE STATUT (Présent ou Retard)
+        // 7. VÉRIFICATION GPS (géolocalisation) — BLOQUANTE
+        // ============================================================
+        if (emp.site_id) {
+            const siteRes = await pool.query(`
+                SELECT latitude, longitude, rayon_gps FROM sites WHERE id = $1
+            `, [emp.site_id]);
+            const site = siteRes.rows[0];
+            if (site && site.latitude && site.longitude) {
+                if (!gpsLat || !gpsLng) {
+                    return res.status(400).json({
+                        message: "Votre position GPS est requise pour pointer. Activez la localisation.",
+                        data: null
+                    });
+                }
+                const distance = haversineDistance(
+                    parseFloat(gpsLat), parseFloat(gpsLng),
+                    parseFloat(site.latitude), parseFloat(site.longitude)
+                );
+                const rayon = site.rayon_gps || 100;
+                if (distance > rayon) {
+                    return res.status(400).json({
+                        message: `Vous êtes à ${Math.round(distance)}m du site. Vous devez être à moins de ${rayon}m pour pointer.`,
+                        data: null
+                    });
+                }
+            }
+        }
+
+        // ============================================================
+        // 8. DÉTERMINER LE STATUT (Présent ou Retard)
         // ============================================================
         // Statut "Retard" si heure_arrivée > heure_ouverture + retard_apres.
         // Exemple : ouverture 09:00, retard_apres=15 → Retard si > 09:15
@@ -115,23 +163,21 @@ const checkIn = async (req, res) => {
         // (configurable par le RH dans la page Configuration).
         // ============================================================
         const retardApres = params?.retard_apres;
-        
-        // Si retard_apres est NULL ou 0, on désactive le statut "Retard"
-        // → tous les pointages sont marqués "Present"
+
         let statut;
         if (!retardApres || retardApres <= 0) {
             statut = "Present";
         } else {
-            // Sinon, on calcule l'heure limite : ouverture + retard_apres minutes
+            // Heure limite = ouverture + retard_apres minutes
             const [h, m] = heureOuverture.split(":").map(Number);
             const totalMinutes = h * 60 + m + retardApres;
-            const heureLimite = String(Math.floor(totalMinutes / 60)).padStart(2, "0") 
+            const heureLimite = String(Math.floor(totalMinutes / 60)).padStart(2, "0")
                 + ":" + String(totalMinutes % 60).padStart(2, "0");
             statut = heure_entree > heureLimite ? "Retard" : "Present";
         }
 
         // ============================================================
-        // 7. ENREGISTRER LA PRÉSENCE (date_presence = CURRENT_DATE dans le modèle)
+        // 9. ENREGISTRER LA PRÉSENCE avec GPS si fourni
         // ============================================================
         const newPresence = await presencesModel.checkIn({
             employe_id, heure_entree, statut,
@@ -155,8 +201,8 @@ const checkIn = async (req, res) => {
         }
 
         const message = closedPresences.length > 0
-            ? `Arrivee enregistree (${closedPresences.length} presence(s) precedente(s) fermee(s) automatiquement)`
-            : "Arrivee enregistree";
+            ? `Arrivée enregistrée (${closedPresences.length} présence(s) précédente(s) fermée(s) automatiquement)`
+            : "Arrivée enregistrée";
 
         res.status(201).json({
             message,
@@ -204,7 +250,14 @@ const checkOut = async (req, res) => {
         // ============================================================
         // 2. RÉCUPÉRER LES PARAMÈTRES (horaires de l'entreprise)
         // ============================================================
-        const params = await parametresModel.get();
+        // Récupérer l'entreprise de l'employé via la présence
+        const empCheckoutRes = await pool.query(`
+            SELECT e.entreprise_id FROM employes e
+            JOIN presences p ON p.employe_id = e.id
+            WHERE p.id = $1
+        `, [presenceId]);
+        const entrepriseCheckoutId = empCheckoutRes.rows[0]?.entreprise_id;
+        const params = await parametresModel.get(entrepriseCheckoutId);
         const heureFermeture = params?.heure_fermeture || "17:00";
         const departAnticipe = params?.depart_anticipe || 0;
 

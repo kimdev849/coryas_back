@@ -16,7 +16,7 @@ const parametresModel = require("../models/parametres.model");
 // ----------------------------------------------------------------
 async function getParametres(req, res) {
     try {
-        const data = await parametresModel.get();
+        const data = await parametresModel.get(req.user?.entreprise_id);
         res.json({ message: "Parametres", data });
     } catch (error) {
         console.error("Erreur getParametres:", error);
@@ -32,7 +32,7 @@ async function getParametres(req, res) {
 // ----------------------------------------------------------------
 async function saveParametres(req, res) {
     try {
-        const data = await parametresModel.save(req.body);
+        const data = await parametresModel.save({ ...req.body, entreprise_id: req.user?.entreprise_id });
         res.json({ message: "Parametres sauvegardes", data });
     } catch (error) {
         console.error("Erreur saveParametres:", error);

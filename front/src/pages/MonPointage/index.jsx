@@ -49,10 +49,26 @@ function MonPointage() {
   // Vérifier si l'employé a déjà pointé aujourd'hui (même après départ)
   const alreadyCheckedInToday = todayPresences.length > 0 && !activePresence;
 
+  // Récupère la position GPS du navigateur
+  const getPosition = () => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ latitude: null, longitude: null });
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve({ latitude: null, longitude: null }),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      );
+    });
+  };
+
   const handleCheckIn = async () => {
     setActionLoading(true);
     try {
-      const res = await presencesService.checkIn(user.employe_id, nowTime());
+      const { latitude, longitude } = await getPosition();
+      const res = await presencesService.checkIn(user.employe_id, nowTime(), latitude, longitude);
       const autoClosed = res.autoClosed;
       if (autoClosed && autoClosed.length > 0) {
         showMessage(`✅ Arrivée enregistrée — ${autoClosed.length} présence(s) précédente(s) fermée(s) automatiquement`);
