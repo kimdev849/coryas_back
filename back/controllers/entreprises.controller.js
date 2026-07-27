@@ -3,6 +3,7 @@
 // ================================================================
 
 const entreprisesModel = require("../models/entreprises.model");
+const pool = require("../config/database");
 
 const getAll = async (req, res) => {
     try {
@@ -42,6 +43,19 @@ const update = async (req, res) => {
     try {
         const data = await entreprisesModel.update(req.params.id, req.body);
         if (!data) return res.status(404).json({ message: "Entreprise introuvable", data: null });
+
+        // Si le statut actif change, on active/désactive aussi tous les utilisateurs
+        if (req.body.actif !== undefined) {
+            const newActif = req.body.actif === true || req.body.actif === "true";
+            await pool.query(`
+                UPDATE utilisateurs SET
+                    actif = $1,
+                    updated_at = NOW()
+                WHERE entreprise_id = $2
+            `, [newActif, req.params.id]);
+            console.log(`🔐 Utilisateurs de l'entreprise ${req.params.id} ${newActif ? 'activés' : 'désactivés'}`);
+        }
+
         res.json({ message: "Entreprise mise à jour", data });
     } catch (error) {
         console.error("❌ updateEntreprise:", error);

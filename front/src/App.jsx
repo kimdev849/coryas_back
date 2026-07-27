@@ -29,6 +29,7 @@ import Equipes from "./pages/Equipes";
 import HeuresSup from "./pages/HeuresSup";
 import AuditLog from "./pages/AuditLog";
 import SuperAdmin from "./pages/SuperAdmin";
+import EntrepriseDetail from "./pages/SuperAdmin/EntrepriseDetail";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -108,6 +109,7 @@ function AppRoutes() {
         <Route path="/heures-sup" element={<HeuresSup />} />
         <Route path="/audit" element={<AdminRoute><AuditLog /></AdminRoute>} />
         <Route path="/super-admin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
+        <Route path="/super-admin/entreprise/:id" element={<SuperAdminRoute><EntrepriseDetail /></SuperAdminRoute>} />
       </Route>
     </Routes>
   );
