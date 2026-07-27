@@ -242,16 +242,26 @@ function Conges() {
                   id="employe_id"
                   name="employe_id"
                   value={formData.employe_id}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                    // Stocker le téléphone de l'employé sélectionné
+                    const emp = employes.find(el => String(el.id) === e.target.value);
+                    setFormData(prev => ({ ...prev, employe_id: e.target.value, telephone: emp?.telephone || "" }));
+                  }}
                   required
                 >
                   <option value="">-- Selectionner un employé --</option>
                   {employes.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.prenom} {emp.nom} — {emp.departement_nom || "—"}
+                      {emp.prenom} {emp.nom} — {emp.departement_nom || "—"} {emp.telephone ? `📞 ${emp.telephone}` : ""}
                     </option>
                   ))}
                 </select>
+                {formData.telephone && (
+                  <p style={{ marginTop: 6, fontSize: 13, color: "#666" }}>
+                    📞 Tél: {formData.telephone}
+                  </p>
+                )}
               </div>
             )}
 

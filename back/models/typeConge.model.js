@@ -66,9 +66,9 @@ async function getSoldeByEmploye(employe_id, annee) {
     return result.rows;
 }
 
-async function getAllSoldes(annee) {
+async function getAllSoldes(annee, entrepriseId = null) {
     if (!annee) annee = new Date().getFullYear();
-    const result = await pool.query(`
+    let sql = `
         SELECT sc.*, tc.nom AS type_conge_nom, tc.code AS type_conge_code,
                tc.couleur,
                e.nom || ' ' || e.prenom AS employe_nom,
@@ -80,8 +80,14 @@ async function getAllSoldes(annee) {
         JOIN employes e ON e.id = sc.employe_id
         LEFT JOIN departements d ON d.id = e.departement_id
         WHERE sc.annee = $1
-        ORDER BY e.nom, tc.nom
-    `, [annee]);
+    `;
+    const params = [annee];
+    if (entrepriseId) {
+        sql += ` AND e.entreprise_id = $2`;
+        params.push(entrepriseId);
+    }
+    sql += ` ORDER BY e.nom, tc.nom`;
+    const result = await pool.query(sql, params);
     return result.rows;
 }
 

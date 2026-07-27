@@ -77,7 +77,7 @@ const getSoldeByEmploye = async (req, res) => {
 const getAllSoldes = async (req, res) => {
     try {
         const annee = req.query.annee || new Date().getFullYear();
-        const data = await typeCongeModel.getAllSoldes(annee);
+        const data = await typeCongeModel.getAllSoldes(annee, req.user?.entreprise_id);
         res.json({ message: "Soldes de congés", data });
     } catch (error) {
         console.error("❌ getAllSoldes:", error);
@@ -111,4 +111,41 @@ const creerSolde = async (req, res) => {
     }
 };
 
-module.exports = { getAllTypes, getTypeById, createType, updateType, getSoldeByEmploye, getAllSoldes, updateSolde, creerSolde };
+// ----------------------------------------------------------------
+// POST /api/conges-types/soldes/backfill - Backfill des soldes
+// ----------------------------------------------------------------
+// Crée les soldes manquants pour tous les employés de l'entreprise
+// qui n'ont pas encore de solde pour l'année en cours.
+// ----------------------------------------------------------------
+const backfillSoldes = async (req, res) => {
+    try {
+        const entrepriseId = req.user?.entreprise_id;
+        const annee = req.query.annee || new Date().getFullYear();
+
+        const result = await pool.query(`
+            INSERT INTO solde_conge (employe_id, type_conge_id, total_jours, jours_pris, annee)
+            SELECT e.id, tc.id, COALESCE(tc.jours_max, 0), 0, $1
+            FROM employes e
+            CROSS JOIN type_conge tc
+            WHERE tc.actif = true
+              AND ($2 IS NULL OR e.entreprise_id = $2)
+              AND NOT EXISTS (
+                  SELECT 1 FROM solde_conge sc
+                  WHERE sc.employe_id = e.id
+                    AND sc.type_conge_id = tc.id
+                    AND sc.annee = $1
+              )
+            RETURNING id
+        `, [annee, entrepriseId]);
+
+        res.json({
+            message: `${result.rows.length} solde(s) créé(s) avec succès`,
+            data: { total: result.rows.length },
+        });
+    } catch (error) {
+        console.error("❌ backfillSoldes:", error);
+        res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+    }
+};
+
+module.exports = { getAllTypes, getTypeById, createType, updateType, getSoldeByEmploye, getAllSoldes, updateSolde, creerSolde, backfillSoldes };

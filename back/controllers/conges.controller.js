@@ -13,6 +13,7 @@
 // congesModel contient les fonctions qui font les requetes SQL
 const congesModel = require("../models/conges.model");
 const notificationsModel = require("../models/notifications.model");
+const pool = require("../config/database");
 
 // ----------------------------------------------------------------
 // GET /api/conges - Liste toutes les demandes de conges
@@ -60,6 +61,52 @@ const creerDemande = async (req, res) => {
             date_fin: finalDateFin, motif: finalMotif,
             commentaire, type_conge_id: type_conge_id || undefined,
         });
+
+        // Notifier les administrateurs de l'entreprise + le SuperAdmin
+        try {
+            const empInfo = await pool.query(`
+                SELECT e.nom, e.prenom, e.entreprise_id FROM employes e WHERE e.id = $1
+            `, [finalEmployeId]);
+            const employeNom = empInfo.rows[0] ? `${empInfo.rows[0].prenom} ${empInfo.rows[0].nom}` : 'Un employé';
+            const entrepriseId = empInfo.rows[0]?.entreprise_id;
+
+            // Notifier les admins/RH de l'entreprise
+            const admins = await pool.query(`
+                SELECT u.employe_id FROM utilisateurs u
+                JOIN employes e ON e.id = u.employe_id
+                WHERE e.entreprise_id = $1
+                  AND u.role_id IN (1, 2, 4) -- Administrateur, RH, Directeur
+                  AND u.actif = true
+            `, [entrepriseId]);
+
+            for (const admin of admins.rows) {
+                await notificationsModel.create({
+                    employe_id: admin.employe_id,
+                    titre: "Nouvelle demande de congé 📋",
+                    message: `${employeNom} a demandé un congé du ${finalDateDebut} au ${finalDateFin}. Motif : ${finalMotif}`,
+                    type: "conges",
+                    lien: "/Conges",
+                });
+            }
+
+            // Notifier aussi le SuperAdmin
+            const superAdmins = await pool.query(`
+                SELECT u.employe_id FROM utilisateurs u
+                JOIN employes e ON e.id = u.employe_id
+                WHERE u.role_id = 5 AND u.actif = true
+            `);
+            for (const sa of superAdmins.rows) {
+                await notificationsModel.create({
+                    employe_id: sa.employe_id,
+                    titre: "📋 Nouvelle demande de congé",
+                    message: `${employeNom} a demandé un congé du ${finalDateDebut} au ${finalDateFin}.`,
+                    type: "conges",
+                    lien: "/Conges",
+                });
+            }
+        } catch (notifError) {
+            console.error("Erreur notification demande congé:", notifError);
+        }
 
         res.status(201).json({ message: "Demande de conge creee", data: nouveauConge });
     } catch (error) {

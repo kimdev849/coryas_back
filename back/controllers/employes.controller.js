@@ -113,6 +113,21 @@ async function createEmploye(req, res) {
             VALUES ($1, $2, $3, $4, true)
         `, [newEmploye.id, role_id, email, hashedPassword]);
 
+        // 3. Créer les soldes de congés par défaut pour l'employé
+        //    (Congé annuel: 22 jours, Congé maladie: ∞, Mariage: 5, Décès: 3, Naissance: 3)
+        const anneeCourante = new Date().getFullYear();
+        const typesCongeResult = await client.query(`
+            SELECT id, code, jours_max FROM type_conge WHERE actif = true
+        `);
+        for (const type of typesCongeResult.rows) {
+            const totalJours = type.jours_max || 0;
+            await client.query(`
+                INSERT INTO solde_conge (employe_id, type_conge_id, total_jours, jours_pris, annee)
+                VALUES ($1, $2, $3, 0, $4)
+                ON CONFLICT (employe_id, type_conge_id, annee) DO NOTHING
+            `, [newEmploye.id, type.id, totalJours, anneeCourante]);
+        }
+
         await client.query("COMMIT");
 
         // On renvoie l'employe cree AVEC ses identifiants

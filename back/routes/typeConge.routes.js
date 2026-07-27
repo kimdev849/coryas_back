@@ -20,5 +20,6 @@ router.get("/soldes", checkRole(["SuperAdmin", "Administrateur", "RH", "Directeu
 router.get("/soldes/:employe_id", controller.getSoldeByEmploye);
 router.put("/soldes/:id", checkRole(["SuperAdmin", "Administrateur", "RH"]), controller.updateSolde);
 router.post("/soldes", checkRole(["SuperAdmin", "Administrateur", "RH"]), controller.creerSolde);
+router.post("/soldes/backfill", checkRole(["SuperAdmin", "Administrateur", "RH"]), controller.backfillSoldes);
 
 module.exports = router;
