@@ -212,5 +212,16 @@ const api = {
     },
 };
 
-export { API_URL, getToken, getValidToken, getHeaders, fetchWithAuth, isTokenExpired, resetRedirectCount, api };
-export default api;
+// ================================================================
+// Attache les méthodes api.get/post/put/delete à fetchWithAuth
+// Comme ça, les deux imports fonctionnent :
+//   import fetchWithAuth from "./api" → fonction avec .get(), .post()
+//   import api from "./api"           → idem (même objet)
+// ================================================================
+fetchWithAuth.get = api.get;
+fetchWithAuth.post = api.post;
+fetchWithAuth.put = api.put;
+fetchWithAuth.delete = api.delete;
+
+export { API_URL, getToken, getValidToken, getHeaders, fetchWithAuth, isTokenExpired, resetRedirectCount };
+export default fetchWithAuth;
