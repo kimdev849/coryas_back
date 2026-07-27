@@ -18,7 +18,9 @@ const getAllPresences = async (req, res) => {
         if (req.user?.role === "Employé") {
             employe_id = req.user.employe_id;
         }
-        const presences = await presencesModel.getAll({ employe_id, date_debut, date_fin });
+        // Filtrer par entreprise (sauf SuperAdmin)
+        const entreprise_id = req.user?.entreprise_id;
+        const presences = await presencesModel.getAll({ employe_id, date_debut, date_fin, entreprise_id });
         res.json({ message: "Liste des presences", data: presences });
     } catch (error) {
         console.error("Erreur getAllPresences:", error);
@@ -436,7 +438,7 @@ const rattrapage = async (req, res) => {
 // ----------------------------------------------------------------
 const getTodayStats = async (req, res) => {
     try {
-        const stats = await presencesModel.getTodayStats();
+        const stats = await presencesModel.getTodayStats(req.user?.entreprise_id);
         res.json({ message: "Stats du jour", data: stats });
     } catch (error) {
         console.error("Erreur getTodayStats:", error);

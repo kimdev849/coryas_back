@@ -53,6 +53,7 @@ const verifyToken = (req, res, next) => {
             email: decoded.email,     // Email
             role: decoded.role,       // Role (Administrateur, RH, Employe)
             employe_id: decoded.employe_id, // ID de l'employe lie
+            entreprise_id: decoded.entreprise_id, // ID de l'entreprise (null pour SuperAdmin)
         };
 
         next(); // Token valide -> on passe au controlleur

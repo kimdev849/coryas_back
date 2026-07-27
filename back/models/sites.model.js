@@ -4,14 +4,21 @@
 
 const pool = require("../config/database");
 
-async function getAll() {
-    const result = await pool.query(`
+async function getAll(entrepriseId = null) {
+    let sql = `
         SELECT s.*,
                (SELECT COUNT(*) FROM employes e WHERE e.site_id = s.id AND e.statut = 'Actif') AS nb_employes,
                (SELECT COUNT(*) FROM equipes eq WHERE eq.site_id = s.id AND eq.actif = true) AS nb_equipes
         FROM sites s
-        ORDER BY s.nom ASC
-    `);
+        WHERE 1=1
+    `;
+    const params = [];
+    if (entrepriseId) {
+        sql += ` AND s.entreprise_id = $1`;
+        params.push(entrepriseId);
+    }
+    sql += ` ORDER BY s.nom ASC`;
+    const result = await pool.query(sql, params);
     return result.rows;
 }
 

@@ -7,7 +7,7 @@ const auditLogModel = require("../models/auditLog.model");
 
 const getAll = async (req, res) => {
     try {
-        const data = await sitesModel.getAll();
+        const data = await sitesModel.getAll(req.user?.entreprise_id);
         res.json({ message: "Liste des sites", data });
     } catch (error) {
         console.error("❌ getAllSites:", error);
@@ -28,7 +28,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
     try {
-        const data = await sitesModel.create(req.body);
+        const data = await sitesModel.create({ ...req.body, entreprise_id: req.user?.entreprise_id });
         await auditLogModel.create({
             employe_id: req.user?.employe_id, employe_nom: req.user?.email,
             action: "CREATE", table_name: "sites", record_id: data.id,

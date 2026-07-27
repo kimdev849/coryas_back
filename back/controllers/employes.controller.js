@@ -15,7 +15,7 @@ const bcrypt = require("bcrypt");
 // ----------------------------------------------------------------
 async function getEmployes(req, res) {
     try {
-        const employes = await employeModel.getEmployes();
+        const employes = await employeModel.getEmployes(req.user?.entreprise_id);
         res.json({ message: "Liste des employes", data: employes });
     } catch (error) {
         console.error("Erreur getEmployes:", error);
@@ -28,7 +28,7 @@ async function getEmployes(req, res) {
 // ----------------------------------------------------------------
 async function getEmployeById(req, res) {
     try {
-        const employe = await employeModel.getEmployeById(req.params.id);
+        const employe = await employeModel.getEmployeById(req.params.id, req.user?.entreprise_id);
         if (!employe) {
             return res.status(404).json({ message: "Employe introuvable", data: null });
         }
@@ -95,14 +95,15 @@ async function createEmploye(req, res) {
         await client.query("BEGIN");
 
         // 1. Creer l'employe avec le matricule auto-genere
+        const entrepriseId = req.user?.entreprise_id;
         const employeRes = await client.query(`
             INSERT INTO employes (matricule, nom, prenom, sexe, telephone,
-                                  date_naissance, date_embauche, departement_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                                  date_naissance, date_embauche, departement_id, entreprise_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
         `, [nouveauMatricule, nom, prenom, sexe || null, telephone || null,
             date_naissance || null, date_embauche || new Date().toISOString().split('T')[0],
-            departement_id]);
+            departement_id, entrepriseId]);
 
         const newEmploye = employeRes.rows[0];
 

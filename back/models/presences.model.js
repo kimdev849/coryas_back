@@ -22,7 +22,7 @@ const pool = require("../config/database");
 // Si aucun filtre, retourne toutes les presences.
 // ----------------------------------------------------------------
 async function getAll(filters = {}) {
-    const { employe_id, date_debut, date_fin } = filters;
+    const { employe_id, date_debut, date_fin, entreprise_id } = filters;
     let sql = `
         SELECT p.id, p.employe_id,
                e.nom || ' ' || e.prenom AS employe_nom,
@@ -30,7 +30,6 @@ async function getAll(filters = {}) {
                e.prenom AS employe_prenom,
                p.date_presence, p.heure_entree, p.heure_sortie,
                p.statut, p.remarque, p.created_at,
-               -- Calcule la duree de travail en minutes si heure_sortie est renseignee
                CASE
                    WHEN p.heure_entree IS NOT NULL AND p.heure_sortie IS NOT NULL THEN
                        EXTRACT(EPOCH FROM (p.heure_sortie - p.heure_entree)) / 60
@@ -54,6 +53,10 @@ async function getAll(filters = {}) {
     if (date_fin) {
         sql += ` AND p.date_presence <= $${paramIndex++}`;
         params.push(date_fin);
+    }
+    if (entreprise_id) {
+        sql += ` AND e.entreprise_id = $${paramIndex++}`;
+        params.push(entreprise_id);
     }
 
     sql += ` ORDER BY p.date_presence DESC, p.heure_entree DESC`;
@@ -195,7 +198,7 @@ async function updateStatut(id, statut) {
 // ----------------------------------------------------------------
 // Retourne : total, presents, retards, absents, actifs (pas encore partis)
 // ----------------------------------------------------------------
-async function getTodayStats() {
+async function getTodayStats(entrepriseId = null) {
     // ============================================================
     // VERIFICATION : Si on est samedi (6) ou dimanche (0),
     // on ne compte pas les absents (les employes ne travaillent pas)
@@ -204,27 +207,30 @@ async function getTodayStats() {
     const jourSemaine = aujourdhui.getDay(); // 0=Dimanche, 6=Samedi
     const estWeekend = jourSemaine === 0 || jourSemaine === 6;
 
+    const entrepriseFilterEmp = entrepriseId ? ` WHERE e.entreprise_id = $1` : '';
+    const entrepriseFilterConges = entrepriseId ? ` AND c.entreprise_id = $1` : '';
+    const entrepriseParams = entrepriseId ? [entrepriseId] : [];
+
     const [totalEmployes, presencesAujourdhui, employesEnConge] = await Promise.all([
-        pool.query("SELECT COUNT(*) AS total FROM employes WHERE statut = 'Actif'"),
+        pool.query(`SELECT COUNT(*) AS total FROM employes e WHERE e.statut = 'Actif'${entrepriseFilterEmp}`, entrepriseParams),
         pool.query(`
             SELECT
                 COUNT(*) AS total,
                 COUNT(*) FILTER (WHERE statut = 'Present') AS presents,
                 COUNT(*) FILTER (WHERE statut = 'Retard') AS retards,
                 COUNT(*) FILTER (WHERE heure_sortie IS NULL) AS en_cours
-            FROM presences
-            WHERE date_presence = CURRENT_DATE
-        `),
-        // Compte les employés qui sont en congé approuvé AUJOURD'HUI
-        // (date_debut <= aujourd'hui <= date_fin)
-        // Ceux-ci ne doivent PAS être comptés comme absents
+            FROM presences p
+            JOIN employes e ON e.id = p.employe_id
+            WHERE p.date_presence = CURRENT_DATE${entrepriseFilterEmp}
+        `, entrepriseParams),
         pool.query(`
-            SELECT COUNT(DISTINCT employe_id) AS total
-            FROM conges
-            WHERE statut = 'Approuve'
-              AND date_debut <= CURRENT_DATE
-              AND date_fin >= CURRENT_DATE
-        `),
+            SELECT COUNT(DISTINCT c.employe_id) AS total
+            FROM conges c
+            JOIN employes e ON e.id = c.employe_id
+            WHERE c.statut = 'Approuve'
+              AND c.date_debut <= CURRENT_DATE
+              AND c.date_fin >= CURRENT_DATE${entrepriseFilterEmp}
+        `, entrepriseParams),
     ]);
 
     const employesActifs = parseInt(totalEmployes.rows[0].total) || 0;
@@ -235,9 +241,6 @@ async function getTodayStats() {
     const retards = parseInt(p.retards) || 0;
     const enCours = parseInt(p.en_cours) || 0;
 
-    // Calcul des absents :
-    //   employesActifs - ceux presents aujourd'hui - ceux en congé = absents
-    // Les employés en congé approuvé ne sont PAS absents
     let absents = 0;
     let tauxPresence = 0;
 
@@ -251,7 +254,7 @@ async function getTodayStats() {
 
     return {
         employesActifs,
-        enConge,         // Nb d'employés en congé aujourd'hui
+        enConge,
         totalPresents,
         presents,
         retards,

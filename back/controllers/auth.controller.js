@@ -59,6 +59,7 @@ const login = async (req, res) => {
             email: user.email,
             role: user.role_nom,           // ex: "Administrateur" ou "RH"
             employe_id: user.employe_id,
+            entreprise_id: user.entreprise_id,
             nom: user.employe_nom,
             prenom: user.employe_prenom,
         };
@@ -76,6 +77,7 @@ const login = async (req, res) => {
                 user: {
                     id: user.id, email: user.email, nom: user.employe_nom,
                     prenom: user.employe_prenom, role: user.role_nom, employe_id: user.employe_id,
+                    entreprise_id: user.entreprise_id,
                 },
             },
         });

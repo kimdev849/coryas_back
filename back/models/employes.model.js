@@ -11,8 +11,8 @@ const pool = require("../config/database");
 // ----------------------------------------------------------------
 // getEmployes() - Liste tous les employes avec leurs infos complètes
 // ----------------------------------------------------------------
-async function getEmployes() {
-    const result = await pool.query(`
+async function getEmployes(entrepriseId = null) {
+    let sql = `
         SELECT e.id, e.matricule, e.nom, e.prenom, e.sexe, e.telephone,
                e.date_naissance, e.date_embauche, e.departement_id,
                d.nom AS departement_nom, e.statut,
@@ -34,16 +34,23 @@ async function getEmployes() {
         LEFT JOIN sites s ON s.id = e.site_id
         LEFT JOIN equipes eq ON eq.id = e.equipe_id
         LEFT JOIN employes resp ON resp.id = e.responsable_id
-        ORDER BY e.id ASC
-    `);
+        WHERE 1=1
+    `;
+    const params = [];
+    if (entrepriseId) {
+        sql += ` AND e.entreprise_id = $1`;
+        params.push(entrepriseId);
+    }
+    sql += ` ORDER BY e.id ASC`;
+    const result = await pool.query(sql, params);
     return result.rows;
 }
 
 // ----------------------------------------------------------------
 // getEmployeById(id) - Voir un employe par son ID
 // ----------------------------------------------------------------
-async function getEmployeById(id) {
-    const result = await pool.query(`
+async function getEmployeById(id, entrepriseId = null) {
+    let sql = `
         SELECT e.*, d.nom AS departement_nom, u.email, u.role_id,
                tc.nom AS type_contrat_nom,
                s.nom AS site_nom,
@@ -57,7 +64,13 @@ async function getEmployeById(id) {
         LEFT JOIN equipes eq ON eq.id = e.equipe_id
         LEFT JOIN employes resp ON resp.id = e.responsable_id
         WHERE e.id = $1
-    `, [id]);
+    `;
+    const params = [id];
+    if (entrepriseId) {
+        sql += ` AND e.entreprise_id = $2`;
+        params.push(entrepriseId);
+    }
+    const result = await pool.query(sql, params);
     return result.rows[0];
 }
 

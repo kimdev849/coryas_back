@@ -18,7 +18,7 @@ const dashboardModel = require("../models/dashboard.model");
 const getDashboardStats = async (req, res) => {
     try {
         // On demande les stats au modele (qui fait les requetes SQL)
-        const stats = await dashboardModel.getStats();
+        const stats = await dashboardModel.getStats(req.user?.entreprise_id);
         // On renvoie les stats au frontend
         res.json({ message: "Statistiques du dashboard", data: stats });
     } catch (error) {
