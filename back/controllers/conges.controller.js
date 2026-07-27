@@ -21,7 +21,10 @@ const pool = require("../config/database");
 const getAllConges = async (req, res) => {
     try {
         const { employe_id } = req.query;
-        const conges = await congesModel.getAll({ employe_id });
+        const conges = await congesModel.getAll({
+            employe_id,
+            entreprise_id: req.user?.entreprise_id,
+        });
         res.json({ message: "Liste des demandes de conges", data: conges });
     } catch (error) {
         console.error("Erreur getAllConges:", error);

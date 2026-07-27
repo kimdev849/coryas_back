@@ -14,31 +14,33 @@
 const pool = require("../config/database");
 
 // ----------------------------------------------------------------
-// getAll() - Liste toutes les demandes de conges
+// getAll(filters) - Liste toutes les demandes de conges
 // ----------------------------------------------------------------
 // JOIN avec employes pour afficher le nom de l'employe.
+// Filtre par entreprise_id si fourni (multi-tenant).
 // ORDER BY created_at DESC affiche les plus recentes en premier.
 // ----------------------------------------------------------------
 async function getAll(filters = {}) {
+    const { employe_id, entreprise_id } = filters;
     let query = `
         SELECT c.id, c.employe_id,
-               -- On concatene nom + prenom
                e.nom || ' ' || e.prenom AS employe_nom,
                c.date_debut, c.date_fin, c.motif, c.statut,
                c.commentaire, c.commentaire_rh, c.created_at, c.updated_at
         FROM conges c
         JOIN employes e ON e.id = c.employe_id
+        WHERE 1=1
     `;
     const params = [];
-    const conditions = [];
 
-    if (filters.employe_id) {
-        conditions.push(`c.employe_id = $${params.length + 1}`);
-        params.push(filters.employe_id);
+    if (employe_id) {
+        query += ` AND c.employe_id = $${params.length + 1}`;
+        params.push(employe_id);
     }
 
-    if (conditions.length > 0) {
-        query += ` WHERE ${conditions.join(' AND ')}`;
+    if (entreprise_id) {
+        query += ` AND e.entreprise_id = $${params.length + 1}`;
+        params.push(entreprise_id);
     }
 
     query += ` ORDER BY c.created_at DESC`;

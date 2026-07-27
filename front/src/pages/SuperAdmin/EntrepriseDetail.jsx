@@ -14,16 +14,17 @@ function EntrepriseDetail() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
+  const loadEntreprise = async () => {
+    setLoading(true);
+    try {
+      const res = await entreprisesService.getById(id);
+      setEntreprise(res?.data || res);
+    } catch (err) {
+      setMessage("Erreur: " + (err.message || ""));
+    } finally { setLoading(false); }
+  };
+
   useEffect(() => {
-    const loadEntreprise = async () => {
-      setLoading(true);
-      try {
-        const res = await entreprisesService.getById(id);
-        setEntreprise(res?.data || res);
-      } catch (err) {
-        setMessage("Erreur: " + (err.message || ""));
-      } finally { setLoading(false); }
-    };
     loadEntreprise();
   }, [id]);
 
