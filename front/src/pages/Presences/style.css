@@ -268,7 +268,7 @@
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   margin-bottom: 20px;
-  animation: fadeInSection 0.3s ease;
+  animation: fadeInPage 0.3s ease;
 }
 
 .presences-valider-header {
