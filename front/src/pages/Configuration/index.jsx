@@ -1,30 +1,99 @@
 // ================================================================
-// Page Configuration - Paramètres de l'application
+// Page Configuration - Paramètres premium de l'entreprise
 // ================================================================
-// Connectée à la table `parametres` dans Supabase.
-// Les données sont chargées au démarrage et sauvegardées via l'API.
+// Sections : Informations entreprise, Logo/Branding, Horaires,
+// Jours ouvrables, Règles de pointage, Politique de congés,
+// Notifications, Sécurité, Thème
 // ================================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import parametresService from "../../services/parametresService";
 import { useTheme } from "../../contexts/ThemeContext";
+import {
+  Building2, Clock, Palette, Shield, Bell, Calendar,
+  Mail, Phone, MapPin, Save, Upload, CheckCircle2, AlertCircle,
+  Globe, Eye, EyeOff, Settings2, Users, Timer, Coffee,
+  UserCheck, Briefcase, ChevronDown, ChevronUp, Sun, Moon
+} from "lucide-react";
 import "./style.css";
+
+// Jours de la semaine
+const JOURS = [
+  { key: "lundi", label: "Lundi" },
+  { key: "mardi", label: "Mardi" },
+  { key: "mercredi", label: "Mercredi" },
+  { key: "jeudi", label: "Jeudi" },
+  { key: "vendredi", label: "Vendredi" },
+  { key: "samedi", label: "Samedi" },
+  { key: "dimanche", label: "Dimanche" },
+];
 
 function Configuration() {
   const { currentTheme, themes, changeTheme } = useTheme();
+  const logoInputRef = useRef(null);
 
-  // État des paramètres (correspond aux colonnes de la table parametres)
+  // Sections dépliables
+  const [sections, setSections] = useState({
+    entreprise: true,
+    horaires: false,
+    jours: false,
+    regles: false,
+    conges: false,
+    notifications: false,
+    securite: false,
+    theme: false,
+  });
+
+  // État des paramètres
   const [settings, setSettings] = useState({
+    // Entreprise
     nom_entreprise: "",
-    heure_ouverture: "08:00",
-    heure_fermeture: "17:00",
-    retard_apres: 0,       // Minutes après l'heure d'ouverture considéré comme retard
-    depart_anticipe: 0,    // Minutes avant l'heure de fermeture considéré comme départ anticipé
-    duree_pause: 0,        // Durée de la pause en minutes
+    slogan: "",
+    description: "",
     email_entreprise: "",
     telephone: "",
     adresse: "",
-    theme: "coryas",
+    site_web: "",
+    logo_url: "",
+    
+    // Horaires
+    heure_ouverture: "08:00",
+    heure_fermeture: "17:00",
+    duree_pause: 60,
+    
+    // Jours ouvrables
+    jours_ouvrables: ["lundi", "mardi", "mercredi", "jeudi", "vendredi"],
+    
+    // Règles de pointage
+    retard_apres: 15,
+    depart_anticipe: 15,
+    tolerance_retard: 5,
+    auto_checkout: false,
+    heure_auto_checkout: "19:00",
+    geo_restriction: false,
+    
+    // Congés
+    conges_annuel_default: 30,
+    conges_maladie_annee: 90,
+    jours_max_consecutifs: 15,
+    delai_demande_jours: 2,
+    
+    // Notifications
+    notif_pointage: true,
+    notif_retard: true,
+    notif_absence: true,
+    notif_conge_demande: true,
+    notif_conge_valide: true,
+    notif_rapport_hebdo: false,
+    
+    // Sécurité
+    ip_restriction: false,
+    ip_autorisees: "",
+    double_auth: false,
+    session_timeout: 60,
+    
+    // Thème
+    theme: "bleu",
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +101,6 @@ function Configuration() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
 
-  // Charge les paramètres depuis Supabase au démarrage
   useEffect(() => {
     loadParametres();
   }, []);
@@ -42,20 +110,42 @@ function Configuration() {
     try {
       const result = await parametresService.get();
       if (result.data) {
-        setSettings({
+        setSettings(prev => ({
+          ...prev,
           nom_entreprise: result.data.nom_entreprise || "",
-          heure_ouverture: result.data.heure_ouverture
-            ? result.data.heure_ouverture.slice(0, 5) : "08:00",
-          heure_fermeture: result.data.heure_fermeture
-            ? result.data.heure_fermeture.slice(0, 5) : "17:00",
-          retard_apres: result.data.retard_apres || 0,
-          depart_anticipe: result.data.depart_anticipe || 0,
-          duree_pause: result.data.duree_pause || 0,
+          slogan: result.data.slogan || "",
+          description: result.data.description || "",
           email_entreprise: result.data.email_entreprise || "",
           telephone: result.data.telephone || "",
           adresse: result.data.adresse || "",
-          theme: result.data.theme || "coryas",
-        });
+          site_web: result.data.site_web || "",
+          logo_url: result.data.logo_url || "",
+          heure_ouverture: result.data.heure_ouverture?.slice(0, 5) || "08:00",
+          heure_fermeture: result.data.heure_fermeture?.slice(0, 5) || "17:00",
+          duree_pause: result.data.duree_pause || 60,
+          jours_ouvrables: result.data.jours_ouvrables || ["lundi", "mardi", "mercredi", "jeudi", "vendredi"],
+          retard_apres: result.data.retard_apres ?? 15,
+          depart_anticipe: result.data.depart_anticipe ?? 15,
+          tolerance_retard: result.data.tolerance_retard ?? 5,
+          auto_checkout: result.data.auto_checkout ?? false,
+          heure_auto_checkout: result.data.heure_auto_checkout?.slice(0, 5) || "19:00",
+          geo_restriction: result.data.geo_restriction ?? false,
+          conges_annuel_default: result.data.conges_annuel_default ?? 30,
+          conges_maladie_annee: result.data.conges_maladie_annee ?? 90,
+          jours_max_consecutifs: result.data.jours_max_consecutifs ?? 15,
+          delai_demande_jours: result.data.delai_demande_jours ?? 2,
+          notif_pointage: result.data.notif_pointage ?? true,
+          notif_retard: result.data.notif_retard ?? true,
+          notif_absence: result.data.notif_absence ?? true,
+          notif_conge_demande: result.data.notif_conge_demande ?? true,
+          notif_conge_valide: result.data.notif_conge_valide ?? true,
+          notif_rapport_hebdo: result.data.notif_rapport_hebdo ?? false,
+          ip_restriction: result.data.ip_restriction ?? false,
+          ip_autorisees: result.data.ip_autorisees || "",
+          double_auth: result.data.double_auth ?? false,
+          session_timeout: result.data.session_timeout ?? 60,
+          theme: result.data.theme || "bleu",
+        }));
       }
     } catch (err) {
       console.error("Erreur chargement paramètres:", err);
@@ -64,23 +154,41 @@ function Configuration() {
     }
   };
 
-  // Met à jour un champ du formulaire
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setSettings((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setSettings(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
-  // Sauvegarde les paramètres dans Supabase
+  const toggleJour = (key) => {
+    setSettings(prev => {
+      const jours = [...prev.jours_ouvrables];
+      if (jours.includes(key)) {
+        if (jours.length > 1) {
+          return { ...prev, jours_ouvrables: jours.filter(j => j !== key) };
+        }
+        return prev;
+      }
+      return { ...prev, jours_ouvrables: [...jours, key] };
+    });
+  };
+
+  const toggleSection = (key) => {
+    setSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       await parametresService.save(settings);
-      setMessage("Paramètres sauvegardés avec succès !");
+      setMessage("✅ Paramètres sauvegardés avec succès !");
       setMessageType("success");
-      setTimeout(() => setMessage(""), 3000);
+      setTimeout(() => setMessage(""), 4000);
     } catch (err) {
-      setMessage("Erreur : " + (err.message || "Impossible de sauvegarder"));
+      setMessage("❌ Erreur : " + (err.message || "Impossible de sauvegarder"));
       setMessageType("error");
     } finally {
       setIsSaving(false);
@@ -96,179 +204,511 @@ function Configuration() {
   }
 
   return (
-    <div>
+    <div className="config-page">
       <h1 className="page-title">Configuration</h1>
       <p className="page-description">
-        Paramètres généraux de l'application — horaires, contacts, règles
+        Personnalisez tous les paramètres de votre entreprise — branding, horaires, règles et sécurité
       </p>
 
       {message && (
-        <div style={{
-          padding: "12px 16px", borderRadius: "8px", marginBottom: "20px",
-          fontWeight: "bold",
-          background: messageType === "success" ? "#d4edda" : "#f8d7da",
-          color: messageType === "success" ? "#155724" : "#721c24",
-        }}>
+        <div className={`config-alert config-alert-${messageType}`}>
+          {messageType === "success" ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
           {message}
         </div>
       )}
 
       <form onSubmit={handleSave}>
-        {/* ===== INFORMATIONS ENTREPRISE ===== */}
-        <div className="config-section">
-          <h3 className="config-section-title">Informations entreprise</h3>
-
-          <div className="config-option">
-            <div>
-              <strong>Nom de l'entreprise</strong>
-              <p className="config-description">Nom affiché dans l'application</p>
+        {/* ===== SECTION 1: INFORMATIONS ENTREPRISE ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("entreprise")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Building2 size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Informations entreprise</h3>
+                <p className="config-section-desc">Nom, logo, coordonnées et branding</p>
+              </div>
             </div>
-            <input type="text" name="nom_entreprise"
-              className="config-input" value={settings.nom_entreprise}
-              onChange={handleChange} placeholder="Mon entreprise" />
-          </div>
+            {sections.entreprise ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
 
-          <div className="config-option">
-            <div>
-              <strong>Email</strong>
-              <p className="config-description">Email de contact de l'entreprise</p>
-            </div>
-            <input type="email" name="email_entreprise"
-              className="config-input" value={settings.email_entreprise}
-              onChange={handleChange} placeholder="contact@entreprise.com" />
-          </div>
+          {sections.entreprise && (
+            <div className="config-section-body">
+              {/* Logo */}
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Logo de l'entreprise</strong>
+                  <p className="config-row-desc">Image carrée recommandée (200x200px)</p>
+                </div>
+                <div className="config-logo-area">
+                  <div className="config-logo-preview">
+                    {settings.logo_url ? (
+                      <img src={settings.logo_url} alt="Logo" />
+                    ) : (
+                      <Building2 size={32} />
+                    )}
+                  </div>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => logoInputRef.current?.click()}>
+                    <Upload size={14} /> Choisir
+                  </button>
+                  <input ref={logoInputRef} type="text" name="logo_url" value={settings.logo_url}
+                    onChange={handleChange} className="config-input config-input-sm"
+                    placeholder="URL du logo (ou upload)" style={{ display: "none" }} />
+                </div>
+              </div>
 
-          <div className="config-option">
-            <div>
-              <strong>Téléphone</strong>
-              <p className="config-description">Numéro de téléphone</p>
-            </div>
-            <input type="text" name="telephone"
-              className="config-input" value={settings.telephone}
-              onChange={handleChange} placeholder="+225 01 02 03 04 05" />
-          </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Nom de l'entreprise</strong>
+                  <p className="config-row-desc">Nom affiché dans toute l'application</p>
+                </div>
+                <input type="text" name="nom_entreprise" className="config-input"
+                  value={settings.nom_entreprise} onChange={handleChange}
+                  placeholder="Présencia SARL" />
+              </div>
 
-          <div className="config-option">
-            <div>
-              <strong>Adresse</strong>
-              <p className="config-description">Adresse physique de l'entreprise</p>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Slogan</strong>
+                  <p className="config-row-desc">Phrase d'accroche de votre entreprise</p>
+                </div>
+                <input type="text" name="slogan" className="config-input"
+                  value={settings.slogan || ""} onChange={handleChange}
+                  placeholder="La gestion RH intelligente" />
+              </div>
+
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Description</strong>
+                  <p className="config-row-desc">Brève présentation de l'entreprise</p>
+                </div>
+                <textarea name="description" className="config-input config-textarea"
+                  value={settings.description || ""} onChange={handleChange}
+                  placeholder="Présencia est une solution de gestion des présences et RH..." rows={3} />
+              </div>
+
+              <div className="config-row-group">
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong><Mail size={14} /> Email</strong>
+                  </div>
+                  <input type="email" name="email_entreprise" className="config-input"
+                    value={settings.email_entreprise} onChange={handleChange}
+                    placeholder="contact@entreprise.com" />
+                </div>
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong><Phone size={14} /> Téléphone</strong>
+                  </div>
+                  <input type="text" name="telephone" className="config-input"
+                    value={settings.telephone} onChange={handleChange}
+                    placeholder="+225 01 02 03 04 05" />
+                </div>
+              </div>
+
+              <div className="config-row-group">
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong><MapPin size={14} /> Adresse</strong>
+                  </div>
+                  <input type="text" name="adresse" className="config-input"
+                    value={settings.adresse} onChange={handleChange}
+                    placeholder="Abidjan, Cocody" />
+                </div>
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong><Globe size={14} /> Site web</strong>
+                  </div>
+                  <input type="url" name="site_web" className="config-input"
+                    value={settings.site_web || ""} onChange={handleChange}
+                    placeholder="https://www.presencia.ci" />
+                </div>
+              </div>
             </div>
-            <textarea name="adresse" className="config-input"
-              value={settings.adresse} onChange={handleChange}
-              placeholder="Abidjan, Cocody..." rows={2}
-              style={{ resize: "vertical", fontFamily: "inherit" }} />
-          </div>
+          )}
         </div>
 
-        {/* ===== THÈME ===== */}
-        <div className="config-section">
-          <h3 className="config-section-title">Thème</h3>
-          <p style={{ fontSize: "13px", color: "#888", marginBottom: "16px" }}>
-            Choisissez la couleur principale de l'interface
-          </p>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            {Object.entries(themes).map(([key, theme]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  changeTheme(key);
-                  setSettings(prev => ({ ...prev, theme: key }));
-                }}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "16px",
-                  borderRadius: "12px",
-                  border: currentTheme === key ? `3px solid ${theme.colors["--color-primary"]}` : "2px solid #e5e7eb",
-                  background: currentTheme === key ? theme.colors["--color-primary-bg"] : "#fff",
-                  cursor: "pointer",
-                  minWidth: "90px",
-                  transition: "all 0.2s",
-                }}
-              >
-                <div style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "50%",
-                  background: theme.colors["--color-primary"],
-                  boxShadow: currentTheme === key ? `0 0 12px ${theme.colors["--color-primary"]}60` : "none",
-                }} />
-                <span style={{
-                  fontSize: "13px",
-                  fontWeight: currentTheme === key ? "700" : "500",
-                  color: currentTheme === key ? theme.colors["--color-primary-dark"] : "#555",
-                }}>
-                  {theme.name}
-                </span>
-              </button>
-            ))}
-          </div>
+        {/* ===== SECTION 2: HORAIRES ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("horaires")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Clock size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Horaires de travail</h3>
+                <p className="config-section-desc">Plages horaires et pauses</p>
+              </div>
+            </div>
+            {sections.horaires ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+
+          {sections.horaires && (
+            <div className="config-section-body">
+              <div className="config-row-group">
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>Heure d'ouverture</strong>
+                    <p className="config-row-desc">Début de la journée de travail</p>
+                  </div>
+                  <input type="time" name="heure_ouverture" className="config-input config-input-time"
+                    value={settings.heure_ouverture} onChange={handleChange} />
+                </div>
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>Heure de fermeture</strong>
+                    <p className="config-row-desc">Fin de la journée de travail</p>
+                  </div>
+                  <input type="time" name="heure_fermeture" className="config-input config-input-time"
+                    value={settings.heure_fermeture} onChange={handleChange} />
+                </div>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong><Coffee size={14} /> Durée de pause</strong>
+                  <p className="config-row-desc">Temps de pause déjeuner en minutes</p>
+                </div>
+                <div className="config-input-with-icon">
+                  <input type="number" name="duree_pause" className="config-input config-input-number"
+                    value={settings.duree_pause} onChange={handleChange} min="0" max="180" />
+                  <span className="config-input-suffix">minutes</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ===== HORAIRES DE TRAVAIL ===== */}
-        <div className="config-section">
-          <h3 className="config-section-title">Horaires de travail</h3>
-
-          <div className="config-option">
-            <div>
-              <strong>Heure d'ouverture</strong>
-              <p className="config-description">Début de la journée de travail</p>
+        {/* ===== SECTION 3: JOURS OUVRABLES ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("jours")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Calendar size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Jours ouvrables</h3>
+                <p className="config-section-desc">Sélectionnez les jours travaillés</p>
+              </div>
             </div>
-            <input type="time" name="heure_ouverture"
-              className="config-input" value={settings.heure_ouverture}
-              onChange={handleChange} />
-          </div>
+            {sections.jours ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
 
-          <div className="config-option">
-            <div>
-              <strong>Heure de fermeture</strong>
-              <p className="config-description">Fin de la journée de travail</p>
+          {sections.jours && (
+            <div className="config-section-body">
+              <p className="config-row-desc" style={{ marginBottom: 12 }}>
+                Choisissez les jours de la semaine où l'entreprise est ouverte
+              </p>
+              <div className="config-jours-grid">
+                {JOURS.map(jour => {
+                  const isActive = settings.jours_ouvrables.includes(jour.key);
+                  return (
+                    <button
+                      key={jour.key}
+                      type="button"
+                      className={`config-jour-btn ${isActive ? "active" : ""}`}
+                      onClick={() => toggleJour(jour.key)}
+                    >
+                      <span className="config-jour-indicator" />
+                      {jour.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <input type="time" name="heure_fermeture"
-              className="config-input" value={settings.heure_fermeture}
-              onChange={handleChange} />
-          </div>
-
-          <div className="config-option">
-            <div>
-              <strong>Seuil de retard</strong>
-              <p className="config-description">Minutes après l'ouverture considéré comme retard</p>
-            </div>
-            <input type="number" name="retard_apres"
-              className="config-input" value={settings.retard_apres}
-              onChange={handleChange} min="0" max="120" />
-          </div>
-
-          <div className="config-option">
-            <div>
-              <strong>Départ anticipé</strong>
-              <p className="config-description">Minutes avant la fermeture considéré comme départ anticipé</p>
-            </div>
-            <input type="number" name="depart_anticipe"
-              className="config-input" value={settings.depart_anticipe}
-              onChange={handleChange} min="0" max="120" />
-          </div>
-
-          <div className="config-option">
-            <div>
-              <strong>Durée de pause</strong>
-              <p className="config-description">Temps de pause en minutes (midi, etc.)</p>
-            </div>
-            <input type="number" name="duree_pause"
-              className="config-input" value={settings.duree_pause}
-              onChange={handleChange} min="0" max="180" />
-          </div>
+          )}
         </div>
 
-        <button type="submit"
-          className="employes-btn employes-btn-primary"
-          style={{ marginTop: "16px" }}
-          disabled={isSaving}>
-          {isSaving ? "Sauvegarde..." : "Sauvegarder les paramètres"}
-        </button>
+        {/* ===== SECTION 4: RÈGLES DE POINTAGE ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("regles")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Settings2 size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Règles de pointage</h3>
+                <p className="config-section-desc">Tolérances, restrictions et automatismes</p>
+              </div>
+            </div>
+            {sections.regles ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+
+          {sections.regles && (
+            <div className="config-section-body">
+              <div className="config-row-group">
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong><Timer size={14} /> Seuil de retard</strong>
+                    <p className="config-row-desc">Minutes après l'ouverture = retard</p>
+                  </div>
+                  <div className="config-input-with-icon">
+                    <input type="number" name="retard_apres" className="config-input config-input-number"
+                      value={settings.retard_apres} onChange={handleChange} min="0" max="120" />
+                    <span className="config-input-suffix">min</span>
+                  </div>
+                </div>
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong><Timer size={14} /> Départ anticipé</strong>
+                    <p className="config-row-desc">Minutes avant fermeture = départ anticipé</p>
+                  </div>
+                  <div className="config-input-with-icon">
+                    <input type="number" name="depart_anticipe" className="config-input config-input-number"
+                      value={settings.depart_anticipe} onChange={handleChange} min="0" max="120" />
+                    <span className="config-input-suffix">min</span>
+                  </div>
+                </div>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong><UserCheck size={14} /> Tolérance de retard</strong>
+                  <p className="config-row-desc">Retard non pénalisé (minutes de grâce)</p>
+                </div>
+                <div className="config-input-with-icon">
+                  <input type="number" name="tolerance_retard" className="config-input config-input-number"
+                    value={settings.tolerance_retard} onChange={handleChange} min="0" max="30" />
+                  <span className="config-input-suffix">min</span>
+                </div>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Check-out automatique</strong>
+                  <p className="config-row-desc">Fermeture automatique des pointages à une heure définie</p>
+                </div>
+                <div className="config-row-right">
+                  <label className="config-toggle">
+                    <input type="checkbox" name="auto_checkout" checked={settings.auto_checkout} onChange={handleChange} />
+                    <span className="config-toggle-slider" />
+                  </label>
+                  {settings.auto_checkout && (
+                    <input type="time" name="heure_auto_checkout" className="config-input config-input-time"
+                      value={settings.heure_auto_checkout} onChange={handleChange} style={{ marginLeft: 8 }} />
+                  )}
+                </div>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong><MapPin size={14} /> Restriction géographique</strong>
+                  <p className="config-row-desc">Pointage autorisé uniquement depuis le lieu de travail</p>
+                </div>
+                <label className="config-toggle">
+                  <input type="checkbox" name="geo_restriction" checked={settings.geo_restriction} onChange={handleChange} />
+                  <span className="config-toggle-slider" />
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ===== SECTION 5: POLITIQUE DE CONGÉS ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("conges")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Briefcase size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Politique de congés</h3>
+                <p className="config-section-desc">Règles et quotas par défaut</p>
+              </div>
+            </div>
+            {sections.conges ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+
+          {sections.conges && (
+            <div className="config-section-body">
+              <div className="config-row-group">
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>Congés annuels par défaut</strong>
+                    <p className="config-row-desc">Nombre de jours de congés annuels pour un employé</p>
+                  </div>
+                  <div className="config-input-with-icon">
+                    <input type="number" name="conges_annuel_default" className="config-input config-input-number"
+                      value={settings.conges_annuel_default} onChange={handleChange} min="0" max="60" />
+                    <span className="config-input-suffix">jours</span>
+                  </div>
+                </div>
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>Congés maladie par an</strong>
+                    <p className="config-row-desc">Nombre maximum de jours de congés maladie par an</p>
+                  </div>
+                  <div className="config-input-with-icon">
+                    <input type="number" name="conges_maladie_annee" className="config-input config-input-number"
+                      value={settings.conges_maladie_annee} onChange={handleChange} min="0" max="365" />
+                    <span className="config-input-suffix">jours</span>
+                  </div>
+                </div>
+              </div>
+              <div className="config-row-group">
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>Jours max consécutifs</strong>
+                    <p className="config-row-desc">Nombre maximum de jours de congés consécutifs autorisé</p>
+                  </div>
+                  <div className="config-input-with-icon">
+                    <input type="number" name="jours_max_consecutifs" className="config-input config-input-number"
+                      value={settings.jours_max_consecutifs} onChange={handleChange} min="1" max="90" />
+                    <span className="config-input-suffix">jours</span>
+                  </div>
+                </div>
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>Délai de demande</strong>
+                    <p className="config-row-desc">Délai minimum avant la date de début (en jours ouvrés)</p>
+                  </div>
+                  <div className="config-input-with-icon">
+                    <input type="number" name="delai_demande_jours" className="config-input config-input-number"
+                      value={settings.delai_demande_jours} onChange={handleChange} min="0" max="30" />
+                    <span className="config-input-suffix">jours</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ===== SECTION 6: NOTIFICATIONS ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("notifications")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Bell size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Notifications</h3>
+                <p className="config-section-desc">Alertes et notifications automatiques</p>
+              </div>
+            </div>
+            {sections.notifications ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+
+          {sections.notifications && (
+            <div className="config-section-body">
+              {[
+                { key: "notif_pointage", label: "Pointage effectué", desc: "Notification lorsqu'un employé pointe" },
+                { key: "notif_retard", label: "Alerte retard", desc: "Notification en cas de retard" },
+                { key: "notif_absence", label: "Alerte absence", desc: "Notification en cas d'absence non justifiée" },
+                { key: "notif_conge_demande", label: "Demande de congé", desc: "Notification lors d'une nouvelle demande" },
+                { key: "notif_conge_valide", label: "Congé validé/refusé", desc: "Notification de la décision sur un congé" },
+                { key: "notif_rapport_hebdo", label: "Rapport hebdomadaire", desc: "Récapitulatif de la semaine par email" },
+              ].map(notif => (
+                <div key={notif.key} className="config-row">
+                  <div className="config-row-label">
+                    <strong>{notif.label}</strong>
+                    <p className="config-row-desc">{notif.desc}</p>
+                  </div>
+                  <label className="config-toggle">
+                    <input type="checkbox" name={notif.key}
+                      checked={settings[notif.key]} onChange={handleChange} />
+                    <span className="config-toggle-slider" />
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ===== SECTION 7: SÉCURITÉ ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("securite")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Shield size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Sécurité</h3>
+                <p className="config-section-desc">Contrôle d'accès et restrictions</p>
+              </div>
+            </div>
+            {sections.securite ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+
+          {sections.securite && (
+            <div className="config-section-body">
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Restriction par IP</strong>
+                  <p className="config-row-desc">Limiter l'accès à certaines adresses IP</p>
+                </div>
+                <label className="config-toggle">
+                  <input type="checkbox" name="ip_restriction" checked={settings.ip_restriction} onChange={handleChange} />
+                  <span className="config-toggle-slider" />
+                </label>
+              </div>
+              {settings.ip_restriction && (
+                <div className="config-row">
+                  <div className="config-row-label">
+                    <strong>IPs autorisées</strong>
+                    <p className="config-row-desc">Une adresse IP par ligne</p>
+                  </div>
+                  <textarea name="ip_autorisees" className="config-input config-textarea"
+                    value={settings.ip_autorisees} onChange={handleChange}
+                    placeholder="192.168.1.1&#10;10.0.0.1" rows={3} />
+                </div>
+              )}
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Authentification à deux facteurs</strong>
+                  <p className="config-row-desc">Renforcer la sécurité des comptes</p>
+                </div>
+                <label className="config-toggle">
+                  <input type="checkbox" name="double_auth" checked={settings.double_auth} onChange={handleChange} />
+                  <span className="config-toggle-slider" />
+                </label>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong>Expiration de session</strong>
+                  <p className="config-row-desc">Déconnexion automatique après inactivité</p>
+                </div>
+                <div className="config-input-with-icon">
+                  <input type="number" name="session_timeout" className="config-input config-input-number"
+                    value={settings.session_timeout} onChange={handleChange} min="5" max="480" />
+                  <span className="config-input-suffix">minutes</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ===== SECTION 8: THÈME ===== */}
+        <div className="config-premium-section">
+          <button type="button" className="config-section-header" onClick={() => toggleSection("theme")}>
+            <div className="config-section-header-left">
+              <div className="config-section-icon"><Palette size={20} /></div>
+              <div>
+                <h3 className="config-section-title">Thème</h3>
+                <p className="config-section-desc">Personnalisez l'apparence de l'interface</p>
+              </div>
+            </div>
+            {sections.theme ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+
+          {sections.theme && (
+            <div className="config-section-body">
+              <p className="config-row-desc" style={{ marginBottom: 16 }}>
+                Choisissez la couleur principale de l'interface
+              </p>
+              <div className="config-themes-grid">
+                {Object.entries(themes).map(([key, theme]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`config-theme-btn ${currentTheme === key ? "active" : ""}`}
+                    onClick={() => {
+                      changeTheme(key);
+                      setSettings(prev => ({ ...prev, theme: key }));
+                    }}
+                  >
+                    <div className="config-theme-color"
+                      style={{ background: theme.colors["--color-primary"] }} />
+                    <div className="config-theme-name">
+                      {theme.name}
+                      {currentTheme === key && " ✓"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bouton sauvegarder */}
+        <div className="config-save-bar">
+          <button type="submit" className="btn btn-primary btn-lg" disabled={isSaving}>
+            <Save size={18} />
+            {isSaving ? "Sauvegarde en cours..." : "Sauvegarder tous les paramètres"}
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS parametres (
     email_entreprise VARCHAR(255),
     telephone VARCHAR(30),
     adresse TEXT,
-    theme VARCHAR(30) DEFAULT 'coryas',
+    theme VARCHAR(30) DEFAULT 'bleu',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

@@ -150,7 +150,7 @@ function Sites() {
                                 <td>{s.nb_equipes || 0}</td>
                                 <td>
                                     <button className="employes-btn" onClick={() => openEdit(s)}
-                                        style={{ background: "#F5A623", color: "black", padding: "6px 10px", fontSize: "12px" }}>
+                                        style={{ background: "var(--color-primary)", color: "white", padding: "6px 10px", fontSize: "12px" }}>
                                         Modifier
                                     </button>
                                 </td>

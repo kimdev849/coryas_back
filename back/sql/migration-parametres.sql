@@ -24,7 +24,7 @@ ALTER TABLE parametres ADD COLUMN IF NOT EXISTS duree_pause INTEGER DEFAULT 0;
 ALTER TABLE parametres ADD COLUMN IF NOT EXISTS adresse TEXT;
 
 -- Thème de l'application (coryas, bleu, vert, violet, sombre)
-ALTER TABLE parametres ADD COLUMN IF NOT EXISTS theme VARCHAR(30) DEFAULT 'coryas';
+ALTER TABLE parametres ADD COLUMN IF NOT EXISTS theme VARCHAR(30) DEFAULT 'bleu';
 
 -- ================================================================
 -- 2. RENOMMER LES COLONNES (bloc sécurisé : ne plante pas si déjà fait)

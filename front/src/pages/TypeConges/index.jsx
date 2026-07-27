@@ -176,7 +176,7 @@ function TypeConges() {
                                 <td>{t.actif ? "✅" : "❌"}</td>
                                 <td>
                                     <button className="employes-btn" onClick={() => openEdit(t)}
-                                        style={{ background: "#F5A623", color: "black", padding: "6px 10px", fontSize: "12px" }}>
+                                        style={{ background: "var(--color-primary)", color: "white", padding: "6px 10px", fontSize: "12px" }}>
                                         Modifier
                                     </button>
                                 </td>

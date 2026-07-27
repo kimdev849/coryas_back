@@ -53,7 +53,7 @@ async function save(data) {
     `, [nom_entreprise, heure_ouverture, heure_fermeture,
         retard_apres, depart_anticipe, duree_pause,
         email_entreprise, telephone, adresse,
-        theme || 'coryas']);
+        theme || 'bleu']);
     return result.rows[0];
 }
 

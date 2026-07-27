@@ -67,12 +67,12 @@ const THEMES = {
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const [currentTheme, setCurrentTheme] = useState("coryas");
+  const [currentTheme, setCurrentTheme] = useState("bleu");
   const [loading, setLoading] = useState(true);
 
   // Applique les couleurs du thème sur le :root
   const applyTheme = useCallback((themeKey) => {
-    const theme = THEMES[themeKey] || THEMES.coryas;
+    const theme = THEMES[themeKey] || THEMES.bleu;
     const root = document.documentElement;
 
     Object.entries(theme.colors).forEach(([variable, value]) => {
@@ -91,7 +91,7 @@ export function ThemeProvider({ children }) {
         // et déconnecterait l'utilisateur !
         // getValidToken() vérifie aussi l'expiration du JWT.
         if (!getValidToken()) {
-          applyTheme("coryas");
+          applyTheme("bleu");
           return;
         }
         
@@ -99,11 +99,11 @@ export function ThemeProvider({ children }) {
         if (result?.data?.theme) {
           applyTheme(result.data.theme);
         } else {
-          applyTheme("coryas");
+          applyTheme("bleu");
         }
       } catch {
         // En cas d'erreur (pas connecté, etc.), utiliser le thème par défaut
-        applyTheme("coryas");
+        applyTheme("bleu");
       } finally {
         setLoading(false);
       }
