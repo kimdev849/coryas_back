@@ -1,91 +1,96 @@
 // ================================================================
 // dashboard.model.js - Requetes SQL pour les stats
 // ================================================================
-// Ce fichier contient 1 fonction : getStats().
-// Elle lance 4 requetes SQL en meme temps pour recuperer :
-// - Le nombre d'employes actifs
-// - Les presences du jour (presents, retards)
-// - Les conges en attente
-// - Les conges approuves ce mois-ci
+// Lance 5 requetes independantes avec try-catch individuel.
+// Si une requete echoue, les autres renvoient leurs resultats.
 // ================================================================
 
-// pool = la connexion a la base de donnees Supabase (PostgreSQL)
 const pool = require("../config/database");
+
+// Helper : execute une requete et retourne le resultat ou null
+async function safeQuery(sql, params = []) {
+    try {
+        const result = await pool.query(sql, params);
+        return result;
+    } catch (error) {
+        console.error("❌ Dashboard query error:", error.message);
+        console.error("   SQL:", sql.substring(0, 200));
+        console.error("   Params:", JSON.stringify(params));
+        return null;
+    }
+}
 
 // ----------------------------------------------------------------
 // getStats() - Calcule toutes les stats du tableau de bord
 // ----------------------------------------------------------------
-// Promise.all() permet de lancer plusieurs requetes EN MEME TEMPS
-// au lieu de les faire une par une (beaucoup plus rapide).
-// ----------------------------------------------------------------
 async function getStats(entrepriseId = null) {
-    // ============================================================
-    // VERIFICATION : Si on est samedi (6) ou dimanche (0),
-    // on ne compte pas les absents (les employes ne travaillent pas)
-    // ============================================================
     const aujourdhui = new Date();
-    const jourSemaine = aujourdhui.getDay(); // 0=Dimanche, 6=Samedi
+    const jourSemaine = aujourdhui.getDay();
     const estWeekend = jourSemaine === 0 || jourSemaine === 6;
 
-    // Helper pour ajouter le filtre entreprise_id
-    const entrepriseParams = entrepriseId ? [entrepriseId] : [];
+    const params = entrepriseId ? [entrepriseId] : [];
+    const entrepriseFilter = entrepriseId ? ' AND e.entreprise_id = $1' : '';
 
-    // On lance 5 requetes SQL en parallele
+    // Lance 5 requetes SQL en parallele avec try-catch individuel
     const [totalEmployes, presencesAujourdhui, congesEnAttente, congesApprouves, employesEnConge] = await Promise.all([
 
-        // Requete 1 : compte les employes actifs (avec alias e pour le filtre)
-        pool.query(`
+        // Requete 1 : employes actifs
+        safeQuery(`
             SELECT COUNT(*) AS total FROM employes e
-            WHERE e.statut = 'Actif'${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
-        `, entrepriseParams),
+            WHERE e.statut = 'Actif'${entrepriseFilter}
+        `, params),
 
-        // Requete 2 : compte les presences d'aujourd'hui (via JOIN employes pour filtre entreprise)
-        pool.query(`
-            SELECT COUNT(*) AS total,
-                   COUNT(*) FILTER (WHERE p.statut = 'Present') AS presents,
-                   COUNT(*) FILTER (WHERE p.statut = 'Retard') AS retards
+        // Requete 2 : presences du jour (CASE WHEN au lieu de FILTER pour compatibilité)
+        safeQuery(`
+            SELECT
+                COUNT(*) AS total,
+                COUNT(CASE WHEN p.statut = 'Present' THEN 1 END) AS presents,
+                COUNT(CASE WHEN p.statut = 'Retard' THEN 1 END) AS retards
             FROM presences p
             JOIN employes e ON e.id = p.employe_id
-            WHERE p.date_presence = CURRENT_DATE${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
-        `, entrepriseParams),
+            WHERE p.date_presence = CURRENT_DATE${entrepriseFilter}
+        `, params),
 
-        // Requete 3 : compte les conges en attente (via JOIN employes pour filtre entreprise)
-        pool.query(`
+        // Requete 3 : conges en attente
+        safeQuery(`
             SELECT COUNT(*) AS total FROM conges c
             JOIN employes e ON e.id = c.employe_id
-            WHERE c.statut = 'En attente'${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
-        `, entrepriseParams),
+            WHERE c.statut = 'En attente'${entrepriseFilter}
+        `, params),
 
-        // Requete 4 : compte les conges approuves ce mois-ci (via JOIN employes)
-        pool.query(`
+        // Requete 4 : conges approuves ce mois (avec filtre année pour éviter mélange)
+        safeQuery(`
             SELECT COUNT(*) AS total FROM conges c
             JOIN employes e ON e.id = c.employe_id
             WHERE c.statut = 'Approuve'
-              AND EXTRACT(MONTH FROM c.created_at) = EXTRACT(MONTH FROM CURRENT_DATE)${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
-        `, entrepriseParams),
+              AND EXTRACT(YEAR FROM c.created_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+              AND EXTRACT(MONTH FROM c.created_at) = EXTRACT(MONTH FROM CURRENT_DATE)${entrepriseFilter}
+        `, params),
 
-        // Requete 5 : compte les employés EN CONGÉ AUJOURD'HUI
-        pool.query(`
+        // Requete 5 : employés en congé aujourd'hui
+        safeQuery(`
             SELECT COUNT(DISTINCT c.employe_id) AS total
             FROM conges c
             JOIN employes e ON e.id = c.employe_id
             WHERE c.statut = 'Approuve'
               AND c.date_debut <= CURRENT_DATE
-              AND c.date_fin >= CURRENT_DATE${entrepriseId ? ' AND e.entreprise_id = $1' : ''}
-        `, entrepriseParams),
+              AND c.date_fin >= CURRENT_DATE${entrepriseFilter}
+        `, params),
     ]);
 
-    // On extrait les valeurs des resultats SQL
-    const employesActifs = parseInt(totalEmployes.rows[0].total) || 0;
-    const enConge = parseInt(employesEnConge.rows[0].total) || 0;
-    const p = presencesAujourdhui.rows[0];
+    // Extraction securisee des valeurs (avec fallback 0 si requete a echoue)
+    const employesActifs = parseInt(totalEmployes?.rows?.[0]?.total) || 0;
+    const enConge = parseInt(employesEnConge?.rows?.[0]?.total) || 0;
+
+    const p = presencesAujourdhui?.rows?.[0] || {};
     const totalPresents = parseInt(p.total) || 0;
     const presents = parseInt(p.presents) || 0;
     const retards = parseInt(p.retards) || 0;
 
-    const congesAttente = parseInt(congesEnAttente.rows[0].total) || 0;
-    const congesApprouvesCeMois = parseInt(congesApprouves.rows[0].total) || 0;
+    const congesAttente = parseInt(congesEnAttente?.rows?.[0]?.total) || 0;
+    const congesApprouvesCeMois = parseInt(congesApprouves?.rows?.[0]?.total) || 0;
 
+    // Calcul des absents et taux de presence
     let absents = 0;
     let tauxPresence = 0;
 
@@ -110,6 +115,4 @@ async function getStats(entrepriseId = null) {
     };
 }
 
-// On exporte la fonction pour l'utiliser dans le controleur
 module.exports = { getStats };
-
