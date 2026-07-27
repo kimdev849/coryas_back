@@ -25,7 +25,7 @@ function Navbar({ onToggleSidebar }) {
 
         <div className="navbar-brand">
           <img src="/logo.png" alt="Logo" className="navbar-logo-img" />
-          <span className="navbar-logo">GESTION DES PRÉSENCES</span>
+          <span className="navbar-logo">PRÉSENCIA</span>
         </div>
       </div>
 

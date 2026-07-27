@@ -1,7 +1,7 @@
 {
   "name": "back",
   "version": "1.0.0",
-  "description": "Gestion des Présences - API Backend",
+  "description": "Présencia - API Backend RH multi-entreprise",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",

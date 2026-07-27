@@ -47,6 +47,8 @@ const equipesRoutes = require("./routes/equipes.routes");
 const heuresSupRoutes = require("./routes/heuresSup.routes");
 const auditLogRoutes = require("./routes/auditLog.routes");
 const exportRoutes = require("./routes/export.routes");
+const entreprisesRoutes = require("./routes/entreprises.routes");
+const plansRoutes = require("./routes/plans.routes");
 
 // ================================================================
 // 4. IMPORT DES MIDDLEWARES
@@ -97,12 +99,14 @@ app.use("/api/equipes", equipesRoutes);
 app.use("/api/heures-sup", heuresSupRoutes);
 app.use("/api/audit", auditLogRoutes);
 app.use("/api/export", exportRoutes);
+app.use("/api/entreprises", entreprisesRoutes);
+app.use("/api/plans", plansRoutes);
 
 // ================================================================
 // 7. ROUTE DE TEST (vérifier que le serveur répond)
 // ================================================================
 app.get("/api/health", (req, res) => {
-    res.json({ status: "OK", message: "Serveur Gestion des Présences opérationnel 💪" });
+    res.json({ status: "OK", message: "Serveur Présencia opérationnel 💪" });
 });
 
 // ================================================================
@@ -122,7 +126,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log("");
     console.log("🚀 ====================================");
-    console.log(`   Gestion des Présences API en ligne !`);
+    console.log(`   Présencia API en ligne !`);
     console.log(`   📡 Port : ${PORT}`);
     console.log(`   🌍 http://localhost:${PORT}/api/health`);
     console.log("====================================");

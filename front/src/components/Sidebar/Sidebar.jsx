@@ -32,8 +32,8 @@ function Sidebar({ onClose }) {
         ✕
       </button>
       <div className="sidebar-brand">
-        <div className="sidebar-brand-text">Gestion des Présences</div>
-        <div className="sidebar-brand-sub">Application RH</div>
+        <div className="sidebar-brand-text">PRÉSENCIA</div>
+        <div className="sidebar-brand-sub">Gestion RH Intelligente</div>
       </div>
       <nav className="sidebar-nav">
         <NavLink to="/dashboard" className="sidebar-link" onClick={handleNavClick}>

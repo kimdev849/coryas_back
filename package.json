@@ -1,7 +1,7 @@
 {
   "name": "coryas-backend",
   "version": "1.0.0",
-  "description": "Gestion des Présences - Backend API RH",
+  "description": "Présencia - Plateforme RH multi-entreprise",
   "main": "back/server.js",
   "scripts": {
     "start": "node back/server.js",
