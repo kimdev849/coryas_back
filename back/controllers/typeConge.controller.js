@@ -4,6 +4,7 @@
 
 const typeCongeModel = require("../models/typeConge.model");
 const auditLogModel = require("../models/auditLog.model");
+const pool = require("../config/database");
 
 // --- Types de congés ---
 const getAllTypes = async (req, res) => {
