@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowRight, Shield, Smartphone, BarChart3, Users, Clock, MapPin } from "lucide-react";
+import { ArrowRight, Shield, Smartphone, BarChart3, Users, Clock, MapPin, Menu, X } from "lucide-react";
 import "./style.css";
 
 function Landing() {
   const [showSignup, setShowSignup] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [signupData, setSignupData] = useState({ nom_entreprise: "", email: "", telephone: "", ville: "" });
   const [signupSent, setSignupSent] = useState(false);
 
@@ -34,9 +35,43 @@ function Landing() {
             <button className="landing-btn landing-btn-primary" onClick={() => setShowSignup(true)}>
               Essayer gratuitement
             </button>
+            {/* Bouton hamburger mobile */}
+            <button className="landing-mobile-toggle" onClick={() => setMobileMenu(true)} aria-label="Menu">
+              <Menu size={22} />
+            </button>
           </div>
         </div>
       </nav>
+
+      {/* ===== MOBILE MENU ===== */}
+      {mobileMenu && (
+        <>
+          <div className="landing-mobile-overlay" onClick={() => setMobileMenu(false)} />
+          <div className="landing-mobile-menu open">
+            <div className="landing-mobile-menu-header">
+              <img src="/logo.png" alt="Présencia" style={{ height: 32 }} />
+              <button className="landing-mobile-menu-close" onClick={() => setMobileMenu(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <a href="#features" className="landing-mobile-menu-link" onClick={() => setMobileMenu(false)}>
+              Fonctionnalités
+            </a>
+            <a href="#pricing" className="landing-mobile-menu-link" onClick={() => setMobileMenu(false)}>
+              Tarifs
+            </a>
+            <hr style={{ border: "none", borderTop: "1px solid #F3F4F6", margin: "8px 0" }} />
+            <a href="/login" className="landing-btn landing-btn-primary landing-mobile-menu-btn"
+               onClick={() => setMobileMenu(false)}>
+              Se connecter
+            </a>
+            <button className="landing-btn landing-btn-outline landing-mobile-menu-btn"
+                    onClick={() => { setMobileMenu(false); setShowSignup(true); }}>
+              Essayer gratuitement
+            </button>
+          </div>
+        </>
+      )}
 
       {/* ===== HERO ===== */}
       <section className="landing-hero">
@@ -58,6 +93,10 @@ function Landing() {
             <a href="#features" className="landing-btn landing-btn-outline landing-btn-lg">
               En savoir plus
             </a>
+          </div>
+          {/* Mockup de l'application */}
+          <div className="landing-hero-mockup">
+            <img src="/Mockup.png" alt="Présencia App Mockup" className="landing-hero-mockup-img" />
           </div>
         </div>
       </section>
@@ -97,6 +136,38 @@ function Landing() {
               </div>
               <h3>Anti-triche total</h3>
               <p>GPS obligatoire, photo en direct, horodatage serveur. Données fiables à 100%.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== ANTI-TRICHE ===== */}
+      <section className="landing-section landing-section-dark">
+        <div className="landing-section-inner">
+          <h2 className="landing-section-title">Comment Présencia bloque la triche</h2>
+          <p className="landing-section-desc">
+            Pas de complications techniques. Du bon sens et du contrôle.
+          </p>
+          <div className="landing-cheat-grid">
+            <div className="landing-cheat-card landing-feature-card-dark">
+              <div className="landing-cheat-icon">📍</div>
+              <h3>Géolocalisation GPS</h3>
+              <p>L'employé doit être physiquement au bureau. Le bouton est grisé s'il est trop loin.</p>
+            </div>
+            <div className="landing-cheat-card landing-feature-card-dark">
+              <div className="landing-cheat-icon">📸</div>
+              <h3>Photo en direct</h3>
+              <p>Selfie obligatoire pris avec l'appareil photo en direct. Pas de galerie, pas de vieille photo.</p>
+            </div>
+            <div className="landing-cheat-card landing-feature-card-dark">
+              <div className="landing-cheat-icon">⏰</div>
+              <h3>Horodatage serveur</h3>
+              <p>L'heure du pointage vient du serveur, pas du téléphone. Impossible de tricher sur l'heure.</p>
+            </div>
+            <div className="landing-cheat-card landing-feature-card-dark">
+              <div className="landing-cheat-icon">👁️</div>
+              <h3>Supervision manager</h3>
+              <p>Le manager voit toutes les photos de pointage. Si le visage ne correspond pas, il le voit.</p>
             </div>
           </div>
         </div>

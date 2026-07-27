@@ -48,6 +48,104 @@
   gap: 8px;
 }
 
+/* Menu hamburger pour mobile */
+.landing-mobile-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: #1F2937;
+  transition: background 0.2s;
+}
+
+.landing-mobile-toggle:hover {
+  background: #F3F4F6;
+}
+
+@media (max-width: 768px) {
+  .landing-mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .landing-mobile-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: #FFFFFF;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+    z-index: 200;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: right 0.3s ease;
+  }
+  
+  .landing-mobile-menu.open {
+    right: 0;
+  }
+  
+  .landing-mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #F3F4F6;
+  }
+  
+  .landing-mobile-menu-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #F3F4F6;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .landing-mobile-menu-link {
+    padding: 12px 16px;
+    color: #374151;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s;
+  }
+  
+  .landing-mobile-menu-link:hover {
+    background: #EFF6FF;
+    color: #2563EB;
+  }
+  
+  .landing-mobile-menu-btn {
+    margin-top: 16px;
+    padding: 14px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .landing-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 150;
+    animation: fadeIn 0.2s ease;
+  }
+}
+
 .landing-nav-link {
   padding: 8px 16px;
   color: #4B5563;
@@ -952,6 +1050,29 @@
   width: auto;
 }
 
+/* ------ HERO MOCKUP ------ */
+.landing-hero-mockup {
+  margin-top: 48px;
+  display: flex;
+  justify-content: center;
+  animation: fadeInUp 1s ease 0.3s both;
+}
+
+.landing-hero-mockup-img {
+  max-width: 900px;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.landing-hero-mockup-img:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
 /* ------ ANIMATIONS ------ */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }
@@ -987,7 +1108,12 @@
 
 @media (max-width: 768px) {
   .landing-nav-links .landing-nav-link { display: none; }
-  .landing-nav-links .landing-btn-outline { display: none; }
+  /* On garde le bouton "Se connecter" visible même en mobile */
+  .landing-nav-links .landing-btn-outline {
+    display: inline-flex;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
   .landing-hero-title { font-size: 36px; }
   .landing-section-title { font-size: 28px; }
   .landing-section { padding: 60px 20px; }

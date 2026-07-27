@@ -25,17 +25,17 @@ async function getById(id) {
 }
 
 async function create(data) {
-    const { nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture } = data;
+    const { nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, latitude, longitude, rayon_gps } = data;
     const result = await pool.query(`
-        INSERT INTO sites (nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO sites (nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, latitude, longitude, rayon_gps)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
-    `, [nom, code || null, adresse || null, ville || null, pays || "Côte d'Ivoire", telephone || null, email || null, horaire_ouverture || null, horaire_fermeture || null]);
+    `, [nom, code || null, adresse || null, ville || null, pays || "Côte d'Ivoire", telephone || null, email || null, horaire_ouverture || null, horaire_fermeture || null, latitude || null, longitude || null, rayon_gps || 100]);
     return result.rows[0];
 }
 
 async function update(id, data) {
-    const { nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, actif } = data;
+    const { nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, actif, latitude, longitude, rayon_gps } = data;
     const result = await pool.query(`
         UPDATE sites SET
             nom = COALESCE($2, nom),
@@ -48,10 +48,13 @@ async function update(id, data) {
             horaire_ouverture = COALESCE($9, horaire_ouverture),
             horaire_fermeture = COALESCE($10, horaire_fermeture),
             actif = COALESCE($11, actif),
+            latitude = COALESCE($12, latitude),
+            longitude = COALESCE($13, longitude),
+            rayon_gps = COALESCE($14, rayon_gps),
             updated_at = NOW()
         WHERE id = $1
         RETURNING *
-    `, [id, nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, actif]);
+    `, [id, nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, actif, latitude, longitude, rayon_gps]);
     return result.rows[0];
 }
 
