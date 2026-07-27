@@ -40,6 +40,13 @@ const parametresRoutes = require("./routes/parametres.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const notificationsRoutes = require("./routes/notifications.routes");
 const statsRoutes = require("./routes/stats.routes");
+const typeCongeRoutes = require("./routes/typeConge.routes");
+const typeContratRoutes = require("./routes/typeContrat.routes");
+const sitesRoutes = require("./routes/sites.routes");
+const equipesRoutes = require("./routes/equipes.routes");
+const heuresSupRoutes = require("./routes/heuresSup.routes");
+const auditLogRoutes = require("./routes/auditLog.routes");
+const exportRoutes = require("./routes/export.routes");
 
 // ================================================================
 // 4. IMPORT DES MIDDLEWARES
@@ -83,6 +90,13 @@ app.use("/api/parametres", parametresRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/conges-types", typeCongeRoutes);
+app.use("/api/contrats-types", typeContratRoutes);
+app.use("/api/sites", sitesRoutes);
+app.use("/api/equipes", equipesRoutes);
+app.use("/api/heures-sup", heuresSupRoutes);
+app.use("/api/audit", auditLogRoutes);
+app.use("/api/export", exportRoutes);
 
 // ================================================================
 // 7. ROUTE DE TEST (vérifier que le serveur répond)

@@ -12,6 +12,7 @@
 
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { emit } from "./eventEmitter";
 
 // 🔑 Clé utilisée pour stocker le token JWT dans AsyncStorage
 const TOKEN_KEY = "@auth_token";
@@ -68,6 +69,10 @@ api.interceptors.response.use(
       // Token expiré ou invalide → on déconnecte complètement
       await AsyncStorage.removeItem(TOKEN_KEY);
       await AsyncStorage.removeItem("@user_data");
+      // ✅ Notifie AuthContext pour mettre à jour l'état React
+      // Sans cela, isAuthenticated reste true même si le token est effacé,
+      // et l'utilisateur bloque sur l'écran sans pouvoir se reconnecter.
+      emit("auth:unauthorized");
     }
     return Promise.reject(error);
   }

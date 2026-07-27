@@ -16,11 +16,12 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../src/constants/Colors";
-import { logout } from "../../src/services/auth";
 import { postChangerMdp } from "../../src/services/data";
+import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function ParametresPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [showMdpForm, setShowMdpForm] = useState(false);
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
@@ -147,8 +148,8 @@ export default function ParametresPage() {
               style: "destructive",
               onPress: async () => {
                 try {
-                  await logout();
-                  router.replace("/login");
+                  // La déconnexion est gérée par AuthContext dans _layout.tsx
+                  await auth.logout();
                 } catch {
                   Alert.alert("Erreur", "Impossible de se déconnecter");
                 }

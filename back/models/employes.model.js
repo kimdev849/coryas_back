@@ -9,18 +9,31 @@
 const pool = require("../config/database");
 
 // ----------------------------------------------------------------
-// getEmployes() - Liste tous les employes avec leur departement ET utilisateur
+// getEmployes() - Liste tous les employes avec leurs infos complètes
 // ----------------------------------------------------------------
 async function getEmployes() {
     const result = await pool.query(`
         SELECT e.id, e.matricule, e.nom, e.prenom, e.sexe, e.telephone,
                e.date_naissance, e.date_embauche, e.departement_id,
                d.nom AS departement_nom, e.statut,
+               e.type_contrat_id, e.date_fin_contrat,
+               e.periode_essai_jours, e.date_fin_essai,
+               e.poste, e.salaire, e.numero_securite_sociale,
+               e.adresse_domicile, e.ville,
+               e.site_id, e.equipe_id, e.responsable_id,
                e.created_at, e.updated_at,
-               u.email, u.role_id
+               u.email, u.role_id,
+               tc.nom AS type_contrat_nom,
+               s.nom AS site_nom,
+               eq.nom AS equipe_nom,
+               (resp.nom || ' ' || resp.prenom) AS responsable_nom
         FROM employes e
         LEFT JOIN departements d ON d.id = e.departement_id
         LEFT JOIN utilisateurs u ON u.employe_id = e.id
+        LEFT JOIN type_contrat tc ON tc.id = e.type_contrat_id
+        LEFT JOIN sites s ON s.id = e.site_id
+        LEFT JOIN equipes eq ON eq.id = e.equipe_id
+        LEFT JOIN employes resp ON resp.id = e.responsable_id
         ORDER BY e.id ASC
     `);
     return result.rows;
@@ -31,10 +44,18 @@ async function getEmployes() {
 // ----------------------------------------------------------------
 async function getEmployeById(id) {
     const result = await pool.query(`
-        SELECT e.*, d.nom AS departement_nom, u.email, u.role_id
+        SELECT e.*, d.nom AS departement_nom, u.email, u.role_id,
+               tc.nom AS type_contrat_nom,
+               s.nom AS site_nom,
+               eq.nom AS equipe_nom,
+               (resp.nom || ' ' || resp.prenom) AS responsable_nom
         FROM employes e
         LEFT JOIN departements d ON d.id = e.departement_id
         LEFT JOIN utilisateurs u ON u.employe_id = e.id
+        LEFT JOIN type_contrat tc ON tc.id = e.type_contrat_id
+        LEFT JOIN sites s ON s.id = e.site_id
+        LEFT JOIN equipes eq ON eq.id = e.equipe_id
+        LEFT JOIN employes resp ON resp.id = e.responsable_id
         WHERE e.id = $1
     `, [id]);
     return result.rows[0];
@@ -42,23 +63,36 @@ async function getEmployeById(id) {
 
 // ----------------------------------------------------------------
 // create({ matricule, nom, prenom, sexe, telephone,
-//          date_naissance, date_embauche, departement_id })
+//          date_naissance, date_embauche, departement_id, ... })
 // ----------------------------------------------------------------
-async function create({ matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id }) {
+async function create({ matricule, nom, prenom, sexe, telephone,
+    date_naissance, date_embauche, departement_id,
+    type_contrat_id, date_fin_contrat, periode_essai_jours, date_fin_essai,
+    poste, salaire, numero_securite_sociale, adresse_domicile, ville,
+    site_id, equipe_id, responsable_id }) {
     const result = await pool.query(`
         INSERT INTO employes (matricule, nom, prenom, sexe, telephone,
-                              date_naissance, date_embauche, departement_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                              date_naissance, date_embauche, departement_id,
+                              type_contrat_id, date_fin_contrat, periode_essai_jours, date_fin_essai,
+                              poste, salaire, numero_securite_sociale, adresse_domicile, ville,
+                              site_id, equipe_id, responsable_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         RETURNING *
-    `, [matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id]);
+    `, [matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id,
+        type_contrat_id || null, date_fin_contrat || null, periode_essai_jours || null, date_fin_essai || null,
+        poste || null, salaire || null, numero_securite_sociale || null, adresse_domicile || null, ville || null,
+        site_id || null, equipe_id || null, responsable_id || null]);
     return result.rows[0];
 }
 
 // ----------------------------------------------------------------
-// update(id, { matricule, nom, prenom, sexe, telephone,
-//              date_naissance, date_embauche, departement_id, statut })
+// update(id, { ... toutes les colonnes ... })
 // ----------------------------------------------------------------
-async function update(id, { matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id, statut }) {
+async function update(id, { matricule, nom, prenom, sexe, telephone,
+    date_naissance, date_embauche, departement_id, statut,
+    type_contrat_id, date_fin_contrat, periode_essai_jours, date_fin_essai,
+    poste, salaire, numero_securite_sociale, adresse_domicile, ville,
+    site_id, equipe_id, responsable_id }) {
     const result = await pool.query(`
         UPDATE employes SET
             matricule = COALESCE($2, matricule),
@@ -70,10 +104,25 @@ async function update(id, { matricule, nom, prenom, sexe, telephone, date_naissa
             date_embauche = COALESCE($8, date_embauche),
             departement_id = COALESCE($9, departement_id),
             statut = COALESCE($10, statut),
+            type_contrat_id = COALESCE($11, type_contrat_id),
+            date_fin_contrat = COALESCE($12, date_fin_contrat),
+            periode_essai_jours = COALESCE($13, periode_essai_jours),
+            date_fin_essai = COALESCE($14, date_fin_essai),
+            poste = COALESCE($15, poste),
+            salaire = COALESCE($16, salaire),
+            numero_securite_sociale = COALESCE($17, numero_securite_sociale),
+            adresse_domicile = COALESCE($18, adresse_domicile),
+            ville = COALESCE($19, ville),
+            site_id = COALESCE($20, site_id),
+            equipe_id = COALESCE($21, equipe_id),
+            responsable_id = COALESCE($22, responsable_id),
             updated_at = NOW()
         WHERE id = $1
         RETURNING *
-    `, [id, matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id, statut]);
+    `, [id, matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id, statut,
+        type_contrat_id, date_fin_contrat, periode_essai_jours, date_fin_essai,
+        poste, salaire, numero_securite_sociale, adresse_domicile, ville,
+        site_id, equipe_id, responsable_id]);
     return result.rows[0];
 }
 
@@ -94,7 +143,7 @@ async function remove(id) {
 // getEmployeStats(id) - Statistiques d'un employé
 // ----------------------------------------------------------------
 async function getEmployeStats(id) {
-    // Stats des présences
+    // Stats des présences + soldes congés
     const today = new Date();
     const debutMois = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const debutAnnee = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
@@ -194,6 +243,7 @@ async function getEmployeStats(id) {
             refusés: parseInt(c.refusés) || 0,
         },
         dernieresPresences: dernieresPresences.rows,
+        soldeConges: null, // Sera rempli plus tard si besoin
     };
 }
 

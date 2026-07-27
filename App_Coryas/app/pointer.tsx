@@ -302,9 +302,7 @@ const styles = StyleSheet.create({
   pointerButtonPressed: {
     opacity: 0.9,
   },
-  pointerIcon: {
-    fontSize: 64,
-  },
+  // pointerIcon supprimé (inutilisé)
   statusText: {
     fontSize: 18,
     fontWeight: "600",

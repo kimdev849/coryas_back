@@ -1415,4 +1415,4 @@ eas submit -p android
 
 > ✨ **Fin de la documentation** — *Présence Coryas v1.1.0*
 >
-> *Si quelque chose n'est pas clair, n'hésite pas à demander !* 💬
+

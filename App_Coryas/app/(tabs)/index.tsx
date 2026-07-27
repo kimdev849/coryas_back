@@ -35,7 +35,6 @@ export default function HomeScreen() {
   const [checkInTime, setCheckInTime] = useState("--:--"); // Heure d'arrivée
   const [activePresenceId, setActivePresenceId] = useState<string | number | null>(null); // ID présence active
   const [loading, setLoading] = useState(true);
-  const [loadingAction, setLoadingAction] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [todayCompleted, setTodayCompleted] = useState(false);
   // Paramètres de l'entreprise (heures configurées)
@@ -282,7 +281,7 @@ export default function HomeScreen() {
         <Pressable 
           style={styles.pointerButton} 
           onPress={goToPointer}
-          disabled={loadingAction || todayCompleted}
+          disabled={todayCompleted}
         >
           <Text style={styles.pointerButtonText}>
             {isCheckedIn ? "Pointer le départ" : todayCompleted ? "Déjà pointé" : "Pointer l'arrivée"}

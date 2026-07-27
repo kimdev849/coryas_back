@@ -16,19 +16,19 @@
 // ============================================================
 
 import { StyleSheet, Text, View, Pressable, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "expo-router";
-import { logout } from "../../src/services/auth";
 import { Colors } from "../../src/constants/Colors";
+import { useAuth } from "../../src/contexts/AuthContext";
 
 
 
 export default function ProfilTab() {
   const router = useRouter();
+  const auth = useAuth();
   const insets = useSafeAreaInsets();
   const [user, setUser] = useState<any>(null); // Données utilisateur (any car structure variable)
 
@@ -75,13 +75,12 @@ export default function ProfilTab() {
           style: "destructive",
           onPress: async () => {
             try {
-              await logout();
-              // ✅ Navigation directe vers la page de connexion
-              // Ne PAS utiliser router.replace("/") car le splash screen
-              // (app/index.tsx) a un useEffect avec [router] comme dépendance :
-              // si router ne change pas, l'effet ne se ré-exécute PAS et
-              // l'utilisateur reste bloqué sur le splash.
-              router.replace("/login");
+              // ✅ La déconnexion est gérée par AuthContext dans le layout
+              // racine. Il n'y a PAS d'appel à router.replace / nav.reset
+              // ici car ces appels échouent depuis les tabs imbriqués.
+              // C'est AuthContext (dans _layout.tsx) qui reset la
+              // navigation racine après avoir vidé le token.
+              await auth.logout();
             } catch (error) {
               Alert.alert("Erreur", "Impossible de se déconnecter");
             }
@@ -238,9 +237,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textLight,
   },
-  optionsList: {
-    paddingTop: 8,
-  },
+  // optionsList supprimé (inutilisé)
   menuItem: {
     flexDirection: "row",
     alignItems: "center",

@@ -290,6 +290,7 @@ export const postDemandeConge = async (
   dateDebut: string,
   dateFin: string,
   motif: string,
+  commentaire?: string,
 ): Promise<Conge> => {
   try {
     const employeId = await getEmployeId();
@@ -298,6 +299,7 @@ export const postDemandeConge = async (
       date_debut: convertirDateEnISO(dateDebut),
       date_fin: convertirDateEnISO(dateFin),
       motif,
+      commentaire,
     });
     return response.data.data;
   } catch (error) {

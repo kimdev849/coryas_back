@@ -25,7 +25,7 @@ async function getAll(filters = {}) {
                -- On concatene nom + prenom
                e.nom || ' ' || e.prenom AS employe_nom,
                c.date_debut, c.date_fin, c.motif, c.statut,
-               c.commentaire_rh, c.created_at, c.updated_at
+               c.commentaire, c.commentaire_rh, c.created_at, c.updated_at
         FROM conges c
         JOIN employes e ON e.id = c.employe_id
     `;
@@ -57,7 +57,7 @@ async function getById(id) {
         SELECT c.id, c.employe_id,
                e.nom || ' ' || e.prenom AS employe_nom,
                c.date_debut, c.date_fin, c.motif, c.statut,
-               c.commentaire_rh, c.created_at, c.updated_at
+               c.commentaire, c.commentaire_rh, c.created_at, c.updated_at
         FROM conges c
         JOIN employes e ON e.id = c.employe_id
         WHERE c.id = $1
@@ -71,12 +71,12 @@ async function getById(id) {
 // INSERT une nouvelle demande. Le statut par defaut est "En attente"
 // (defini dans la table SQL, pas besoin de le passer ici).
 // ----------------------------------------------------------------
-async function create({ employe_id, date_debut, date_fin, motif }) {
+async function create({ employe_id, date_debut, date_fin, motif, commentaire, type_conge_id }) {
     const result = await pool.query(`
-        INSERT INTO conges (employe_id, date_debut, date_fin, motif)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO conges (employe_id, date_debut, date_fin, motif, commentaire, type_conge_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
-    `, [employe_id, date_debut, date_fin, motif]);
+    `, [employe_id, date_debut, date_fin, motif, commentaire || null, type_conge_id || null]);
     return result.rows[0];
 }
 

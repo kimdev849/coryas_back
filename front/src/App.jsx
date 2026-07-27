@@ -21,6 +21,12 @@ import Profil from "./pages/Profil";
 import EmployeDetail from "./pages/EmployeDetail";
 import Stats from "./pages/Stats";
 import DashboardLayout from "./layouts/DashboardLayout";
+import TypeConges from "./pages/TypeConges";
+import Contrats from "./pages/Contrats";
+import Sites from "./pages/Sites";
+import Equipes from "./pages/Equipes";
+import HeuresSup from "./pages/HeuresSup";
+import AuditLog from "./pages/AuditLog";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -84,6 +90,12 @@ function AppRoutes() {
         <Route path="/presences" element={<AdminRoute><Presences /></AdminRoute>} />
         <Route path="/configuration" element={<AdminRoute><Configuration /></AdminRoute>} />
         <Route path="/stats" element={<AdminRoute><Stats /></AdminRoute>} />
+        <Route path="/types-conges" element={<AdminRoute><TypeConges /></AdminRoute>} />
+        <Route path="/contrats" element={<AdminRoute><Contrats /></AdminRoute>} />
+        <Route path="/sites" element={<AdminRoute><Sites /></AdminRoute>} />
+        <Route path="/equipes" element={<AdminRoute><Equipes /></AdminRoute>} />
+        <Route path="/heures-sup" element={<HeuresSup />} />
+        <Route path="/audit" element={<AdminRoute><AuditLog /></AdminRoute>} />
       </Route>
     </Routes>
   );

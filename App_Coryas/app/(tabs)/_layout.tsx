@@ -2,30 +2,13 @@
 // LAYOUT DES ONGLETS - Navigation par tabs (bottom tabs)
 // ============================================================
 
-import { Tabs, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/Colors";
-import { checkAuth } from "../../src/services/auth";
-import { useFocusEffect } from "expo-router";
 
 export default function TabLayout() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-
-  // Vérifie l'authentification à CHAQUE fois que les onglets sont affichés
-  // (pas seulement au montage). Comme ça, si le token expire, l'utilisateur
-  // est redirigé vers la connexion dès qu'il revient sur les onglets.
-  useFocusEffect(
-    useCallback(() => {
-      const verifyAuth = async () => {
-        const isAuth = await checkAuth();
-        if (!isAuth) router.replace("/login");
-      };
-      verifyAuth();
-    }, [])
-  );
 
   return (
     <Tabs

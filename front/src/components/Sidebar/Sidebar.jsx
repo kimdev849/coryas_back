@@ -46,6 +46,10 @@ function Sidebar({ onClose }) {
           Mes Congés
         </NavLink>
 
+        <NavLink to="/heures-sup" className="sidebar-link" onClick={handleNavClick}>
+          Heures sup
+        </NavLink>
+
         {isAdmin && (
           <>
             <NavLink to="/employes" className="sidebar-link" onClick={handleNavClick}>
@@ -56,6 +60,21 @@ function Sidebar({ onClose }) {
             </NavLink>
             <NavLink to="/stats" className="sidebar-link" onClick={handleNavClick}>
               Ponctualité
+            </NavLink>
+            <NavLink to="/types-conges" className="sidebar-link" onClick={handleNavClick}>
+              Types congés
+            </NavLink>
+            <NavLink to="/equipes" className="sidebar-link" onClick={handleNavClick}>
+              Équipes
+            </NavLink>
+            <NavLink to="/sites" className="sidebar-link" onClick={handleNavClick}>
+              Sites
+            </NavLink>
+            <NavLink to="/contrats" className="sidebar-link" onClick={handleNavClick}>
+              Contrats
+            </NavLink>
+            <NavLink to="/audit" className="sidebar-link" onClick={handleNavClick}>
+              Journal audit
             </NavLink>
             <NavLink to="/configuration" className="sidebar-link" onClick={handleNavClick}>
               Configuration

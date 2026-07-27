@@ -25,7 +25,8 @@ export default function PresenceDetailScreen() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await getPresenceById(id as string);
+        const presenceId = typeof id === "string" ? id : String(id?.[0] || id);
+        const data = await getPresenceById(presenceId);
         setPresence(data);
       } catch (err: any) {
         setError(err?.message || "Impossible de charger les données");

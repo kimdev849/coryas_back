@@ -39,9 +39,20 @@ export default function PresencesTab() {
     const now = new Date();
     const mois = now.getMonth();
     const annee = now.getFullYear();
+    // ⚠️ Parser la date manuellement (évite le bug toISOString
+    // qui décale d'un jour selon le fuseau horaire !)
     const duMois = presences.filter((p) => {
       if (!p.date_presence) return false;
-      const d = new Date(p.date_presence);
+      // L'API retourne toujours YYYY-MM-DD. On extrait année/mois manuellement
+      // pour éviter tout décalage lié au fuseau horaire.
+      const parts = p.date_presence.split('-');
+      if (parts.length === 3) {
+        const anneeP = parseInt(parts[0], 10);
+        const moisP = parseInt(parts[1], 10) - 1; // JS: 0-indexé
+        return moisP === mois && anneeP === annee;
+      }
+      // Fallback sécurisé: parser via Date (rare, car API toujours YYYY-MM-DD)
+      const d = new Date(p.date_presence + "T12:00:00"); // Midi = pas de décalage
       return d.getMonth() === mois && d.getFullYear() === annee;
     });
     const presents = duMois.filter(
@@ -71,10 +82,19 @@ export default function PresencesTab() {
     for (let i = 0; i < premierJour; i++) {
       cases.push({ jour: 0, type: "passe" });
     }
+    // ⚠️ Formater la date manuellement (évite le bug toISOString
+    // qui décale d'un jour selon le fuseau horaire !)
+    const formatLocal = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
     for (let j = 1; j <= nbJours; j++) {
       const dateObj = new Date(annee, mois, j);
       const jourSem = dateObj.getDay();
-      const dateStr = dateObj.toISOString().split("T")[0];
+      const dateStr = formatLocal(dateObj);
       const presence = presences.find((p) => p.date_presence && p.date_presence.startsWith(dateStr));
       const estFutur = dateObj > now;
       const estWeekend = jourSem === 0 || jourSem === 6;

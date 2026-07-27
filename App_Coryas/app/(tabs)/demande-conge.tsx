@@ -187,7 +187,7 @@ export default function DemandeCongePage() {
     setErreurDates("");
     setEnvoiEnCours(true);
     try {
-      await postDemandeConge(dateDebut, dateFin, typeConge);
+      await postDemandeConge(dateDebut, dateFin, typeConge, commentaire || undefined);
       Alert.alert(
         "Demande envoyée ! ✅",
         "Votre demande de congé a bien été transmise au service RH. Vous recevrez une notification dès qu'elle sera traitée.",

@@ -40,7 +40,7 @@ const creerDemande = async (req, res) => {
     try {
         // On recupere les champs en camelCase ET snake_case
         // pour que le frontend puisse envoyer l'un ou l'autre
-        const { employe_id, date_debut, date_fin, motif, dateDebut, dateFin, raison } = req.body;
+        const { employe_id, date_debut, date_fin, motif, commentaire, dateDebut, dateFin, raison, type_conge_id } = req.body;
 
         // Si employe_id est dans le body, on l'utilise. Sinon, on prend celui du token JWT.
         const finalEmployeId = employe_id || req.user?.employe_id;
@@ -58,6 +58,7 @@ const creerDemande = async (req, res) => {
         const nouveauConge = await congesModel.create({
             employe_id: finalEmployeId, date_debut: finalDateDebut,
             date_fin: finalDateFin, motif: finalMotif,
+            commentaire, type_conge_id: type_conge_id || undefined,
         });
 
         res.status(201).json({ message: "Demande de conge creee", data: nouveauConge });
