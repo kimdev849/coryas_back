@@ -12,6 +12,6 @@ const { verifyToken, checkRole } = require("../middlewares/auth.middleware");
 router.use(verifyToken);
 
 router.get("/", parametresController.getParametres);   // GET  /api/parametres
-router.put("/", checkRole(["Administrateur", "RH", "Directeur"]), parametresController.saveParametres);  // PUT  /api/parametres -> admin only
+router.put("/", checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]), parametresController.saveParametres);  // PUT  /api/parametres -> admin only
 
 module.exports = router;

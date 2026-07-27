@@ -8,9 +8,9 @@ router.use(verifyToken);
 router.get("/", controller.getAll);
 router.get("/stats", controller.getStats);
 router.get("/:id", controller.getById);
-router.post("/", checkRole(["Administrateur", "RH"]), controller.create);
-router.put("/:id/approve", checkRole(["Administrateur", "RH"]), controller.approve);
-router.put("/:id/reject", checkRole(["Administrateur", "RH"]), controller.reject);
+router.post("/", checkRole(["SuperAdmin", "Administrateur", "RH"]), controller.create);
+router.put("/:id/approve", checkRole(["SuperAdmin", "Administrateur", "RH"]), controller.approve);
+router.put("/:id/reject", checkRole(["SuperAdmin", "Administrateur", "RH"]), controller.reject);
 router.delete("/:id", controller.remove);
 
 module.exports = router;

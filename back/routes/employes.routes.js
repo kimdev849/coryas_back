@@ -19,7 +19,7 @@ const { validateEmploye } = require("../middlewares/validation.middleware");
 
 // router.use = applique verifyToken a TOUTES les routes en dessous
 router.use(verifyToken);
-router.use(checkRole(["Administrateur", "RH", "Directeur"]));
+router.use(checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]));
 
 router.get("/", employesController.getEmployes);         // GET /api/employes -> liste
 router.post("/", validateEmploye, employesController.createEmploye);      // POST /api/employes -> creer

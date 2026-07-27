@@ -7,7 +7,7 @@ router.use(verifyToken);
 
 router.get("/", controller.getAll);
 router.get("/:id", controller.getById);
-router.post("/", checkRole(["Administrateur"]), controller.create);
-router.put("/:id", checkRole(["Administrateur"]), controller.update);
+router.post("/", checkRole(["SuperAdmin", "Administrateur"]), controller.create);
+router.put("/:id", checkRole(["SuperAdmin", "Administrateur"]), controller.update);
 
 module.exports = router;

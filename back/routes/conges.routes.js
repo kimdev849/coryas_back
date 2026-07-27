@@ -24,15 +24,15 @@ router.get("/:id", congesController.getCongeById);    // GET /api/conges/5 -> de
 // Ces routes sont reservees aux Administrateurs, RH et Directeur
 // checkRole verifie que le role est dans la liste
 router.put("/:id/approve",
-  checkRole(["Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
+  checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
   congesController.appouverConge           // Approuver
 );
 router.put("/:id/reject",
-  checkRole(["Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
+  checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
   congesController.rejeterConge            // Rejeter
 );
 router.delete("/:id",
-  checkRole(["Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
+  checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]),   // Seulement Admin, RH et Directeur
   congesController.supprimerDemande        // Supprimer
 );
 

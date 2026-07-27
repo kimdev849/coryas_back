@@ -7,7 +7,7 @@
 // ================================================================
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import dashboardService from "../../services/dashboardService";
 import presencesService from "../../services/presencesService";
@@ -23,6 +23,12 @@ import "./style.css";
 function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // SuperAdmin → rediriger vers /super-admin
+  if (user?.role === "SuperAdmin") {
+    return <Navigate to="/super-admin" replace />;
+  }
+  
   const isEmploye = user?.role === "Employé";
   const isAdmin = !isEmploye;
 

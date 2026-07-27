@@ -13,7 +13,7 @@ function Sidebar({ onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
+  const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur" || user?.role === "SuperAdmin";
   const isSuperAdmin = user?.role === "SuperAdmin";
 
   const handleLogout = (e) => {
