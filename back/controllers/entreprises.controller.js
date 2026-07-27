@@ -4,6 +4,7 @@
 
 const entreprisesModel = require("../models/entreprises.model");
 const pool = require("../config/database");
+const bcrypt = require("bcrypt");
 
 const getAll = async (req, res) => {
     try {
@@ -27,15 +28,91 @@ const getById = async (req, res) => {
 };
 
 const create = async (req, res) => {
+    const client = await pool.connect();
     try {
-        const data = await entreprisesModel.create(req.body);
-        res.status(201).json({ message: "Entreprise créée", data });
+        const { nom, email, telephone, ville, pays, secteur, plan_id, nb_employes_max, notes, slug } = req.body;
+        
+        // Générer le slug
+        const generatedSlug = slug || (nom
+            ? nom.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                + '-' + Date.now()
+            : 'entreprise-' + Date.now());
+
+        const defaultPassword = "admin123";
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        await client.query("BEGIN");
+
+        // 1. Créer l'entreprise
+        const entrepriseRes = await client.query(`
+            INSERT INTO entreprises (nom, slug, email, telephone, ville, pays, secteur, plan_id, nb_employes_max, notes, actif)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
+            RETURNING *
+        `, [nom, generatedSlug, email, telephone || null, ville || null, pays || 'Congo', secteur || null,
+            plan_id || null, nb_employes_max || 10, notes || null]);
+        
+        const entreprise = entrepriseRes.rows[0];
+        const entrepriseId = entreprise.id;
+
+        // 2. Créer le matricule admin
+        const adminMatricule = "ADM-" + String(entrepriseId).padStart(3, '0');
+
+        // 3. Créer l'employé admin
+        const employeRes = await client.query(`
+            INSERT INTO employes (matricule, nom, prenom, telephone, statut, entreprise_id, date_embauche)
+            VALUES ($1, $2, $3, $4, 'Actif', $5, CURRENT_DATE)
+            RETURNING *
+        `, [adminMatricule, nom || 'Admin', 'Admin', telephone || null, entrepriseId]);
+        
+        const adminEmploye = employeRes.rows[0];
+
+        // 4. Créer l'utilisateur admin (rôle Administrateur = 1)
+        await client.query(`
+            INSERT INTO utilisateurs (employe_id, role_id, email, mot_de_passe, actif, entreprise_id)
+            VALUES ($1, 1, $2, $3, true, $4)
+        `, [adminEmploye.id, email, hashedPassword, entrepriseId]);
+
+        // 5. Créer les paramètres par défaut pour l'entreprise
+        await client.query(`
+            INSERT INTO parametres (nom_entreprise, email_entreprise, telephone, entreprise_id)
+            VALUES ($1, $2, $3, $4)
+        `, [nom, email, telephone || null, entrepriseId]);
+
+        await client.query("COMMIT");
+
+        console.log(`✅ Entreprise créée : ${nom} (ID: ${entrepriseId}) — Admin: ${email} / ${defaultPassword}`);
+
+        res.status(201).json({
+            message: "Entreprise créée avec succès",
+            data: {
+                ...entreprise,
+                admin: {
+                    email: email,
+                    password: defaultPassword,
+                    matricule: adminMatricule,
+                    nom: adminEmploye.prenom + ' ' + adminEmploye.nom,
+                }
+            }
+        });
     } catch (error) {
-        if (error.code === '23505') { // Duplicate slug
-            return res.status(400).json({ message: "Ce slug est déjà utilisé", data: null });
+        await client.query("ROLLBACK").catch(() => {});
+        if (error.code === '23505') {
+            const detail = error.detail || "";
+            if (detail.includes("slug")) {
+                return res.status(400).json({ message: "Ce slug est déjà utilisé", data: null });
+            }
+            if (detail.includes("email")) {
+                return res.status(400).json({ message: "Cet email est déjà utilisé par une autre entreprise", data: null });
+            }
+            return res.status(400).json({ message: "Cet email est déjà utilisé", data: null });
         }
         console.error("❌ createEntreprise:", error);
         res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+    } finally {
+        client.release();
     }
 };
 

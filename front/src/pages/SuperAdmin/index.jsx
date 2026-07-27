@@ -21,6 +21,7 @@ function SuperAdmin() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(null);
   const [formData, setFormData] = useState({ nom: "", email: "", telephone: "", ville: "", plan_id: "" });
 
   const isSuperAdmin = user?.role === "SuperAdmin";
@@ -51,9 +52,13 @@ function SuperAdmin() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await entreprisesService.create(formData);
+      const res = await entreprisesService.create(formData);
       setShowCreate(false);
       setFormData({ nom: "", email: "", telephone: "", ville: "", plan_id: "" });
+      // Affiche les identifiants de l'admin créé
+      if (res?.data?.admin) {
+        setShowCredentials(res.data.admin);
+      }
       loadData();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -166,6 +171,56 @@ function SuperAdmin() {
           </tbody>
         </table>
       </div>
+
+      {/* ===== CREDENTIALS SUCCESS MODAL ===== */}
+      {showCredentials && (
+        <div className="modal-overlay" onClick={() => setShowCredentials(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440, textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+            <h2 className="modal-title" style={{ textAlign: "center", fontSize: 20, marginBottom: 8 }}>
+              Entreprise créée !
+            </h2>
+            <p style={{ color: "#6B7280", fontSize: 14, marginBottom: 20 }}>
+              Le compte admin a été créé automatiquement. Voici les identifiants :
+            </p>
+            <div style={{
+              background: "#F0F7FF", borderRadius: 12, padding: 20,
+              border: "2px solid #DBEAFE", marginBottom: 20, textAlign: "left"
+            }}>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Admin</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#1F2937" }}>{showCredentials.nom}</div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Email</div>
+                <div style={{
+                  fontSize: 14, fontWeight: 600, color: "#1D4ED8",
+                  background: "#FFFFFF", padding: "8px 12px", borderRadius: 8,
+                  border: "1px solid #DBEAFE", fontFamily: "monospace"
+                }}>{showCredentials.email}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Mot de passe</div>
+                <div style={{
+                  fontSize: 14, fontWeight: 600, color: "#1F2937",
+                  background: "#FFFFFF", padding: "8px 12px", borderRadius: 8,
+                  border: "1px solid #DBEAFE", fontFamily: "monospace"
+                }}>{showCredentials.password}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>
+              ⚠️ Transmettez ces identifiants au responsable de l'entreprise.
+              Il devra changer le mot de passe à la première connexion.
+            </p>
+            <button
+              className="btn btn-primary btn-block btn-lg"
+              onClick={() => setShowCredentials(null)}
+            >
+              J'ai copié les identifiants
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create modal */}
       {showCreate && (
