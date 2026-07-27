@@ -13,8 +13,9 @@ function Sidebar({ onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur" || user?.role === "SuperAdmin";
+  const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
   const isSuperAdmin = user?.role === "SuperAdmin";
+  const canManage = isAdmin || isSuperAdmin;
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -41,21 +42,27 @@ function Sidebar({ onClose }) {
           Dashboard
         </NavLink>
 
-        {!isAdmin && (
+        {/* Liens employé (cachés pour SuperAdmin et admin) */}
+        {!canManage && (
           <NavLink to="/mon-pointage" className="sidebar-link" onClick={handleNavClick}>
             Mon Pointage
           </NavLink>
         )}
 
-        <NavLink to="/conges" className="sidebar-link" onClick={handleNavClick}>
-          Mes Congés
-        </NavLink>
+        {/* Liens employé (cachés pour SuperAdmin) */}
+        {!isSuperAdmin && (
+          <>
+            <NavLink to="/conges" className="sidebar-link" onClick={handleNavClick}>
+              Mes Congés
+            </NavLink>
+            <NavLink to="/heures-sup" className="sidebar-link" onClick={handleNavClick}>
+              Heures sup
+            </NavLink>
+          </>
+        )}
 
-        <NavLink to="/heures-sup" className="sidebar-link" onClick={handleNavClick}>
-          Heures sup
-        </NavLink>
-
-        {isAdmin && (
+        {/* Liens admin (cachés pour SuperAdmin) */}
+        {isAdmin && !isSuperAdmin && (
           <>
             <NavLink to="/employes" className="sidebar-link" onClick={handleNavClick}>
               Employés

@@ -141,38 +141,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* ===== ANTI-TRICHE ===== */}
-      <section className="landing-section landing-section-dark">
-        <div className="landing-section-inner">
-          <h2 className="landing-section-title">Comment Présencia bloque la triche</h2>
-          <p className="landing-section-desc">
-            Pas de complications techniques. Du bon sens et du contrôle.
-          </p>
-          <div className="landing-cheat-grid">
-            <div className="landing-cheat-card landing-feature-card-dark">
-              <div className="landing-cheat-icon">📍</div>
-              <h3>Géolocalisation GPS</h3>
-              <p>L'employé doit être physiquement au bureau. Le bouton est grisé s'il est trop loin.</p>
-            </div>
-            <div className="landing-cheat-card landing-feature-card-dark">
-              <div className="landing-cheat-icon">📸</div>
-              <h3>Photo en direct</h3>
-              <p>Selfie obligatoire pris avec l'appareil photo en direct. Pas de galerie, pas de vieille photo.</p>
-            </div>
-            <div className="landing-cheat-card landing-feature-card-dark">
-              <div className="landing-cheat-icon">⏰</div>
-              <h3>Horodatage serveur</h3>
-              <p>L'heure du pointage vient du serveur, pas du téléphone. Impossible de tricher sur l'heure.</p>
-            </div>
-            <div className="landing-cheat-card landing-feature-card-dark">
-              <div className="landing-cheat-icon">👁️</div>
-              <h3>Supervision manager</h3>
-              <p>Le manager voit toutes les photos de pointage. Si le visage ne correspond pas, il le voit.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ===== TARIFS (sans prix) ===== */}
       <section className="landing-section landing-section-dark" id="pricing">
         <div className="landing-section-inner">
