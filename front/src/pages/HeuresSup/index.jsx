@@ -5,7 +5,7 @@ import "./style.css";
 
 function HeuresSup() {
     const { user } = useAuth();
-    const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
+    const canManage = user?.role === "Administrateur" || user?.role === "RH";
     const [list, setList] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ nb_heures: "1", motif: "", date_heure_sup: new Date().toISOString().split("T")[0] });
@@ -66,7 +66,7 @@ function HeuresSup() {
             {message && <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", fontWeight: "bold", background: messageType === "success" ? "#d4edda" : "#f8d7da", color: messageType === "success" ? "#155724" : "#721c24" }}>{message}</div>}
 
             <div className="employes-actions">
-                {isAdmin && (
+                {canManage && (
                     <button className="employes-btn employes-btn-primary" onClick={() => setShowForm(!showForm)}>
                         {showForm ? "Fermer" : "+ Nouvelle heure sup"}
                     </button>
@@ -108,7 +108,7 @@ function HeuresSup() {
             <div className="employes-table-container">
                 <table className="employes-table">
                     <thead>
-                        <tr><th>Employé</th><th>Date</th><th>Heures</th><th>Taux</th><th>Motif</th><th>Statut</th>{isAdmin && <th>Actions</th>}</tr>
+                        <tr><th>Employé</th><th>Date</th><th>Heures</th><th>Taux</th><th>Motif</th><th>Statut</th>{canManage && <th>Actions</th>}</tr>
                     </thead>
                     <tbody>
                         {list.map(hs => (
@@ -119,7 +119,7 @@ function HeuresSup() {
                                 <td>x{hs.taux_majoration}</td>
                                 <td>{hs.motif || "-"}</td>
                                 <td>{badge(hs.statut)}</td>
-                                {isAdmin && (
+                                {canManage && (
                                     <td>{hs.statut === "En attente" && (
                                         <div style={{ display: "flex", gap: 4 }}>
                                             <button onClick={() => handleAction(hs.id, "approve")}
@@ -131,7 +131,7 @@ function HeuresSup() {
                                 )}
                             </tr>
                         ))}
-                        {list.length === 0 && <tr><td colSpan={isAdmin ? 7 : 6} className="employes-empty">Aucune heure sup</td></tr>}
+                        {list.length === 0 && <tr><td colSpan={canManage ? 7 : 6} className="employes-empty">Aucune heure sup</td></tr>}
                     </tbody>
                 </table>
             </div>
