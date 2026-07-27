@@ -40,12 +40,21 @@ async function getBySlug(slug) {
 
 async function create(data) {
     const { nom, slug, email, telephone, ville, pays, secteur, plan_id, nb_employes_max, notes } = data;
+    // Génère automatiquement un slug à partir du nom si non fourni
+    // Exemple: "SARL Congo Tech" → "sarl-congo-tech"
+    const generatedSlug = slug || (nom
+        ? nom.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
+            .replace(/[^a-z0-9]+/g, '-') // remplace caractères spéciaux par -
+            .replace(/^-+|-+$/g, '') // enlève les - au début/fin
+            + '-' + Date.now() // ajoute timestamp pour unicité
+        : 'entreprise-' + Date.now());
     const result = await pool.query(`
-        INSERT INTO entreprises (nom, slug, email, telephone, ville, pays, secteur, plan_id, nb_employes_max, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO entreprises (nom, slug, email, telephone, ville, pays, secteur, plan_id, nb_employes_max, notes, actif)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
-    `, [nom, slug, email, telephone || null, ville || null, pays || 'Congo', secteur || null,
-        plan_id || null, nb_employes_max || 10, notes || null]);
+    `, [nom, generatedSlug, email, telephone || null, ville || null, pays || 'Congo', secteur || null,
+        plan_id || null, nb_employes_max || 10, notes || null, true]);
     return result.rows[0];
 }
 
