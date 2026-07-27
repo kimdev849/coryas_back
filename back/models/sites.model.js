@@ -32,12 +32,12 @@ async function getById(id) {
 }
 
 async function create(data) {
-    const { nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, latitude, longitude, rayon_gps } = data;
+    const { nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, latitude, longitude, rayon_gps, entreprise_id } = data;
     const result = await pool.query(`
-        INSERT INTO sites (nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, latitude, longitude, rayon_gps)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        INSERT INTO sites (nom, code, adresse, ville, pays, telephone, email, horaire_ouverture, horaire_fermeture, latitude, longitude, rayon_gps, entreprise_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
-    `, [nom, code || null, adresse || null, ville || null, pays || "Côte d'Ivoire", telephone || null, email || null, horaire_ouverture || null, horaire_fermeture || null, latitude || null, longitude || null, rayon_gps || 100]);
+    `, [nom, code || null, adresse || null, ville || null, pays || "Côte d'Ivoire", telephone || null, email || null, horaire_ouverture || null, horaire_fermeture || null, latitude || null, longitude || null, rayon_gps || 100, entreprise_id || null]);
     return result.rows[0];
 }
 
