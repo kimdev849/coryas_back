@@ -144,28 +144,44 @@ CREATE INDEX IF NOT EXISTS idx_notifications_entreprise ON notifications(entrepr
 CREATE INDEX IF NOT EXISTS idx_heures_sup_entreprise ON heures_sup(entreprise_id);
 
 -- ================================================================
--- 8. CRÉATION DU SUPER ADMIN PRÉSENCIA
+-- 8. RÉPARATION DES CONTRAINTES NOT NULL (corrige les migrations
+--    précédentes qui ont modifié les colonnes)
 -- ================================================================
--- ⚠️ On fournit TOUTES les colonnes pour éviter les erreurs NOT NULL
--- (les migrations précédentes ont pu modifier les contraintes).
--- On crée d'abord un département par défaut si inexistant.
-INSERT INTO departements (nom)
-SELECT 'Présencia'
-WHERE NOT EXISTS (SELECT 1 FROM departements WHERE nom = 'Présencia');
+-- Ces ALTER TABLE annulent les NOT NULL ajoutés par erreur et
+-- restaurent les valeurs par défaut d'origine.
+ALTER TABLE employes ALTER COLUMN departement_id DROP NOT NULL;
+ALTER TABLE employes ALTER COLUMN departement_id DROP DEFAULT;
+ALTER TABLE employes ALTER COLUMN date_embauche SET DEFAULT CURRENT_DATE;
 
-INSERT INTO employes (matricule, nom, prenom, sexe, telephone, date_naissance,
-                      date_embauche, departement_id, statut)
-SELECT 'SUPER001', 'Super', 'Présencia', 'M', NULL, CURRENT_DATE,
-       CURRENT_DATE, (SELECT id FROM departements WHERE nom = 'Présencia'), 'Actif'
+-- ================================================================
+-- 9. CRÉATION DU SUPER ADMIN PRÉSENCIA (avec TOUTES les colonnes
+--    fournies explicitement pour éviter tout NOT NULL)
+-- ================================================================
+INSERT INTO employes (
+    matricule, nom, prenom, sexe, telephone,
+    date_naissance, date_embauche, departement_id, statut,
+    type_contrat_id, date_fin_contrat, periode_essai_jours, date_fin_essai,
+    poste, salaire, numero_securite_sociale, adresse_domicile, ville,
+    site_id, equipe_id, responsable_id,
+    photo_url, entreprise_id
+)
+SELECT 
+    'SUPER001', 'Super', 'Présencia', NULL, NULL,
+    NULL, CURRENT_DATE, NULL, 'Actif',
+    NULL, NULL, NULL, NULL,
+    'Super Admin Présencia', NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL,
+    NULL, NULL
 WHERE NOT EXISTS (SELECT 1 FROM employes WHERE matricule = 'SUPER001');
 
-INSERT INTO utilisateurs (employe_id, role_id, email, mot_de_passe, actif)
+INSERT INTO utilisateurs (employe_id, role_id, email, mot_de_passe, actif, entreprise_id)
 SELECT 
     (SELECT id FROM employes WHERE matricule = 'SUPER001'),
     5, -- SuperAdmin
     'super@presencia.cg',
     '$2b$10$Nky8LrZN6sn4JFFLe4/rAO1Ax/ndVHQ1vUxLLo2Cu1WNP/vNXEm8W', -- admin123
-    true
+    true,
+    NULL
 WHERE NOT EXISTS (SELECT 1 FROM utilisateurs WHERE email = 'super@presencia.cg');
 
 -- ================================================================
