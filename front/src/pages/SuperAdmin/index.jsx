@@ -37,9 +37,10 @@ function SuperAdmin() {
         entreprisesService.getAll(),
         plansService.getAll(),
       ]);
-      setStats(statsRes);
-      setEntreprises(entreprisesRes || []);
-      setPlans(plansRes || []);
+      // Les services renvoient { message, data } - on extrait .data
+      setStats(statsRes?.data || statsRes);
+      setEntreprises(entreprisesRes?.data || entreprisesRes || []);
+      setPlans(plansRes?.data || plansRes || []);
     } catch (err) {
       console.error("Erreur chargement SuperAdmin:", err);
     } finally {

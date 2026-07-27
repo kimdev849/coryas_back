@@ -280,14 +280,14 @@ function Dashboard() {
   }
 
   const statCards = [
-    { icon: Building2, label: "Total Employés", value: stats?.totalEmployes || 0, color: "#2563EB", bg: "#EFF6FF", change: "+2 cette semaine" },
-    { icon: UserCheck, label: "Présents", value: stats?.presents || 0, color: "#059669", bg: "#D1FAE5", change: `${Math.round((stats?.presents || 0) / (stats?.totalEmployes || 1) * 100)}% du personnel` },
-    { icon: UserX, label: "Absents", value: stats?.absents || 0, color: "#DC2626", bg: "#FEE2E2", change: "Dont congés & absences" },
+    { icon: Building2, label: "Total Employés", value: stats?.totalEmployes || 0, color: "#2563EB", bg: "#EFF6FF", change: "Effectif total" },
+    { icon: UserCheck, label: "Présents", value: stats?.presentAujourdhui || todayStats?.presents || 0, color: "#059669", bg: "#D1FAE5", change: `${Math.round((stats?.presentAujourdhui || 0) / (stats?.totalEmployes || 1) * 100)}% du personnel` },
+    { icon: UserX, label: "Absents", value: stats?.absents || 0, color: "#DC2626", bg: "#FEE2E2", change: "Aujourd'hui" },
     { icon: Clock, label: "Retards", value: stats?.retards || 0, color: "#D97706", bg: "#FEF3C7", change: "Aujourd'hui" },
     { icon: TrendingUp, label: "Taux de présence", value: `${stats?.tauxPresence || 0}%`, color: "#7C3AED", bg: "#EDE9FE", change: "Objectif : 95%" },
     { icon: AlertTriangle, label: "Congés en attente", value: stats?.congesEnAttente || 0, color: "#2563EB", bg: "#DBEAFE", change: "À valider" },
-    { icon: TrendingDown, label: "Départs anticipés", value: stats?.departsAnticipe || todayStats?.departsAnticipe || 0, color: "#EA580C", bg: "#FED7AA", change: "Aujourd'hui" },
-    { icon: Award, label: "Taux de ponctualité", value: `${stats?.tauxPonctualite || todayStats?.tauxPonctualite || 0}%`, color: "#0891B2", bg: "#CFFAFE", change: "Moyenne générale" },
+    { icon: Award, label: "Taux de présence", value: `${todayStats?.tauxPresence || stats?.tauxPresence || 0}%`, color: "#0891B2", bg: "#CFFAFE", change: "Aujourd'hui" },
+    { icon: TrendingDown, label: "En cours", value: todayStats?.enCours || 0, color: "#EA580C", bg: "#FED7AA", change: "Encore au travail" },
   ];
 
   return (
@@ -323,7 +323,7 @@ function Dashboard() {
           </div>
           <div className="dash-hero-divider" />
           <div className="dash-hero-stat">
-            <span className="dash-hero-stat-value" style={{ color: "var(--color-success)" }}>{stats?.presents || 0}</span>
+            <span className="dash-hero-stat-value" style={{ color: "var(--color-success)" }}>{stats?.presentAujourdhui || todayStats?.presents || 0}</span>
             <span className="dash-hero-stat-label">Présents</span>
           </div>
           <div className="dash-hero-divider" />
