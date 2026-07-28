@@ -105,9 +105,6 @@ function Sidebar({ onClose }) {
             <NavLink to="/contrats" className="sidebar-link" onClick={handleNavClick}>
               Contrats
             </NavLink>
-            <NavLink to="/audit" className="sidebar-link" onClick={handleNavClick}>
-              Journal audit
-            </NavLink>
             <NavLink to="/configuration" className="sidebar-link" onClick={handleNavClick}>
               Configuration
             </NavLink>
@@ -119,6 +116,9 @@ function Sidebar({ onClose }) {
             <div className="sidebar-section">Super Admin</div>
             <NavLink to="/super-admin" className="sidebar-link" onClick={handleNavClick}>
               🏢 Entreprises
+            </NavLink>
+            <NavLink to="/audit" className="sidebar-link" onClick={handleNavClick}>
+              📋 Journal audit
             </NavLink>
           </>
         )}

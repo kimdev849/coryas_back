@@ -150,3 +150,79 @@
     font-size: 12px;
   }
 }
+
+/* ===============================================================
+   PRINT — Impression de la liste des employés
+   ============================================================ */
+
+.employes-btn-print {
+  background: #374151;
+  color: white;
+}
+
+.employes-btn-print:hover {
+  background: #1F2937;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  
+  .page-title,
+  .page-description,
+  .employes-table-container,
+  .employes-table-container * {
+    visibility: visible;
+  }
+  
+  .page-title {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    font-size: 18px;
+  }
+  
+  .page-description {
+    position: absolute;
+    top: 28px;
+    left: 20px;
+    font-size: 11px;
+    color: #666;
+  }
+  
+  .employes-actions,
+  .employes-table th:last-child,
+  .employes-table td:last-child {
+    display: none !important;
+  }
+  
+  .employes-table-container {
+    position: absolute;
+    top: 55px;
+    left: 10px;
+    right: 10px;
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .employes-table { min-width: auto; font-size: 11px; }
+  .employes-table th {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+    border-bottom: 2px solid #333 !important;
+    padding: 7px 8px;
+    font-size: 9px;
+  }
+  .employes-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #eee;
+    color: #000 !important;
+  }
+  .employes-table tbody tr:hover { background: transparent !important; }
+  
+  .sidebar, .navbar, .page-content > header,
+  .page-content > nav,
+  .page-content > .employes-actions {
+    display: none !important;
+  }
+}

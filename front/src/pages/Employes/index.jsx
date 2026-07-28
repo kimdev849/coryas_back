@@ -309,9 +309,15 @@ function Employes() {
         <button
           className="employes-btn"
           onClick={loadEmployes}
-          style={{ background: "#6c757d", color: "white", marginLeft: "8px" }}
+          style={{ background: "#6c757d", color: "white" }}
         >
           Recharger
+        </button>
+        <button
+          className="employes-btn employes-btn-print"
+          onClick={() => window.print()}
+        >
+          🖨️ Imprimer
         </button>
       </div>
 
