@@ -299,7 +299,6 @@ export const getParametres = async (): Promise<Parametres | null> => {
       return null; // Pas connecté → valeurs par défaut
     }
     const response = await api.get("/parametres");
-    console.log("📋 getParametres réponse:", JSON.stringify(response.data?.data).substring(0, 100));
     return response.data?.data || null;
   } catch (error) {
     console.error("Erreur getParametres:", error);

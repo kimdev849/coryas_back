@@ -27,11 +27,15 @@ async function findByEmail(email) {
         SELECT u.id, u.email, u.mot_de_passe, u.actif,
                e.id AS employe_id, e.nom AS employe_nom, e.prenom AS employe_prenom,
                e.entreprise_id,
+               ent.nom AS entreprise_nom,
                r.nom AS role_nom
         -- Table principale : utilisateurs (alias u)
         FROM utilisateurs u
         -- JOIN avec la table employes pour avoir le nom, prenom ET entreprise_id
         JOIN employes e ON e.id = u.employe_id
+        -- LEFT JOIN avec la table entreprises pour avoir le NOM de l'entreprise
+        -- (source autoritaire, pas les parametres)
+        LEFT JOIN entreprises ent ON ent.id = e.entreprise_id
         -- JOIN avec la table roles pour avoir le nom du role
         JOIN roles r ON r.id = u.role_id
         -- On filtre par email (WHERE)

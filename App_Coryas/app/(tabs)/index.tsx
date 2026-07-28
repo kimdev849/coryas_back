@@ -96,25 +96,33 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const userStr = await AsyncStorage.getItem("@user_data");
+      let storedEntrepriseNom = "";
       if (userStr) {
         const user = JSON.parse(userStr);
         setUserName(`${user.prenom}`);
+        // ✅ Nom de l'entreprise depuis la réponse login (table entreprises)
+        // C'est la source autoritaire, pas besoin de getParametres pour ça
+        if (user.entreprise_nom) {
+          storedEntrepriseNom = user.entreprise_nom;
+          setNomEntreprise(user.entreprise_nom);
+        }
       }
 
       // Chargement parallèle des données principales
-      // ⚠️ IMPORTANT : getParametres() est SÉPARÉ du Promise.all pour garantir
-      // que le nom de l'entreprise s'affiche même si les présences échouent.
       const [activePresence, unread, todayPresences] = await Promise.all([
         getActivePresence(),
         getUnreadNotificationsCount(),
         getTodayPresences(),
       ]);
 
-      // Chargement du nom de l'entreprise (indépendant pour ne pas être bloqué)
+      // Chargement des paramètres (heures configurées) — indépendant
       try {
         const parametres = await getParametres();
         if (parametres) {
-          setNomEntreprise(parametres.nom_entreprise || "");
+          // Ne pas écraser le nom entreprise si déjà chargé depuis AsyncStorage
+          if (!storedEntrepriseNom && parametres.nom_entreprise) {
+            setNomEntreprise(parametres.nom_entreprise);
+          }
           setHeureOuverture(parametres.heure_ouverture || null);
           setHeureFermeture(parametres.heure_fermeture || null);
         }

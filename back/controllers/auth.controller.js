@@ -60,6 +60,7 @@ const login = async (req, res) => {
             role: user.role_nom,           // ex: "Administrateur" ou "RH"
             employe_id: user.employe_id,
             entreprise_id: user.entreprise_id,
+            entreprise_nom: user.entreprise_nom, // Nom de l'entreprise depuis la table entreprises
             nom: user.employe_nom,
             prenom: user.employe_prenom,
         };
@@ -78,6 +79,7 @@ const login = async (req, res) => {
                     id: user.id, email: user.email, nom: user.employe_nom,
                     prenom: user.employe_prenom, role: user.role_nom, employe_id: user.employe_id,
                     entreprise_id: user.entreprise_id,
+                    entreprise_nom: user.entreprise_nom,
                 },
             },
         });
