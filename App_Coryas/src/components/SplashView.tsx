@@ -1,9 +1,5 @@
 // ============================================================
-// SPLASH VIEW - Animation d'accueil réutilisable
-// ============================================================
-// Utilisé par :
-//   - app/index.tsx (route splash standard)
-//   - app/_layout.tsx (rendu conditionnel pendant chargement auth)
+// SPLASH VIEW — Animation d'accueil PRÉSENCIA
 // ============================================================
 
 import { StyleSheet, Text, View, Animated } from "react-native";
@@ -19,57 +15,38 @@ export function SplashView() {
     Animated.sequence([
       Animated.delay(200),
       Animated.parallel([
-        Animated.spring(logoScale, {
-          toValue: 1,
-          friction: 5,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
+        Animated.spring(logoScale, { toValue: 1, friction: 5, tension: 40, useNativeDriver: true }),
+        Animated.timing(logoOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
       ]),
     ]).start();
 
     const spinLoop = Animated.loop(
-      Animated.timing(spinnerAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      })
+      Animated.timing(spinnerAnim, { toValue: 1, duration: 1000, useNativeDriver: true })
     );
     spinLoop.start();
-
-    return () => {
-      spinLoop.stop();
-    };
+    return () => { spinLoop.stop(); };
   }, []);
 
   const spinnerRotate = spinnerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
+    inputRange: [0, 1], outputRange: ["0deg", "360deg"],
   });
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <Animated.Image
-          source={require("../../assets/logo.png")}
+        <Animated.View
           style={[
-            styles.logoImage,
-            {
-              transform: [{ scale: logoScale }],
-              opacity: logoOpacity,
-            },
+            styles.logoCircle,
+            { transform: [{ scale: logoScale }], opacity: logoOpacity },
           ]}
-        />
+        >
+          <Text style={styles.logoLetter}>P</Text>
+        </Animated.View>
         <Animated.Text style={[styles.appName, { opacity: logoOpacity }]}>
-          PRESENCE
+          PRÉSENCIA
         </Animated.Text>
-        <Animated.Text style={[styles.appNameSub, { opacity: logoOpacity }]}>
-          CORYAS
+        <Animated.Text style={[styles.appTagline, { opacity: logoOpacity }]}>
+          Gestion des présences
         </Animated.Text>
       </View>
       <View style={styles.spinnerContainer}>
@@ -81,43 +58,28 @@ export function SplashView() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: Colors.black,
-    alignItems: "center",
-    justifyContent: "center",
+    flex: 1, backgroundColor: Colors.bgDark,
+    alignItems: "center", justifyContent: "center",
   },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 100,
+  logoContainer: { alignItems: "center", marginBottom: 100 },
+  logoCircle: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: Colors.primary,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 24,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 12,
   },
-  logoImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 30,
-  },
-  appName: {
-    color: Colors.white,
-    fontSize: 28,
-    fontWeight: "bold",
-    letterSpacing: 4,
-  },
-  appNameSub: {
-    color: Colors.primary,
-    fontSize: 20,
-    fontWeight: "600",
-    letterSpacing: 3,
-  },
-  spinnerContainer: {
-    position: "absolute",
-    bottom: 150,
-  },
+  logoLetter: { fontSize: 44, fontWeight: "800", color: Colors.white },
+  appName: { color: Colors.white, fontSize: 28, fontWeight: "800", letterSpacing: 3 },
+  appTagline: { color: Colors.textSecondary, fontSize: 14, marginTop: 6 },
+  spinnerContainer: { position: "absolute", bottom: 150 },
   spinner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: "transparent",
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 3, borderColor: "transparent",
     borderTopColor: Colors.primary,
   },
 });

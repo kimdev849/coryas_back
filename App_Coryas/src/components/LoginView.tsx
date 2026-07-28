@@ -1,9 +1,5 @@
 // ============================================================
-// LOGIN VIEW - Formulaire de connexion réutilisable
-// ============================================================
-// Utilisé à la fois par :
-//   - app/login.tsx (quand on navigue vers /login)
-//   - app/_layout.tsx (rendu conditionnel quand déconnecté)
+// LOGIN VIEW - Formulaire de connexion PRÉSENCIA
 // ============================================================
 
 import {
@@ -25,7 +21,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 export function LoginView() {
   const auth = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,23 +36,13 @@ export function LoginView() {
     }
 
     setLoading(true);
-
     try {
       await auth.login(email.trim(), password);
-      // ✅ Connexion réussie ! isAuthenticated devient true.
-      // Le RootLayout (dans _layout.tsx) détecte le changement
-      // et monte automatiquement le Stack (app complète).
-      // L'index.tsx (splash) redirige vers /(tabs) au montage.
-      // Pas besoin de navigation ici.
     } catch (error: any) {
       if (!error.response) {
-        Alert.alert(
-          "Erreur réseau",
-          "Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez."
-        );
+        Alert.alert("Erreur réseau", "Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez.");
       } else {
-        const message =
-          error.response?.data?.message || "Email ou mot de passe incorrect.";
+        const message = error.response?.data?.message || "Email ou mot de passe incorrect.";
         Alert.alert("Erreur de connexion", message);
       }
     } finally {
@@ -75,11 +60,13 @@ export function LoginView() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* HEADER : Logo */}
+        {/* HEADER Logo */}
         <View style={styles.header}>
-          <Image source={require("../../assets/logo.png")} style={styles.logoImage} />
-          <Text style={styles.logoPrimary}>PRÉSENCE</Text>
-          <Text style={styles.logoSecondary}>CORYAS</Text>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>P</Text>
+          </View>
+          <Text style={styles.appName}>PRÉSENCIA</Text>
+          <Text style={styles.appTagline}>Gestion des présences</Text>
         </View>
 
         {/* FORMULAIRE */}
@@ -90,7 +77,7 @@ export function LoginView() {
             <Text style={styles.label}>Email</Text>
             <TextInput
               style={styles.input}
-              placeholder="votre@email.com"
+              placeholder="vous@entreprise.com"
               placeholderTextColor={Colors.textLight}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -130,85 +117,50 @@ export function LoginView() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    padding: 24,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
-  header: {
-    marginTop: 60,
-    marginBottom: 80,
-    alignItems: "center",
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  container: { flex: 1, backgroundColor: Colors.white, padding: 24 },
+  scrollContent: { flexGrow: 1, justifyContent: "center" },
+  header: { marginTop: 60, marginBottom: 60, alignItems: "center" },
+  logoCircle: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: Colors.primary,
+    alignItems: "center", justifyContent: "center",
     marginBottom: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  logoPrimary: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: Colors.black,
-    letterSpacing: 6,
+  logoText: { fontSize: 36, fontWeight: "800", color: Colors.white },
+  appName: {
+    fontSize: 28, fontWeight: "800", color: Colors.black,
+    letterSpacing: 3,
   },
-  logoSecondary: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: Colors.primary,
-    letterSpacing: 4,
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: Colors.black,
-    marginBottom: 40,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
+  appTagline: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
+  content: { flex: 1 },
+  title: { fontSize: 24, fontWeight: "700", color: Colors.black, marginBottom: 32 },
+  inputContainer: { marginBottom: 20 },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.textSecondary,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 13, fontWeight: "600", color: Colors.textSecondary,
+    marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8,
   },
   input: {
-    width: "100%",
-    backgroundColor: Colors.bgLight,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-    fontSize: 16,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
+    width: "100%", backgroundColor: Colors.bgLight,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderRadius: 12, fontSize: 16, color: Colors.textPrimary,
+    borderWidth: 1, borderColor: Colors.lightGray,
   },
   button: {
     width: "100%",
-    backgroundColor: Colors.black,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 32,
+    backgroundColor: Colors.primary,
+    paddingVertical: 16, borderRadius: 12,
+    alignItems: "center", marginTop: 24,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: Colors.white, fontSize: 16, fontWeight: "700", letterSpacing: 0.5 },
 });

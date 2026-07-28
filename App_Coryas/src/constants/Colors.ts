@@ -1,45 +1,39 @@
 // ============================================================
-// PALETTE DE COULEURS DE L'APPLICATION
+// PALETTE DE COULEURS DE L'APPLICATION — PRÉSENCIA
 // ============================================================
-// Ce fichier centralise toutes les couleurs utilisées dans l'app.
-// Avantages :
-//   1. Cohérence visuelle (une seule source de vérité)
-//   2. Facilité de modification (changer une couleur ici la change partout)
-//   3. as const : rend l'objet immuable (TypeScript)
-//
-// 📌 Utilisation :
-//   import { Colors } from "../constants/Colors";
-//   backgroundColor: Colors.primary
+// Thème bleu professionnel, aligné sur le design web.
 // ============================================================
 
 export const Colors = {
   // ============================================================
-  // COULEURS PRINCIPALES
+  // COULEURS PRINCIPALES — Bleu Présencia
   // ============================================================
-  primary: "#FFD700", // Or/jaune - couleur principale de l'app
-  black: "#000000",   // Noir pur
-  white: "#FFFFFF",   // Blanc pur
+  primary: "#2563EB",      // Bleu vif — couleur principale
+  primaryDark: "#1D4ED8",  // Bleu foncé — hover/actif
+  primaryLight: "#DBEAFE", // Bleu très clair — fonds
+  black: "#0B1120",        // Noir profond (titres)
+  white: "#FFFFFF",
 
   // ============================================================
-  // GRIS (pour les fonds, bordures, textes secondaires)
+  // GRIS
   // ============================================================
-  darkGray: "#333333",
-  gray: "#808080",
-  lightGray: "#E5E5E5",
-  bgLight: "#F5F5F5", // Fond clair (inputs, cartes)
-  bgDark: "#1A1A1A",  // Fond foncé (non utilisé pour l'instant)
+  darkGray: "#1F2937",
+  gray: "#6B7280",
+  lightGray: "#E5E7EB",
+  bgLight: "#F9FAFB",
+  bgDark: "#0B1120",
 
   // ============================================================
-  // COULEURS DE STATUT
+  // STATUT
   // ============================================================
-  success: "#22C55E", // Vert - présent, check-in réussi
-  warning: "#FBBF24", // Jaune - retard, pause
-  danger: "#EF4444",  // Rouge - départ anticipé, erreur, déconnexion
+  success: "#059669",    // Vert
+  warning: "#D97706",    // Orange/Ambre
+  danger: "#DC2626",     // Rouge
 
   // ============================================================
-  // COULEURS DE TEXTE
+  // TEXTE
   // ============================================================
-  textPrimary: "#000000",   // Texte principal (noir)
-  textSecondary: "#666666", // Texte secondaire (gris foncé)
-  textLight: "#999999",     // Texte léger (placeholders, infos mineures)
+  textPrimary: "#1F2937",
+  textSecondary: "#6B7280",
+  textLight: "#9CA3AF",
 } as const;

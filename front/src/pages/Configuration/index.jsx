@@ -256,8 +256,8 @@ function Configuration() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        if (file.size > 500 * 1024) {
-                          alert("Image trop volumineuse. Maximum 500 Ko.");
+                        if (file.size > 1.5 * 1024 * 1024) {
+                          alert("Image trop volumineuse. Maximum 1,5 Mo.");
                           return;
                         }
                         const reader = new FileReader();
