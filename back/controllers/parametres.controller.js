@@ -7,6 +7,33 @@
 // ================================================================
 
 const parametresModel = require("../models/parametres.model");
+const pool = require("../config/database");
+
+// ----------------------------------------------------------------
+// getEntrepriseId - Récupère l'entreprise_id depuis la base de données
+// ----------------------------------------------------------------
+// ⚠️ IMPORTANT : on ne se fie PAS au JWT car entreprise_id peut être
+// obsolète (ex: employé déplacé vers une autre entreprise sans
+// réauthentification). On fait une vraie requête DB pour être sûr.
+// ----------------------------------------------------------------
+async function getEntrepriseId(req) {
+    // 1. Si l'utilisateur a un employe_id, on cherche dans la table employes
+    if (req.user?.employe_id) {
+        try {
+            const result = await pool.query(
+                'SELECT entreprise_id FROM employes WHERE id = $1',
+                [req.user.employe_id]
+            );
+            if (result.rows[0]?.entreprise_id) {
+                return result.rows[0].entreprise_id;
+            }
+        } catch (e) {
+            console.warn("⚠️ getEntrepriseId lookup error:", e.message);
+        }
+    }
+    // 2. Fallback sur le JWT (au cas où)
+    return req.user?.entreprise_id || null;
+}
 
 // ----------------------------------------------------------------
 // GET /api/parametres - Recuperer les parametres
@@ -16,7 +43,8 @@ const parametresModel = require("../models/parametres.model");
 // ----------------------------------------------------------------
 async function getParametres(req, res) {
     try {
-        const data = await parametresModel.get(req.user?.entreprise_id);
+        const entrepriseId = await getEntrepriseId(req);
+        const data = await parametresModel.get(entrepriseId);
         res.json({ message: "Parametres", data });
     } catch (error) {
         console.error("Erreur getParametres:", error);
@@ -29,10 +57,12 @@ async function getParametres(req, res) {
 // ----------------------------------------------------------------
 // Recoit les donnees du formulaire de configuration et les
 // enregistre dans la table parametres (UPSERT = update ou insert).
+// On utilise aussi getEntrepriseId pour garantir le bon scope.
 // ----------------------------------------------------------------
 async function saveParametres(req, res) {
     try {
-        const data = await parametresModel.save({ ...req.body, entreprise_id: req.user?.entreprise_id });
+        const entrepriseId = await getEntrepriseId(req);
+        const data = await parametresModel.save({ ...req.body, entreprise_id: entrepriseId });
         res.json({ message: "Parametres sauvegardes", data });
     } catch (error) {
         console.error("Erreur saveParametres:", error);
