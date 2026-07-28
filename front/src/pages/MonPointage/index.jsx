@@ -278,13 +278,21 @@ function MonPointage() {
               </div>
               <div className="mp-config-item">
                 <Coffee size={14} />
-                <span>Pause déjeuner : {settings.pause_debut} → {(() => {
-                  const [h, m] = settings.pause_debut.split(":").map(Number);
-                  const totalMin = h * 60 + m + settings.duree_pause;
-                  const finH = Math.floor(totalMin / 60) % 24;
-                  const finM = totalMin % 60;
-                  return String(finH).padStart(2, "0") + ":" + String(finM).padStart(2, "0");
-                })()} ({settings.duree_pause} min)</span>
+                <span>
+                  {activePresence?.pause_statut === "En pause" ? (
+                    <>Pause en cours : début à {activePresence.pause_entree || settings.pause_debut}</>
+                  ) : activePresence?.pause_statut === "Terminee" ? (
+                    <>Pause : {activePresence.pause_entree} → {activePresence.pause_sortie}</>
+                  ) : (
+                    <>Pause prévue : {settings.pause_debut} → {(() => {
+                      const [h, m] = settings.pause_debut.split(":").map(Number);
+                      const totalMin = h * 60 + m + settings.duree_pause;
+                      const finH = Math.floor(totalMin / 60) % 24;
+                      const finM = totalMin % 60;
+                      return String(finH).padStart(2, "0") + ":" + String(finM).padStart(2, "0");
+                    })()} ({settings.duree_pause} min)</>
+                  )}
+                </span>
               </div>
             </div>
 
