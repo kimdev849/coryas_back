@@ -11,12 +11,13 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import dashboardService from "../../services/dashboardService";
 import presencesService from "../../services/presencesService";
+import heuresSupService from "../../services/heuresSupService";
 import {
   Users, UserCheck, UserX, Clock, CalendarCheck, AlertTriangle,
   LogIn, LogOut, Bell, ArrowRight, RefreshCw, BarChart3, Award,
   TrendingUp, TrendingDown, Activity, Calendar, CheckCircle2,
   XCircle, Clock4, Moon, Sun, MapPin, Mail, Phone, Building2,
-  ChevronRight, Sparkles
+  ChevronRight, Sparkles, Timer, Zap
 } from "lucide-react";
 import "./style.css";
 
@@ -34,6 +35,7 @@ function Dashboard() {
 
   const [stats, setStats] = useState(null);
   const [todayStats, setTodayStats] = useState(null);
+  const [heuresSupData, setHeuresSupData] = useState(null);
   const [activePresence, setActivePresence] = useState(null);
   const [todayPresences, setTodayPresences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,11 +71,13 @@ function Dashboard() {
     setIsLoading(true);
     setError("");
     try {
-      // On lance les deux appels en parallèle mais on les gère séparément
+      // On lance les appels en parallèle mais on les gère séparément
       // pour qu'un échec de l'un ne bloque pas l'autre
-      const [statsRes, todayStatsRes] = await Promise.allSettled([
+      const todayStr = new Date().toISOString().split("T")[0];
+      const [statsRes, todayStatsRes, hsStatsRes] = await Promise.allSettled([
         dashboardService.getStats(),
         presencesService.getTodayStats(),
+        heuresSupService.getStats({ date_debut: todayStr, date_fin: todayStr }),
       ]);
       
       if (statsRes.status === "fulfilled") {
@@ -88,6 +92,12 @@ function Dashboard() {
       } else {
         console.warn("⚠️ TodayStats échoué:", todayStatsRes.reason?.message);
         setTodayStats(null);
+      }
+
+      if (hsStatsRes.status === "fulfilled") {
+        setHeuresSupData(hsStatsRes.value.data);
+      } else {
+        setHeuresSupData(null);
       }
 
       // Si les DEUX ont échoué, on affiche une erreur
@@ -384,6 +394,41 @@ function Dashboard() {
         ))}
       </div>
 
+      {/* Heures Supplémentaires */}
+      <div className="dash-hs-section">
+        <div className="dash-hs-header">
+          <h3 className="dash-section-title">
+            <Zap size={18} />
+            Heures supplémentaires aujourd'hui
+          </h3>
+          <Link to="/heures-sup" className="dash-hs-link">
+            Voir tout <ChevronRight size={14} />
+          </Link>
+        </div>
+        {heuresSupData && (
+          <div className="dash-hs-stats">
+            <div className="dash-hs-stat">
+              <span className="dash-hs-value">{heuresSupData.total || 0}</span>
+              <span className="dash-hs-label">Demandes</span>
+            </div>
+            <div className="dash-hs-stat">
+              <span className="dash-hs-value">{parseFloat(heuresSupData.total_heures || 0).toFixed(1)}h</span>
+              <span className="dash-hs-label">Total heures</span>
+            </div>
+            <div className="dash-hs-stat">
+              <span className="dash-hs-value dash-hs-value-approved">{parseFloat(heuresSupData.heures_approuvees || 0).toFixed(1)}h</span>
+              <span className="dash-hs-label">Approuvées</span>
+            </div>
+          </div>
+        )}
+        {!heuresSupData && (
+          <div className="dash-hs-empty">
+            <Timer size={24} />
+            <p>Aucune heure supplémentaire aujourd'hui</p>
+          </div>
+        )}
+      </div>
+
       {/* Quick Actions */}
       <div className="dash-admin-actions">
         <h3 className="dash-section-title">Actions rapides</h3>
@@ -401,6 +446,11 @@ function Dashboard() {
           <Link to="/employes" className="dash-quick-action">
             <Users size={20} />
             <span>Gérer les employés</span>
+            <ChevronRight size={16} />
+          </Link>
+          <Link to="/heures-sup" className="dash-quick-action">
+            <Zap size={20} />
+            <span>Heures supplémentaires</span>
             <ChevronRight size={16} />
           </Link>
           <Link to="/stats" className="dash-quick-action">

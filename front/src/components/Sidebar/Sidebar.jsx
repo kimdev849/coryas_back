@@ -1,17 +1,31 @@
 // ================================================================
 // Sidebar - Menu lateral
 // ================================================================
+// Affiche le nom de l'entreprise (depuis Configuration) en haut.
 // Contient les liens vers toutes les pages de l'application.
 // Le lien "Deconnexion" est en bas.
 // ================================================================
 
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import parametresService from "../../services/parametresService";
 import "./style.css";
 
 function Sidebar({ onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [companyName, setCompanyName] = useState("PRÉSENCIA");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await parametresService.get();
+        if (res.data?.nom_entreprise) setCompanyName(res.data.nom_entreprise);
+      } catch { /* fallback */ }
+    };
+    load();
+  }, []);
 
   const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
   const isSuperAdmin = user?.role === "SuperAdmin";
@@ -34,7 +48,7 @@ function Sidebar({ onClose }) {
         ✕
       </button>
       <div className="sidebar-brand">
-        <div className="sidebar-brand-text">PRÉSENCIA</div>
+        <div className="sidebar-brand-text">{companyName}</div>
         <div className="sidebar-brand-sub">Gestion RH Intelligente</div>
       </div>
       <nav className="sidebar-nav">

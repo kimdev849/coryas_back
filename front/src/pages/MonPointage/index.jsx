@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import presencesService from "../../services/presencesService";
+import parametresService from "../../services/parametresService";
+import { Clock, Coffee } from "lucide-react";
 import "./style.css";
 
 function MonPointage() {
   const { user } = useAuth();
   const [activePresence, setActivePresence] = useState(null);
   const [todayPresences, setTodayPresences] = useState([]);
+  const [settings, setSettings] = useState({ heure_ouverture: "08:00", heure_fermeture: "17:00", duree_pause: 60 });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -23,13 +26,21 @@ function MonPointage() {
     try {
       if (!user?.employe_id) return;
 
-      const [activeRes, todayRes] = await Promise.all([
+      const [activeRes, todayRes, settingsRes] = await Promise.all([
         presencesService.getActivePresence(user.employe_id),
         presencesService.getAll({ employe_id: user.employe_id, date_debut: todayStr, date_fin: todayStr }),
+        parametresService.get(),
       ]);
 
       setActivePresence(activeRes.data || null);
       setTodayPresences(todayRes.data || []);
+      if (settingsRes.data) {
+        setSettings({
+          heure_ouverture: settingsRes.data.heure_ouverture || "08:00",
+          heure_fermeture: settingsRes.data.heure_fermeture || "17:00",
+          duree_pause: settingsRes.data.duree_pause || 60,
+        });
+      }
     } catch {
       // silencieux
     } finally {
@@ -142,6 +153,51 @@ function MonPointage() {
                 {todayPresences[0]?.heure_entree} → {todayPresences[0]?.heure_sortie}
               </div>
             ) : null}
+
+            {/* Infos pause + horaires */}
+            <div className="mp-config-info">
+              <div className="mp-config-item">
+                <Clock size={14} />
+                <span>Horaires : {settings.heure_ouverture} - {settings.heure_fermeture}</span>
+              </div>
+              <div className="mp-config-item">
+                <Coffee size={14} />
+                <span>Pause déjeuner : {settings.duree_pause} min</span>
+              </div>
+            </div>
+
+            {/* Calcul du temps travaillé */}
+            {todayPresences.length > 0 && todayPresences[0]?.heure_entree && todayPresences[0]?.heure_sortie && (
+              <div className="mp-worked-time">
+                {(() => {
+                  const [ah, am] = todayPresences[0].heure_entree.split(":").map(Number);
+                  const [dh, dm] = todayPresences[0].heure_sortie.split(":").map(Number);
+                  const totalMin = (dh * 60 + dm) - (ah * 60 + am);
+                  const heures = Math.floor(totalMin / 60);
+                  const minutes = totalMin % 60;
+                  const pause = settings.duree_pause || 0;
+                  const travailMin = totalMin - pause;
+                  const tHeures = Math.floor(travailMin / 60);
+                  const tMinutes = travailMin % 60;
+                  return (
+                    <>
+                      <div className="mp-worked-row">
+                        <span>Temps à l'entreprise</span>
+                        <strong>{heures}h{String(minutes).padStart(2, "0")}</strong>
+                      </div>
+                      <div className="mp-worked-row">
+                        <span>Pause déjeuner</span>
+                        <strong>-{settings.duree_pause} min</strong>
+                      </div>
+                      <div className="mp-worked-row mp-worked-total">
+                        <span>Temps travaillé</span>
+                        <strong>{tHeures}h{String(tMinutes).padStart(2, "0")}</strong>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Bouton pointer */}

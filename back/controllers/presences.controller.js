@@ -4,6 +4,7 @@
 
 const presencesModel = require("../models/presences.model");
 const parametresModel = require("../models/parametres.model");
+const heuresSupModel = require("../models/heuresSup.model");
 const notificationsModel = require("../models/notifications.model");
 const pool = require("../config/database");
 
@@ -73,7 +74,21 @@ const checkIn = async (req, res) => {
         const entrepriseId = emp.entreprise_id;
 
         // ============================================================
-        // 2. VÉRIFICATION : Un seul pointage par jour
+        // 2. VÉRIFICATION : Jour ouvrable
+        // ============================================================
+        if (!(await parametresModel.isWorkingDay(entrepriseId))) {
+            const paramsData = await parametresModel.get(entrepriseId);
+            const joursConfig = paramsData?.jours_ouvrables 
+                ? paramsData.jours_ouvrables.map(j => j.charAt(0).toUpperCase() + j.slice(1)).join(', ')
+                : 'Lundi à Vendredi';
+            return res.status(400).json({
+                message: `Aujourd'hui n'est pas un jour ouvrable. Jours travaillés : ${joursConfig}`,
+                data: null
+            });
+        }
+
+        // ============================================================
+        // 3. VÉRIFICATION : Un seul pointage par jour
         // ============================================================
         const todayPresence = await presencesModel.getTodayPresence(employe_id);
         if (todayPresence) {
@@ -91,7 +106,7 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 3. DÉTERMINER L'HEURE D'ARRIVÉE
+        // 4. DÉTERMINER L'HEURE D'ARRIVÉE
         // ============================================================
         let heure_entree;
         if (frontHeure) {
@@ -104,14 +119,14 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 4. RÉCUPÉRER LES PARAMÈTRES DE L'ENTREPRISE
+        // 5. RÉCUPÉRER LES PARAMÈTRES DE L'ENTREPRISE
         // ============================================================
         const params = await parametresModel.get(entrepriseId);
         const heureOuverture = params?.heure_ouverture || "07:00";
         const heureFermeture = params?.heure_fermeture || "19:00";
 
         // ============================================================
-        // 5. VALIDATION : Heure de fermeture
+        // 6. VALIDATION : Heure de fermeture
         // ============================================================
         if (heure_entree > heureFermeture) {
             return res.status(400).json({
@@ -121,12 +136,12 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 6. Auto-fermeture des présences des jours précédents oubliées
+        // 7. Auto-fermeture des présences des jours précédents oubliées
         // ============================================================
         const closedPresences = await presencesModel.autoCloseStalePresences(employe_id);
 
         // ============================================================
-        // 7. VÉRIFICATION GPS (géolocalisation) — BLOQUANTE
+        // 8. VÉRIFICATION GPS (géolocalisation) — BLOQUANTE
         // ============================================================
         if (emp.site_id) {
             const siteRes = await pool.query(`
@@ -155,7 +170,7 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 8. DÉTERMINER LE STATUT (Présent ou Retard)
+        // 9. DÉTERMINER LE STATUT (Présent ou Retard)
         // ============================================================
         // Statut "Retard" si heure_arrivée > heure_ouverture + retard_apres.
         // Exemple : ouverture 09:00, retard_apres=15 → Retard si > 09:15
@@ -177,7 +192,7 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 9. ENREGISTRER LA PRÉSENCE avec GPS si fourni
+        // 10. ENREGISTRER LA PRÉSENCE avec GPS si fourni
         // ============================================================
         const newPresence = await presencesModel.checkIn({
             employe_id, heure_entree, statut,
@@ -344,28 +359,58 @@ const checkOut = async (req, res) => {
         }
 
         // ============================================================
-        // 7b. CORRECTION DU STATUT : Si l'employé était "Retard" mais
+        // 7b. CALCUL DES HEURES SUPPLÉMENTAIRES
+        // ============================================================
+        // Temps travaillé = (départ - arrivée) en minutes
+        // Temps normal = (fermeture - ouverture - pause) en minutes
+        // Heures sup = max(0, temps_travaillé - temps_normal)
+        // ============================================================
+        try {
+            if (presenceActuelle.heure_entree) {
+                const [ah, am] = presenceActuelle.heure_entree.split(":").map(Number);
+                const [dh, dm] = heure_sortie.split(":").map(Number);
+                const [oh, om] = heureFermeture.split(":").map(Number);
+                const dureePause = params?.duree_pause || 0;
+
+                const tempsTravaille = (dh * 60 + dm) - (ah * 60 + am); // minutes totales à l'entreprise
+                const tempsNormal = (oh * 60 + om) - dureePause; // minutes normales de travail
+
+                // Heures sup = temps passé - temps normal
+                if (tempsTravaille > tempsNormal && tempsNormal > 0) {
+                    const minutesSup = tempsTravaille - tempsNormal;
+                    const heuresSup = parseFloat((minutesSup / 60).toFixed(2));
+
+                    // Créer une entrée heures_sup automatiquement (si > 0)
+                    if (heuresSup > 0) {
+                        await heuresSupModel.create({
+                            employe_id: presenceActuelle.employe_id,
+                            date_heure_sup: new Date().toISOString().split('T')[0],
+                            nb_heures: heuresSup,
+                            taux_majoration: 1.5,
+                            motif: `Auto - Départ à ${heure_sortie}`,
+                        });
+                    }
+                }
+            }
+        } catch (hsError) {
+            console.error("⚠️ Erreur calcul heures sup (non bloquante):", hsError.message);
+        }
+
+        // ============================================================
+        // 7c. CORRECTION DU STATUT : Si l'employé était "Retard" mais
         //     a travaillé au moins 6h (360 min), on passe à "Present".
-        //     Exemple : arrivée 10h35, départ 19h = 8h25 de travail.
-        //     L'employé a fait sa journée → pas de raison d'être "Retard".
         // ============================================================
         try {
             if (presenceActuelle.heure_entree) {
                 const [ah, am] = presenceActuelle.heure_entree.split(":").map(Number);
                 const [dh, dm] = heure_sortie.split(":").map(Number);
                 const minutesWorked = (dh * 60 + dm) - (ah * 60 + am);
-                
-                // Si l'employé a travaillé au moins 6h et son statut était "Retard"
                 if (minutesWorked >= 360 && presence.statut === "Retard") {
                     const presenceCorrigee = await presencesModel.updateStatut(presenceId, "Present");
-                    if (presenceCorrigee) {
-                        presence.statut = "Present";
-                    }
+                    if (presenceCorrigee) presence.statut = "Present";
                 }
             }
         } catch (correctionError) {
-            // En cas d'échec de la correction, on loggue mais on ne bloque pas
-            // la réponse de check-out (le départ a déjà été enregistré)
             console.error("⚠️ Erreur correction statut (non bloquante):", correctionError.message);
         }
 

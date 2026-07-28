@@ -4,13 +4,32 @@
 // Design moderne avec icônes Lucide React.
 // ================================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import parametresService from "../../services/parametresService";
+import { Mail, Lock, Eye, EyeOff, LogIn, Building2 } from "lucide-react";
 import "./style.css";
 
 function Login() {
+  const [company, setCompany] = useState({ nom: "PRÉSENCIA", logo: null, slogan: "Connectez-vous à votre espace" });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await parametresService.get();
+        if (res.data) {
+          setCompany({
+            nom: res.data.nom_entreprise || "PRÉSENCIA",
+            logo: res.data.logo_url || null,
+            slogan: res.data.slogan || "Connectez-vous à votre espace",
+          });
+        }
+      } catch { /* fallback */ }
+    };
+    load();
+  }, []);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -58,10 +77,14 @@ function Login() {
         {/* Logo */}
         <div className="login-header">
           <div className="login-logo">
-            <img src="/logo.png" alt="Présencia" className="login-logo-img" />
+            {company.logo ? (
+              <img src={company.logo} alt={company.nom} className="login-logo-img" />
+            ) : (
+              <Building2 size={48} className="login-logo-icon" />
+            )}
           </div>
-          <h1 className="login-title">PRÉSENCIA</h1>
-          <p className="login-subtitle">Connectez-vous à votre espace</p>
+          <h1 className="login-title">{company.nom}</h1>
+          <p className="login-subtitle">{company.slogan}</p>
         </div>
 
         {/* Error */}
