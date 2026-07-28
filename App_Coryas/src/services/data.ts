@@ -191,6 +191,22 @@ export const checkOut = async (presenceId: string | number): Promise<Presence> =
   return response.data.data;
 };
 
+/**
+ * startPause : débuter la pause
+ */
+export const startPause = async (presenceId: string | number): Promise<Presence> => {
+  const response = await api.post("/presences/start-pause", { presenceId });
+  return response.data.data;
+};
+
+/**
+ * endPause : terminer la pause
+ */
+export const endPause = async (presenceId: string | number): Promise<Presence> => {
+  const response = await api.post("/presences/end-pause", { presenceId });
+  return response.data.data;
+};
+
 // ============================================================
 // NOTIFICATIONS
 // ============================================================

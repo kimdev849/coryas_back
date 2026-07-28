@@ -1,23 +1,14 @@
 // ============================================================
-// LOGIN VIEW - Formulaire de connexion PRÉSENCIA
+// LOGIN VIEW - Connexion PRÉSENCIA — Design Premium
 // ============================================================
 
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  Pressable,
-  Alert,
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { StyleSheet, Text, View, TextInput, Pressable, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/Colors";
 import { useAuth } from "../contexts/AuthContext";
+
+const { width } = Dimensions.get("window");
 
 export function LoginView() {
   const auth = useAuth();
@@ -56,56 +47,105 @@ export function LoginView() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* HEADER Logo */}
-        <View style={styles.header}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>P</Text>
+        {/* ============================================ */}
+        {/* BANDEAU DÉCORATIF SUPÉRIEUR */}
+        {/* ============================================ */}
+        <View style={styles.topDecoration}>
+          <View style={styles.topBlob} />
+        </View>
+
+        {/* ============================================ */}
+        {/* LOGO + NOM DE L'APP */}
+        {/* ============================================ */}
+        <View style={styles.logoSection}>
+          <View style={styles.logoOuterRing}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>P</Text>
+            </View>
           </View>
           <Text style={styles.appName}>PRÉSENCIA</Text>
           <Text style={styles.appTagline}>Gestion des présences</Text>
         </View>
 
-        {/* FORMULAIRE */}
-        <View style={styles.content}>
-          <Text style={styles.title}>Connexion</Text>
+        {/* ============================================ */}
+        {/* FORMULAIRE DE CONNEXION */}
+        {/* ============================================ */}
+        <View style={styles.formSection}>
+          {/* En-tête du formulaire */}
+          <View style={styles.formHeader}>
+            <Text style={styles.formTitle}>Bienvenue</Text>
+            <Text style={styles.formSubtitle}>Connectez-vous à votre espace</Text>
+          </View>
 
-          <View style={styles.inputContainer}>
+          {/* Champ Email */}
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="vous@entreprise.com"
-              placeholderTextColor={Colors.textLight}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={email}
-              onChangeText={setEmail}
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="vous@entreprise.com"
+                placeholderTextColor={Colors.textLight}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+              />
+              <View style={styles.inputIconRight}>
+                <Ionicons name="mail-outline" size={20} color={Colors.textLight} />
+              </View>
+            </View>
           </View>
 
-          <View style={styles.inputContainer}>
+          {/* Champ Mot de passe */}
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={Colors.textLight}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor={Colors.textLight}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+              <View style={styles.inputIconRight}>
+                <Ionicons name="lock-closed-outline" size={20} color={Colors.textLight} />
+              </View>
+            </View>
           </View>
 
+          {/* Bouton de connexion */}
           <Pressable
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={({ pressed }) => [
+              styles.button,
+              loading && styles.buttonDisabled,
+              pressed && !loading && { transform: [{ scale: 0.97 }] },
+            ]}
             onPress={handleLogin}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color={Colors.white} />
+              <ActivityIndicator color={Colors.white} size="small" />
             ) : (
-              <Text style={styles.buttonText}>Se connecter</Text>
+              <View style={styles.buttonContent}>
+                <Text style={styles.buttonText}>Se connecter</Text>
+                <Text style={styles.buttonArrow}>→</Text>
+              </View>
             )}
           </Pressable>
+        </View>
+
+        {/* ============================================ */}
+        {/* FOOTER */}
+        {/* ============================================ */}
+        <View style={styles.footer}>
+          <View style={styles.footerDots}>
+            <View style={[styles.footerDot, { backgroundColor: Colors.primary }]} />
+            <View style={[styles.footerDot, { backgroundColor: Colors.lightGray }]} />
+            <View style={[styles.footerDot, { backgroundColor: Colors.lightGray }]} />
+          </View>
+          <Text style={styles.footerText}>PRÉSENCIA v1.0</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -113,50 +153,193 @@ export function LoginView() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white, padding: 24 },
-  scrollContent: { flexGrow: 1, justifyContent: "center" },
-  header: { marginTop: 60, marginBottom: 60, alignItems: "center" },
-  logoCircle: {
-    width: 80, height: 80, borderRadius: 40,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: 700,
+  },
+
+  // ==========================================
+  // DÉCORATION
+  // ==========================================
+  topDecoration: {
+    height: 200,
+    width: "100%",
+    overflow: "hidden",
+  },
+  topBlob: {
+    position: "absolute",
+    top: -80,
+    right: -40,
+    width: width * 1.3,
+    height: 260,
     backgroundColor: Colors.primary,
-    alignItems: "center", justifyContent: "center",
-    marginBottom: 16,
+    borderBottomLeftRadius: 120,
+    transform: [{ scaleX: 1.1 }],
+    opacity: 0.08,
+  },
+
+  // ==========================================
+  // LOGO
+  // ==========================================
+  logoSection: {
+    alignItems: "center",
+    marginTop: -100,
+    marginBottom: 32,
+  },
+  logoOuterRing: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.primary + "15",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  logoCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoText: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: Colors.white,
+    letterSpacing: 1,
+  },
+  appName: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: Colors.black,
+    letterSpacing: 4,
+  },
+  appTagline: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 6,
+    letterSpacing: 0.5,
+  },
+
+  // ==========================================
+  // FORMULAIRE
+  // ==========================================
+  formSection: {
+    paddingHorizontal: 32,
+    paddingTop: 8,
+  },
+  formHeader: {
+    marginBottom: 28,
+  },
+  formTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: Colors.black,
+    marginBottom: 6,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+
+  // Inputs
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.bgLight,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.lightGray,
+    overflow: "hidden",
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  inputIconRight: {
+    paddingRight: 16,
+  },
+
+  // Bouton
+  button: {
+    width: "100%",
+    backgroundColor: Colors.primary,
+    paddingVertical: 17,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 12,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
-  logoText: { fontSize: 36, fontWeight: "800", color: Colors.white },
-  appName: {
-    fontSize: 28, fontWeight: "800", color: Colors.black,
-    letterSpacing: 3,
-  },
-  appTagline: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
-  content: { flex: 1 },
-  title: { fontSize: 24, fontWeight: "700", color: Colors.black, marginBottom: 32 },
-  inputContainer: { marginBottom: 20 },
-  label: {
-    fontSize: 13, fontWeight: "600", color: Colors.textSecondary,
-    marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8,
-  },
-  input: {
-    width: "100%", backgroundColor: Colors.bgLight,
-    paddingHorizontal: 16, paddingVertical: 14,
-    borderRadius: 12, fontSize: 16, color: Colors.textPrimary,
-    borderWidth: 1, borderColor: Colors.lightGray,
-  },
-  button: {
-    width: "100%",
-    backgroundColor: Colors.primary,
-    paddingVertical: 16, borderRadius: 12,
-    alignItems: "center", marginTop: 24,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
-  },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: Colors.white, fontSize: 16, fontWeight: "700", letterSpacing: 0.5 },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  buttonText: {
+    color: Colors.white,
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  buttonArrow: {
+    color: Colors.white,
+    fontSize: 20,
+    fontWeight: "600",
+    opacity: 0.8,
+  },
+
+  // ==========================================
+  // FOOTER
+  // ==========================================
+  footer: {
+    alignItems: "center",
+    marginTop: 48,
+    marginBottom: 24,
+  },
+  footerDots: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 16,
+  },
+  footerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  footerText: {
+    fontSize: 11,
+    color: Colors.textLight,
+    letterSpacing: 2,
+  },
 });
