@@ -20,13 +20,30 @@ async function safeQuery(sql, params = []) {
     }
 }
 
+// Helper : vérifie si aujourd'hui est un jour ouvrable selon les paramètres de l'entreprise
+async function estJourOuvrable(entrepriseId = null) {
+    try {
+        const parametresModel = require("./parametres.model");
+        const params = await parametresModel.get(entrepriseId);
+        if (params?.jours_ouvrables && Array.isArray(params.jours_ouvrables)) {
+            const joursMap = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+            const aujourdhui = new Date();
+            const jourNom = joursMap[aujourdhui.getDay()];
+            return params.jours_ouvrables.includes(jourNom);
+        }
+    } catch (e) {
+        console.warn("⚠️ Impossible de lire jours_ouvrables, fallback weekend par défaut:", e.message);
+    }
+    // Fallback : samedi et dimanche sont week-end
+    const jourSemaine = new Date().getDay();
+    return jourSemaine !== 0 && jourSemaine !== 6;
+}
+
 // ----------------------------------------------------------------
 // getStats() - Calcule toutes les stats du tableau de bord
 // ----------------------------------------------------------------
 async function getStats(entrepriseId = null) {
-    const aujourdhui = new Date();
-    const jourSemaine = aujourdhui.getDay();
-    const estWeekend = jourSemaine === 0 || jourSemaine === 6;
+    const estWeekend = !(await estJourOuvrable(entrepriseId));
 
     const params = entrepriseId ? [entrepriseId] : [];
     const entrepriseFilter = entrepriseId ? ' AND e.entreprise_id = $1' : '';
