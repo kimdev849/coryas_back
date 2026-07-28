@@ -9,7 +9,7 @@
 // ================================================================
 
 import { useState, useEffect } from "react";
-import { RefreshCw, Clock, Award, AlertTriangle, TrendingUp, TrendingDown, Users, Calendar, ChevronRight } from "lucide-react";
+import { RefreshCw, Clock, Award, AlertTriangle, TrendingUp, Users } from "lucide-react";
 import statsService from "../../services/statsService";
 import "./style.css";
 
