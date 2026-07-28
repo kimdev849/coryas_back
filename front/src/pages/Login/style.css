@@ -150,21 +150,35 @@
 }
 
 .login-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  background: #F9FAFB;
+  transition: all 0.2s;
   position: relative;
 }
 
+.login-input-wrapper:focus-within {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  background: #FFFFFF;
+}
+
+.login-input-wrapper:hover {
+  border-color: #D1D5DB;
+  background: #FFFFFF;
+}
+
 .login-input-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
   color: #9CA3AF;
   pointer-events: none;
   transition: color 0.2s;
-  flex-shrink: 0;
-  z-index: 2;
-  background: transparent;
-  padding: 2px;
 }
 
 .login-input-wrapper:focus-within .login-input-icon {
@@ -172,39 +186,24 @@
 }
 
 .login-input {
-  width: 100%;
-  padding: 16px 18px 16px 56px;
-  border: 2px solid #E5E7EB;
-  border-radius: 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px 14px 0;
+  border: none;
+  outline: none;
   font-size: 15px;
   font-family: inherit;
-  transition: all 0.2s;
-  outline: none;
-  background: #F9FAFB;
+  background: transparent;
   color: #1F2937;
-  box-sizing: border-box;
-  display: block;
 }
 
 .login-input-password {
-  padding-right: 54px;
-}
-
-.login-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-  background: #FFFFFF;
-}
-
-.login-input:hover {
-  border-color: #D1D5DB;
-  background: #FFFFFF;
+  padding-right: 4px;
 }
 
 .login-input:disabled {
-  background: #F3F4F6;
+  opacity: 0.6;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .login-input::placeholder {
@@ -212,19 +211,17 @@
 }
 
 .login-password-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
   background: none;
   border: none;
   cursor: pointer;
   color: #9CA3AF;
   padding: 8px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: all 0.2s;
 }
 
@@ -309,6 +306,7 @@
   .login-card { padding: 32px 24px 28px; margin: 12px; border-radius: 16px; }
   .login-logo { width: 60px; height: 60px; padding: 12px; }
   .login-title { font-size: 22px; }
-  .login-input { font-size: 14px; padding: 14px 14px 14px 48px; }
-  .login-input-icon { left: 14px; }
+  .login-input { font-size: 14px; padding: 12px 14px 12px 0; }
+  .login-input-icon { width: 42px; }
+  .login-password-toggle { width: 38px; }
 }
