@@ -264,23 +264,24 @@ async function getTodayStats(entrepriseId = null) {
 }
 
 // ----------------------------------------------------------------
-// autoCloseStalePresences(employe_id) - Fermeture auto des oublis
+// autoCloseStalePresences(employe_id, heureAutoCheckout) - Fermeture auto des oublis
 // ----------------------------------------------------------------
 // Quand un employe check-in le matin, si une presence de la veille
 // (ou avant) est encore ouverte (heure_sortie NULL), on la ferme
-// automatiquement avec une heure par defaut et une remarque.
+// automatiquement avec l'heure configurée (auto_checkout) et une remarque.
+// Par défaut : 19:00 si non configuré.
 // ----------------------------------------------------------------
-async function autoCloseStalePresences(employe_id) {
+async function autoCloseStalePresences(employe_id, heureAutoCheckout = '19:00') {
     const result = await pool.query(`
         UPDATE presences SET
-            heure_sortie = '19:00',
+            heure_sortie = $2::time,
             remarque = 'Fermeture automatique (jour suivant)',
             updated_at = NOW()
         WHERE employe_id = $1
           AND heure_sortie IS NULL
           AND date_presence < CURRENT_DATE
         RETURNING id, date_presence, heure_entree
-    `, [employe_id]);
+    `, [employe_id, heureAutoCheckout]);
     return result.rows;
 }
 

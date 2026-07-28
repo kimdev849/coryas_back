@@ -137,13 +137,18 @@ const checkIn = async (req, res) => {
 
         // ============================================================
         // 7. Auto-fermeture des présences des jours précédents oubliées
+        //    avec l'heure configurée dans auto_checkout
         // ============================================================
-        const closedPresences = await presencesModel.autoCloseStalePresences(employe_id);
+        const autoCheckoutTime = params?.heure_auto_checkout 
+            ? params.heure_auto_checkout.slice(0, 5) 
+            : '19:00';
+        const closedPresences = await presencesModel.autoCloseStalePresences(employe_id, autoCheckoutTime);
 
         // ============================================================
         // 8. VÉRIFICATION GPS (géolocalisation) — BLOQUANTE
+        //     SKIP si geo_restriction est désactivé dans la config
         // ============================================================
-        if (emp.site_id) {
+        if (params?.geo_restriction !== false && emp.site_id) {
             const siteRes = await pool.query(`
                 SELECT latitude, longitude, rayon_gps FROM sites WHERE id = $1
             `, [emp.site_id]);
@@ -170,22 +175,24 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
-        // 9. DÉTERMINER LE STATUT (Présent ou Retard)
+        // 9. DÉTERMINER LE STATUT (Présent, Retard ou Toléré)
         // ============================================================
-        // Statut "Retard" si heure_arrivée > heure_ouverture + retard_apres.
-        // Exemple : ouverture 09:00, retard_apres=15 → Retard si > 09:15
+        // Statut "Retard" si heure_arrivée > heure_ouverture + retard_apres + tolerance_retard.
+        // La tolerance_retard permet d'être un peu en retard sans être pénalisé.
+        // Exemple : ouverture 09:00, retard_apres=15, tolerance=5 → Retard si > 09:20
         // Si retard_apres = 0 ou NULL → tous les pointages sont "Present"
         // (configurable par le RH dans la page Configuration).
         // ============================================================
         const retardApres = params?.retard_apres;
+        const toleranceRetard = params?.tolerance_retard || 0;
 
         let statut;
         if (!retardApres || retardApres <= 0) {
             statut = "Present";
         } else {
-            // Heure limite = ouverture + retard_apres minutes
+            // Heure limite = ouverture + retard_apres + tolerance_retard minutes
             const [h, m] = heureOuverture.split(":").map(Number);
-            const totalMinutes = h * 60 + m + retardApres;
+            const totalMinutes = h * 60 + m + retardApres + toleranceRetard;
             const heureLimite = String(Math.floor(totalMinutes / 60)).padStart(2, "0")
                 + ":" + String(totalMinutes % 60).padStart(2, "0");
             statut = heure_entree > heureLimite ? "Retard" : "Present";
@@ -198,21 +205,23 @@ const checkIn = async (req, res) => {
             employe_id, heure_entree, statut,
         });
 
-        // Créer une notification pour l'employé
-        try {
-            const notifTitre = statut === "Retard" ? "Arrivée en retard ⏰" : "Arrivée enregistrée ✅";
-            const notifMessage = statut === "Retard"
-                ? `Vous êtes arrivé à ${heure_entree} (en retard).`
-                : `Vous êtes arrivé à ${heure_entree}. Bonne journée !`;
-            await notificationsModel.create({
-                employe_id,
-                titre: notifTitre,
-                message: notifMessage,
-                type: statut === "Retard" ? "warning" : "success",
-                lien: "/(tabs)/presences",
-            });
-        } catch (notifError) {
-            console.error("Erreur création notification check-in:", notifError);
+        // Créer une notification pour l'employé (si activée dans config)
+        if (params?.notif_pointage !== false) {
+            try {
+                const notifTitre = statut === "Retard" ? "Arrivée en retard ⏰" : "Arrivée enregistrée ✅";
+                const notifMessage = statut === "Retard"
+                    ? `Vous êtes arrivé à ${heure_entree} (en retard).`
+                    : `Vous êtes arrivé à ${heure_entree}. Bonne journée !`;
+                await notificationsModel.create({
+                    employe_id,
+                    titre: notifTitre,
+                    message: notifMessage,
+                    type: statut === "Retard" ? "warning" : "success",
+                    lien: "/(tabs)/presences",
+                });
+            } catch (notifError) {
+                console.error("Erreur création notification check-in:", notifError);
+            }
         }
 
         const message = closedPresences.length > 0
@@ -414,17 +423,19 @@ const checkOut = async (req, res) => {
             console.error("⚠️ Erreur correction statut (non bloquante):", correctionError.message);
         }
 
-        // Créer une notification pour l'employé
-        try {
-            await notificationsModel.create({
-                employe_id: presenceActuelle.employe_id,
-                titre: "Départ enregistré 👋",
-                message: `Vous avez quitté à ${heure_sortie}. Bonne fin de journée !`,
-                type: "info",
-                lien: "/(tabs)/presences",
-            });
-        } catch (notifError) {
-            console.error("Erreur création notification check-out:", notifError);
+        // Créer une notification pour l'employé (si activée dans config)
+        if (params?.notif_pointage !== false) {
+            try {
+                await notificationsModel.create({
+                    employe_id: presenceActuelle.employe_id,
+                    titre: "Départ enregistré 👋",
+                    message: `Vous avez quitté à ${heure_sortie}. Bonne fin de journée !`,
+                    type: "info",
+                    lien: "/(tabs)/presences",
+                });
+            } catch (notifError) {
+                console.error("Erreur création notification check-out:", notifError);
+            }
         }
 
         res.json({ message: "Départ enregistré. Bonne fin de journée !", data: presence });

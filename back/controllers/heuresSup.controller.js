@@ -3,8 +3,10 @@
 // ================================================================
 
 const heuresSupModel = require("../models/heuresSup.model");
+const parametresModel = require("../models/parametres.model");
 const notificationsModel = require("../models/notifications.model");
 const auditLogModel = require("../models/auditLog.model");
+const pool = require("../config/database");
 
 const getAll = async (req, res) => {
     try {
@@ -50,13 +52,18 @@ const approve = async (req, res) => {
     try {
         const data = await heuresSupModel.approve(req.params.id, req.user?.employe_id, req.body.commentaire);
         if (!data) return res.status(404).json({ message: "Heure sup introuvable ou déjà traitée", data: null });
+        // Notification si activée
         try {
-            await notificationsModel.create({
-                employe_id: data.employe_id,
-                titre: "Heures sup approuvées ✅",
-                message: `Vos heures supplémentaires du ${data.date_heure_sup} (${data.nb_heures}h) ont été approuvées.`,
-                type: "success", lien: "/heures-sup",
-            });
+            const empRes = await pool.query(`SELECT entreprise_id FROM employes WHERE id = $1`, [data.employe_id]);
+            const params = await parametresModel.get(empRes.rows[0]?.entreprise_id);
+            if (params?.notif_pointage !== false) {
+                await notificationsModel.create({
+                    employe_id: data.employe_id,
+                    titre: "Heures sup approuvées ✅",
+                    message: `Vos heures supplémentaires du ${data.date_heure_sup} (${data.nb_heures}h) ont été approuvées.`,
+                    type: "success", lien: "/heures-sup",
+                });
+            }
         } catch (e) { console.error("Notif error:", e); }
         res.json({ message: "Heures sup approuvées", data });
     } catch (error) {
@@ -70,13 +77,17 @@ const reject = async (req, res) => {
         const data = await heuresSupModel.reject(req.params.id, req.user?.employe_id, req.body.commentaire);
         if (!data) return res.status(404).json({ message: "Heure sup introuvable ou déjà traitée", data: null });
         try {
-            const msg = req.body.commentaire ? ` Motif : ${req.body.commentaire}` : "";
-            await notificationsModel.create({
-                employe_id: data.employe_id,
-                titre: "Heures sup refusées ❌",
-                message: `Vos heures supplémentaires du ${data.date_heure_sup} (${data.nb_heures}h) ont été refusées.${msg}`,
-                type: "warning", lien: "/heures-sup",
-            });
+            const empRes = await pool.query(`SELECT entreprise_id FROM employes WHERE id = $1`, [data.employe_id]);
+            const params = await parametresModel.get(empRes.rows[0]?.entreprise_id);
+            if (params?.notif_pointage !== false) {
+                const msg = req.body.commentaire ? ` Motif : ${req.body.commentaire}` : "";
+                await notificationsModel.create({
+                    employe_id: data.employe_id,
+                    titre: "Heures sup refusées ❌",
+                    message: `Vos heures supplémentaires du ${data.date_heure_sup} (${data.nb_heures}h) ont été refusées.${msg}`,
+                    type: "warning", lien: "/heures-sup",
+                });
+            }
         } catch (e) { console.error("Notif error:", e); }
         res.json({ message: "Heures sup refusées", data });
     } catch (error) {
