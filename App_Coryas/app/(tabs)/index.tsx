@@ -102,18 +102,25 @@ export default function HomeScreen() {
         setUserName(`${user.prenom}`);
       }
 
-      const [activePresence, unread, todayPresences, parametres] = await Promise.all([
+      // Chargement parallèle des données principales
+      // ⚠️ IMPORTANT : getParametres() est SÉPARÉ du Promise.all pour garantir
+      // que le nom de l'entreprise s'affiche même si les présences échouent.
+      const [activePresence, unread, todayPresences] = await Promise.all([
         getActivePresence(),
         getUnreadNotificationsCount(),
         getTodayPresences(),
-        getParametres(),
       ]);
 
-      // Charger les paramètres (heures configurées par le RH)
-      if (parametres) {
-        setNomEntreprise(parametres.nom_entreprise || "");
-        setHeureOuverture(parametres.heure_ouverture || null);
-        setHeureFermeture(parametres.heure_fermeture || null);
+      // Chargement du nom de l'entreprise (indépendant pour ne pas être bloqué)
+      try {
+        const parametres = await getParametres();
+        if (parametres) {
+          setNomEntreprise(parametres.nom_entreprise || "");
+          setHeureOuverture(parametres.heure_ouverture || null);
+          setHeureFermeture(parametres.heure_fermeture || null);
+        }
+      } catch (error) {
+        console.error("Erreur chargement paramètres entreprise:", error);
       }
 
       setUnreadCount(unread);

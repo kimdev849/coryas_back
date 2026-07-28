@@ -90,8 +90,12 @@ export const getPresences = async (params?: { date_debut?: string; date_fin?: st
  * Utilisée pour savoir si l'employé a déjà pointé aujourd'hui (même après départ)
  */
 export const getTodayPresences = async (): Promise<Presence[]> => {
-  const today = new Date().toISOString().split('T')[0];
-  return getPresences({ date_debut: today, date_fin: today });
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    return await getPresences({ date_debut: today, date_fin: today });
+  } catch {
+    return [];
+  }
 };
 
 /**
