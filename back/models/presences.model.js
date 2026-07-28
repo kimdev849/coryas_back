@@ -76,7 +76,8 @@ async function getById(id) {
         SELECT p.id, p.employe_id,
                e.nom || ' ' || e.prenom AS employe_nom,
                p.date_presence, p.heure_entree, p.heure_sortie,
-               p.statut, p.remarque, p.created_at
+               p.statut, p.remarque, p.created_at,
+               p.pause_statut, p.pause_entree, p.pause_sortie
         FROM presences p
         JOIN employes e ON e.id = p.employe_id
         WHERE p.id = $1

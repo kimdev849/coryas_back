@@ -272,6 +272,16 @@ const checkOut = async (req, res) => {
         }
 
         // ============================================================
+        // 1b. VALIDATION : Vérifier si l'employé est en pause
+        // ============================================================
+        if (presenceActuelle.pause_statut === 'En pause') {
+            return res.status(400).json({
+                message: "Vous devez d'abord terminer votre pause avant de pointer votre départ. Cliquez sur « Je reprends le travail ».",
+                data: null
+            });
+        }
+
+        // ============================================================
         // 2. RÉCUPÉRER LES PARAMÈTRES (horaires de l'entreprise)
         // ============================================================
         // Récupérer l'entreprise de l'employé via la présence

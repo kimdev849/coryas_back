@@ -65,14 +65,9 @@ function Sidebar({ onClose }) {
 
         {/* Liens employé (cachés pour SuperAdmin) */}
         {!isSuperAdmin && (
-          <>
-            <NavLink to="/conges" className="sidebar-link" onClick={handleNavClick}>
-              Mes Congés
-            </NavLink>
-            <NavLink to="/heures-sup" className="sidebar-link" onClick={handleNavClick}>
-              Heures sup
-            </NavLink>
-          </>
+          <NavLink to="/conges" className="sidebar-link" onClick={handleNavClick}>
+            Mes Congés
+          </NavLink>
         )}
 
         {/* Liens admin (cachés pour SuperAdmin) */}
@@ -83,6 +78,9 @@ function Sidebar({ onClose }) {
             </NavLink>
             <NavLink to="/presences" className="sidebar-link" onClick={handleNavClick}>
               Présences
+            </NavLink>
+            <NavLink to="/heures-sup" className="sidebar-link" onClick={handleNavClick}>
+              Heures sup
             </NavLink>
             <NavLink to="/stats" className="sidebar-link" onClick={handleNavClick}>
               Ponctualité

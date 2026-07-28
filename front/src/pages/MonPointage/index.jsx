@@ -421,10 +421,15 @@ function MonPointage() {
               <button
                 className={`mp-pointer-btn ${activePresence ? "checkout" : "checkin"}`}
                 onClick={activePresence ? handleCheckOut : handleCheckIn}
-                disabled={actionLoading}
+                disabled={actionLoading || activePresence?.pause_statut === 'En pause'}
               >
                 {actionLoading ? (
                   "Patientez..."
+                ) : activePresence?.pause_statut === 'En pause' ? (
+                  <>
+                    <span className="mp-btn-icon">☕</span>
+                    Terminez d'abord votre pause
+                  </>
                 ) : activePresence ? (
                   <>
                     <span className="mp-btn-icon">⏱</span>
