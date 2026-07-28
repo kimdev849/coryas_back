@@ -8,8 +8,10 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import employesService from "../../services/employesService";
 import departementsService from "../../services/departementsService";
+import parametresService from "../../services/parametresService";
 import typeContratService from "../../services/typeContratService";
 import sitesService from "../../services/sitesService";
 import equipesService from "../../services/equipesService";
@@ -17,6 +19,7 @@ import "./style.css";
 
 function Employes() {
   const navigate = useNavigate();
+  const [companyPrint, setCompanyPrint] = useState({ nom: "", logo: null });
   const [employes, setEmployes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,7 +65,20 @@ function Employes() {
     loadTypesContrat();
     loadSites();
     loadEquipes();
+    loadCompany();
   }, []);
+
+  const loadCompany = async () => {
+    try {
+      const res = await parametresService.get();
+      if (res.data) {
+        setCompanyPrint({
+          nom: res.data.nom_entreprise || "",
+          logo: res.data.logo_url || null,
+        });
+      }
+    } catch { /* fallback */ }
+  };
 
   const loadTypesContrat = async () => {
     try {
@@ -283,6 +299,26 @@ function Employes() {
 
   return (
     <div>
+      {/* ===== EN-TÊTE D'IMPRESSION ===== */}
+      <div className="employes-print-header">
+        <div className="print-header-brand">
+          <div className="print-header-logo">
+            {companyPrint.logo ? (
+              <img src={companyPrint.logo} alt="Logo" />
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4z"/></svg>
+            )}
+          </div>
+          <div className="print-header-texts">
+            <div className="print-header-title">Liste des employés</div>
+            <div className="print-header-company">{companyPrint.nom || "PRÉSENCIA"}</div>
+          </div>
+        </div>
+        <div className="print-header-date">
+          {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+        </div>
+      </div>
+
       <h1 className="page-title">Gestion des Employés</h1>
       <p className="page-description">
         Liste et gestion des employés — création automatique du compte utilisateur

@@ -173,39 +173,145 @@
 }
 
 /* =============================================================
-   PRINT
+   PRINT — En-tête professionnel + Tableau
    ============================================================ */
+
+/* En-tête visible uniquement à l'impression */
+.employes-print-header {
+  display: none;
+}
+
 @media print {
+  @page {
+    margin: 15mm 12mm;
+  }
+
   body * { visibility: hidden; }
-  .page-title, .page-description,
-  .employes-table-container, .employes-table-container * {
+  
+  /* En-tête pro */
+  .employes-print-header {
+    display: flex !important;
+    visibility: visible;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #1E3A5F;
+  }
+  
+  .print-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     visibility: visible;
   }
-  .page-title {
-    position: absolute; top: 0; left: 20px; font-size: 18px;
+  
+  .print-header-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #1E3A5F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    visibility: visible;
   }
-  .page-description {
-    position: absolute; top: 28px; left: 20px; font-size: 11px; color: #666;
+  
+  .print-header-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    visibility: visible;
   }
-  .employes-actions,
+  
+  .print-header-texts {
+    visibility: visible;
+  }
+  
+  .print-header-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1E3A5F;
+    letter-spacing: -0.3px;
+    visibility: visible;
+  }
+  
+  .print-header-company {
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 1px;
+    visibility: visible;
+  }
+  
+  .print-header-date {
+    font-size: 11px;
+    color: #9CA3AF;
+    visibility: visible;
+  }
+  
+  /* Cache titres normaux */
+  .page-title,
+  .page-description,
+  .employes-actions {
+    display: none !important;
+  }
+  
+  /* Tableau */
+  .employes-table-container {
+    visibility: visible;
+    box-shadow: none !important;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    overflow: hidden;
+    position: static !important;
+  }
+  
+  .employes-table-container * {
+    visibility: visible;
+  }
+  
+  /* Cache colonne Actions */
   .employes-table th:last-child,
   .employes-table td:last-child {
     display: none !important;
   }
-  .employes-table-container {
-    position: absolute; top: 55px; left: 10px; right: 10px;
-    box-shadow: none !important; border: 1px solid #ccc; border-radius: 4px;
+  
+  .employes-table {
+    min-width: auto;
+    font-size: 10px;
   }
-  .employes-table { min-width: auto; font-size: 11px; }
+  
   .employes-table th {
-    background: #f0f0f0 !important; color: #000 !important;
-    border-bottom: 2px solid #333 !important; padding: 7px 8px; font-size: 9px;
+    background: #F3F4F6 !important;
+    color: #1F2937 !important;
+    border-bottom: 2px solid #D1D5DB !important;
+    padding: 6px 8px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
+  
   .employes-table td {
-    padding: 5px 8px; border-bottom: 1px solid #eee; color: #000 !important;
+    padding: 5px 8px;
+    border-bottom: 1px solid #E5E7EB;
+    color: #1F2937 !important;
+    font-size: 10px;
   }
-  .employes-table tbody tr:hover { background: transparent !important; }
-  .sidebar, .navbar { display: none !important; }
+  
+  .employes-table tbody tr:hover {
+    background: transparent !important;
+  }
+  
+  .employes-table tbody tr:nth-child(even) {
+    background: #F9FAFB !important;
+  }
+  
+  /* Cache sidebar, navbar etc */
+  .sidebar, .navbar, .page-content > header,
+  .page-content > nav, .page-content > .employes-actions {
+    display: none !important;
+  }
 }
 
 /* =============================================================
