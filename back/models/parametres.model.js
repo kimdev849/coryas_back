@@ -127,4 +127,27 @@ async function save(data) {
     return result.rows[0];
 }
 
-module.exports = { get, save };
+// ----------------------------------------------------------------
+// isWorkingDay(entrepriseId) - Vérifie si aujourd'hui est un jour ouvrable
+// ----------------------------------------------------------------
+// Lit jours_ouvrables depuis la BDD (configuré dans la page Configuration).
+// Si la config n'existe pas, fallback : samedi/dimanche = week-end.
+// ----------------------------------------------------------------
+async function isWorkingDay(entrepriseId = null) {
+    try {
+        const p = await get(entrepriseId);
+        if (p?.jours_ouvrables && Array.isArray(p.jours_ouvrables)) {
+            const joursMap = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+            const aujourdhui = new Date();
+            const jourNom = joursMap[aujourdhui.getDay()];
+            return p.jours_ouvrables.includes(jourNom);
+        }
+    } catch (e) {
+        console.warn("⚠️ isWorkingDay: impossible de lire jours_ouvrables:", e.message);
+    }
+    // Fallback : samedi et dimanche sont week-end
+    const jourSemaine = new Date().getDay();
+    return jourSemaine !== 0 && jourSemaine !== 6;
+}
+
+module.exports = { get, save, isWorkingDay };

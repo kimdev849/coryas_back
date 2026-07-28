@@ -14,6 +14,7 @@
 // ================================================================
 
 const pool = require("../config/database");
+const { isWorkingDay } = require("./parametres.model");
 
 // ----------------------------------------------------------------
 // getAll({ employe_id, date_debut, date_fin }) - Liste filtrée
@@ -203,25 +204,7 @@ async function getTodayStats(entrepriseId = null) {
     // VERIFICATION : Vérifie si aujourd'hui est un jour ouvrable
     // selon la configuration jours_ouvrables de l'entreprise
     // ============================================================
-    let estWeekend = true;
-    try {
-        const parametresModel = require("./parametres.model");
-        const params = await parametresModel.get(entrepriseId);
-        if (params?.jours_ouvrables && Array.isArray(params.jours_ouvrables)) {
-            const joursMap = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-            const aujourdhui = new Date();
-            const jourNom = joursMap[aujourdhui.getDay()];
-            estWeekend = !params.jours_ouvrables.includes(jourNom);
-        } else {
-            // Fallback : samedi et dimanche sont week-end
-            const jourSemaine = new Date().getDay();
-            estWeekend = jourSemaine === 0 || jourSemaine === 6;
-        }
-    } catch (e) {
-        console.warn("⚠️ getTodayStats - jours_ouvrables non lus, fallback weekend:", e.message);
-        const jourSemaine = new Date().getDay();
-        estWeekend = jourSemaine === 0 || jourSemaine === 6;
-    }
+    let estWeekend = !(await isWorkingDay(entrepriseId));
 
     const entrepriseFilterEmp = entrepriseId ? ` AND e.entreprise_id = $1` : '';
     const entrepriseParams = entrepriseId ? [entrepriseId] : [];
