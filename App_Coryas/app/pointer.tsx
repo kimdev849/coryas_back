@@ -23,7 +23,7 @@ import { StyleSheet, Text, View, Pressable, Alert, Animated } from "react-native
 import { useRouter } from "expo-router";
 import { useState, useCallback, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { getActivePresence, getTodayPresences, checkIn, checkOut } from "../src/services/data";
+import { getActivePresence, getTodayPresences, getParametres, checkIn, checkOut } from "../src/services/data";
 import { useFocusEffect } from "expo-router";
 import { Colors } from "../src/constants/Colors";
 
@@ -41,6 +41,10 @@ export default function PointerScreen() {
   const [success, setSuccess] = useState(false);                   // Animation de succès visible ?
   const [successTime, setSuccessTime] = useState<string | null>(null); // Heure affichée dans l'écran de succès
   const [alreadyPointedToday, setAlreadyPointedToday] = useState(false); // Déjà pointé aujourd'hui (même après départ)
+  // Paramètres de l'entreprise (heures configurées)
+  const [heureOuverture, setHeureOuverture] = useState<string | null>(null);
+  const [heureFermeture, setHeureFermeture] = useState<string | null>(null);
+  const [dureePause, setDureePause] = useState<number>(60);
   
   // Valeur animée pour l'effet de pression sur le bouton (scale 1 → 0.95 → 1)
   const scaleAnim = useState(new Animated.Value(1))[0];
@@ -70,7 +74,20 @@ export default function PointerScreen() {
         // Vérifier si l'employé a déjà pointé aujourd'hui (même après départ)
         const todayPresences = await getTodayPresences();
         setAlreadyPointedToday(todayPresences.length > 0);
-      }      } catch (error) {
+      }
+      
+      // Chargement des heures configurées de l'entreprise
+      try {
+        const parametres = await getParametres();
+        if (parametres) {
+          setHeureOuverture(parametres.heure_ouverture || null);
+          setHeureFermeture(parametres.heure_fermeture || null);
+          setDureePause(parametres.duree_pause || 60);
+        }
+      } catch (e) {
+        console.warn("Erreur chargement horaires entreprise pointer:", e);
+      }
+    } catch (error) {
       console.error("Erreur chargement pointer:", error);
       // En cas d'erreur, on affiche quand même l'interface
       setIsCheckedIn(false);
@@ -211,6 +228,32 @@ export default function PointerScreen() {
       </View>
 
       {/* ============================================================ */}
+      {/* HORAIRES CONFIGURÉS DE L'ENTREPRISE                          */}
+      {/* ============================================================ */}
+      {(heureOuverture || heureFermeture) && (
+        <View style={styles.companySchedule}>
+          {heureOuverture && (
+            <View style={styles.scheduleChip}>
+              <Ionicons name="enter-outline" size={14} color={Colors.textSecondary} />
+              <Text style={styles.scheduleChipText}>Début {heureOuverture}</Text>
+            </View>
+          )}
+          {dureePause > 0 && (
+            <View style={styles.scheduleChip}>
+              <Ionicons name="cafe-outline" size={14} color={Colors.textSecondary} />
+              <Text style={styles.scheduleChipText}>Pause {dureePause}min</Text>
+            </View>
+          )}
+          {heureFermeture && (
+            <View style={styles.scheduleChip}>
+              <Ionicons name="exit-outline" size={14} color={Colors.textSecondary} />
+              <Text style={styles.scheduleChipText}>Fin {heureFermeture}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ============================================================ */}
       {/* BOUTON PRINCIPAL DE POINTAGE                                  */}
       {/* ============================================================ */}
       {/* Un grand cercle doré avec un cercle blanc à l'intérieur       */}
@@ -267,6 +310,30 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: Colors.black,
+  },
+  companySchedule: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  scheduleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.bgLight,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+  },
+  scheduleChipText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: "500",
   },
   content: {
     flex: 1,

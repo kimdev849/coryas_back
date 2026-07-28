@@ -53,8 +53,7 @@ export default function HomeScreen() {
   
   const getGreeting = (): string => {
     const h = new Date().getHours();
-    if (h >= 6 && h < 12) return "Bonjour";
-    if (h >= 12 && h < 18) return "Bonjour";
+    if (h >= 5 && h < 16) return "Bonjour";
     return "Bonsoir";
   };
 
