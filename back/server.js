@@ -65,7 +65,8 @@ const { errorHandler, notFoundHandler } = require("./middlewares/errorHandler.mi
 app.use(corsMiddleware);
 
 // Middleware pour lire le JSON dans le corps des requêtes (req.body)
-app.use(express.json());
+// Limite augmentée à 10 Mo pour supporter le logo en base64
+app.use(express.json({ limit: '10mb' }));
 
 // Middleware logger : affiche chaque requête dans la console
 app.use(loggerMiddleware);
