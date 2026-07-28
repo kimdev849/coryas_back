@@ -38,9 +38,11 @@ async function getEmployes(entrepriseId = null) {
     `;
     const params = [];
     if (entrepriseId) {
-        sql += ` AND e.entreprise_id = $1`;
+        sql += ` AND e.entreprise_id = $${params.length + 1}`;
         params.push(entrepriseId);
     }
+    // Exclure les SuperAdmin (role_id=5) de la liste employés
+    sql += ` AND (u.role_id IS NULL OR u.role_id != 5)`;
     sql += ` ORDER BY e.id ASC`;
     const result = await pool.query(sql, params);
     return result.rows;
