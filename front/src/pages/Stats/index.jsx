@@ -1,15 +1,15 @@
 // ================================================================
-// Page Stats - Statistiques de ponctualité
+// 📊 Page Ponctualité — Design Premium Présencia
 // ================================================================
 // Affiche :
-// - Top 10 des employés les plus ponctuels
-// - Top 10 des employés les plus en retard
-// - Stats globales (taux de ponctualité, total retards, etc.)
-// - Stats jour par jour
-// - Filtre par période (semaine / mois)
+// - Hero header avec gradient + stats clés
+// - Top 10 des employés les plus ponctuels / en retard
+// - Stats jour par jour avec barres de progression
+// - Filtre par période (semaine / mois / année)
 // ================================================================
 
 import { useState, useEffect } from "react";
+import { RefreshCw, Clock, Award, AlertTriangle, TrendingUp, TrendingDown, Users, Calendar, ChevronRight } from "lucide-react";
 import statsService from "../../services/statsService";
 import "./style.css";
 
@@ -42,21 +42,40 @@ function Stats() {
     return d.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
   };
 
+  const getRankClass = (index) => {
+    if (index === 0) return "stats-rank-1";
+    if (index === 1) return "stats-rank-2";
+    if (index === 2) return "stats-rank-3";
+    return "";
+  };
+
+  const getWorstRankClass = (index) => {
+    if (index === 0) return "stats-rank-worst-1";
+    if (index === 1) return "stats-rank-worst-2";
+    if (index === 2) return "stats-rank-worst-3";
+    return "";
+  };
+
+  // ==================== LOADING ====================
   if (isLoading) {
     return (
-      <div>
-        <h1 className="page-title">Ponctualité</h1>
-        <div className="loading-spinner"><span className="loading-spinner-text">Chargement...</span></div>
+      <div className="stats-loading">
+        <div className="stats-loading-spinner" />
+        <p className="stats-loading-text">Calcul des statistiques de ponctualité...</p>
       </div>
     );
   }
 
+  // ==================== ERROR ====================
   if (error) {
     return (
-      <div>
-        <h1 className="page-title">Ponctualité</h1>
-        <div className="page-error">{error}</div>
-        <button onClick={loadData} className="employes-btn employes-btn-primary">Réessayer</button>
+      <div className="stats-error">
+        <span className="stats-error-icon">⚠️</span>
+        <h2 className="stats-error-title">Erreur de chargement</h2>
+        <p className="stats-error-text">{error}</p>
+        <button onClick={loadData} className="stats-error-btn">
+          <RefreshCw size={16} /> Réessayer
+        </button>
       </div>
     );
   }
@@ -65,141 +84,194 @@ function Stats() {
 
   return (
     <div>
-      {/* Header responsive */}
-      <div className="stats-header">
-        <div className="stats-header-left">
-          <h1 className="page-title">Ponctualité</h1>
-          <p className="page-description" style={{ marginBottom: 0 }}>
-            Heure limite : <strong>{heureLimite}</strong>
-            {retardApres > 0 && <span> (ouverture {heureOuverture} + {retardApres} min)</span>}
-          </p>
-        </div>
-        {/* Filtre période */}
-        <div className="stats-periodes">
-          {["semaine", "mois", "annee"].map((p) => (
-            <button
-              key={p}
-              className={`stats-periode-btn ${periode === p ? "active" : ""}`}
-              onClick={() => setPeriode(p)}
-            >
-              {p === "semaine" ? "Semaine" : p === "mois" ? "Mois" : "Année"}
+      {/* ===== HERO HEADER ===== */}
+      <div className="stats-hero">
+        <div className="stats-hero-top">
+          <div>
+            <h1 className="stats-hero-title">
+              <span className="stats-hero-title-icon">📊</span>
+              Ponctualité
+            </h1>
+            <p className="stats-hero-subtitle">
+              <Clock size={14} />
+              Heure limite : <strong>{heureLimite}</strong>
+              {retardApres > 0 && (
+                <span> (ouverture {heureOuverture} + {retardApres} min)</span>
+              )}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={loadData} className="stats-refresh-btn" title="Actualiser">
+              <RefreshCw size={14} />
+              Actualiser
             </button>
-          ))}
+            <div className="stats-hero-filter">
+              {["semaine", "mois", "annee"].map((p) => (
+                <button
+                  key={p}
+                  className={`stats-periode-btn ${periode === p ? "active" : ""}`}
+                  onClick={() => setPeriode(p)}
+                >
+                  {p === "semaine" ? "Semaine" : p === "mois" ? "Mois" : "Année"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Hero metrics */}
+        <div className="stats-hero-metrics">
+          <div className="stats-hero-metric">
+            <div className="stats-hero-metric-icon" style={{ background: "rgba(34,197,94,0.2)" }}>
+              <Award size={20} style={{ color: "#22c55e" }} />
+            </div>
+            <div>
+              <div className="stats-hero-metric-value">{statsGlobales?.totalPonctuels || 0}</div>
+              <div className="stats-hero-metric-label">Arrivées à l'heure</div>
+            </div>
+          </div>
+          <div className="stats-hero-metric">
+            <div className="stats-hero-metric-icon" style={{ background: "rgba(239,68,68,0.2)" }}>
+              <AlertTriangle size={20} style={{ color: "#ef4444" }} />
+            </div>
+            <div>
+              <div className="stats-hero-metric-value">{statsGlobales?.totalRetards || 0}</div>
+              <div className="stats-hero-metric-label">Arrivées en retard</div>
+            </div>
+          </div>
+          <div className="stats-hero-metric">
+            <div className="stats-hero-metric-icon" style={{ background: "rgba(59,130,246,0.2)" }}>
+              <TrendingUp size={20} style={{ color: "#3b82f6" }} />
+            </div>
+            <div>
+              <div className="stats-hero-metric-value">{statsGlobales?.tauxPonctualite || 0}%</div>
+              <div className="stats-hero-metric-label">Taux de ponctualité</div>
+            </div>
+          </div>
+          <div className="stats-hero-metric">
+            <div className="stats-hero-metric-icon" style={{ background: "rgba(139,92,246,0.2)" }}>
+              <Users size={20} style={{ color: "#8b5cf6" }} />
+            </div>
+            <div>
+              <div className="stats-hero-metric-value">{statsGlobales?.totalPresences || 0}</div>
+              <div className="stats-hero-metric-label">Total présences</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Cartes stats globales */}
-      <div className="stats-cards">
-        <div className="stats-card stats-card-green">
-          <div className="stats-card-icon">🟢</div>
-          <div className="stats-card-body">
-            <p className="stats-card-number">{statsGlobales?.totalPonctuels || 0}</p>
-            <p className="stats-card-label">Arrivées à l'heure</p>
-          </div>
-        </div>
-        <div className="stats-card stats-card-red">
-          <div className="stats-card-icon">🔴</div>
-          <div className="stats-card-body">
-            <p className="stats-card-number">{statsGlobales?.totalRetards || 0}</p>
-            <p className="stats-card-label">Arrivées en retard</p>
-          </div>
-        </div>
-        <div className="stats-card stats-card-blue">
-          <div className="stats-card-icon">📊</div>
-          <div className="stats-card-body">
-            <p className="stats-card-number">{statsGlobales?.tauxPonctualite || 0}%</p>
-            <p className="stats-card-label">Taux de ponctualité</p>
-          </div>
-        </div>
-        <div className="stats-card stats-card-gray">
-          <div className="stats-card-icon">👥</div>
-          <div className="stats-card-body">
-            <p className="stats-card-number">{statsGlobales?.totalPresences || 0}</p>
-            <p className="stats-card-label">Total présences</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Deux colonnes : Top ponctuels + Top retards */}
+      {/* ===== TOP PONCTUELS + TOP RETARDS ===== */}
       <div className="stats-columns">
-        {/* Top ponctuels */}
-        <div className="stats-table-section">
-          <h3 className="stats-section-title">
-            <span style={{ color: "#22c55e" }}>●</span> Top 10 des plus ponctuels
-          </h3>
-          <div className="dashboard-table-container">
-            <table className="dashboard-table">
+        {/* TOP PONCTUELS */}
+        <div className="stats-table-card">
+          <div className="stats-table-card-header">
+            <div className="stats-table-card-icon" style={{ background: "#dcfce7" }}>
+              🟢
+            </div>
+            <span className="stats-table-card-title">Top 10 des plus ponctuels</span>
+            <span className="stats-table-card-count">{topPonctuels?.length || 0}</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="stats-table">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Employé</th>
                   <th>Département</th>
-                  <th>Présences</th>
-                  <th>À l'heure</th>
-                  <th>%</th>
+                  <th style={{ textAlign: "center" }}>Présences</th>
+                  <th style={{ textAlign: "center" }}>À l'heure</th>
+                  <th style={{ textAlign: "right" }}>%</th>
                 </tr>
               </thead>
               <tbody>
-                {topPonctuels?.length > 0 ? topPonctuels.map((emp, i) => (
-                  <tr key={emp.id}>
-                    <td>
-                      <span className={`stats-rank ${i < 3 ? "stats-rank-top" : ""}`}>{i + 1}</span>
-                    </td>
-                    <td><strong>{emp.prenom} {emp.nom}</strong><br /><small style={{ color: "#888" }}>{emp.matricule}</small></td>
-                    <td>{emp.departement || "—"}</td>
-                    <td>{emp.totalPresences}</td>
-                    <td style={{ color: "#22c55e", fontWeight: 600 }}>{emp.arriveesALHeure}</td>
-                    <td>
-                      <div className="stats-bar-wrap">
-                        <div className="stats-bar" style={{ width: `${emp.ponctualite}%`, background: "#22c55e" }} />
-                        <span className="stats-bar-text">{emp.ponctualite}%</span>
-                      </div>
+                {topPonctuels?.length > 0 ? (
+                  topPonctuels.map((emp, i) => (
+                    <tr key={emp.id}>
+                      <td>
+                        <span className={`stats-rank ${getRankClass(i)}`}>{i + 1}</span>
+                      </td>
+                      <td>
+                        <div className="stats-employe-cell">
+                          <span className="stats-employe-name">{emp.prenom} {emp.nom}</span>
+                          <span className="stats-employe-matricule">{emp.matricule}</span>
+                        </div>
+                      </td>
+                      <td><span className="stats-dept-badge">{emp.departement || "—"}</span></td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-bold">{emp.totalPresences}</span></td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-green">{emp.arriveesALHeure}</span></td>
+                      <td style={{ textAlign: "right" }}>
+                        <div className="stats-bar-wrap" style={{ justifyContent: "flex-end" }}>
+                          <div className="stats-bar stats-bar-green" style={{ width: `${emp.ponctualite}%` }} />
+                          <span className="stats-bar-text stats-bar-text-green">{emp.ponctualite}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="stats-empty">
+                      <span className="stats-empty-icon">📭</span>
+                      <p className="stats-empty-text">Aucune donnée de ponctualité pour cette période</p>
                     </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan={6} style={{ textAlign: "center", color: "#888" }}>Aucune donnée</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Top retards */}
-        <div className="stats-table-section">
-          <h3 className="stats-section-title">
-            <span style={{ color: "#ef4444" }}>●</span> Top 10 des plus en retard
-          </h3>
-          <div className="dashboard-table-container">
-            <table className="dashboard-table">
+        {/* TOP RETARDS */}
+        <div className="stats-table-card">
+          <div className="stats-table-card-header">
+            <div className="stats-table-card-icon" style={{ background: "#fee2e2" }}>
+              🔴
+            </div>
+            <span className="stats-table-card-title">Top 10 des plus en retard</span>
+            <span className="stats-table-card-count">{topRetards?.length || 0}</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="stats-table">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Employé</th>
                   <th>Département</th>
-                  <th>Présences</th>
-                  <th>Retards</th>
-                  <th>%</th>
+                  <th style={{ textAlign: "center" }}>Présences</th>
+                  <th style={{ textAlign: "center" }}>Retards</th>
+                  <th style={{ textAlign: "right" }}>%</th>
                 </tr>
               </thead>
               <tbody>
-                {topRetards?.length > 0 ? topRetards.map((emp, i) => (
-                  <tr key={emp.id}>
-                    <td>
-                      <span className={`stats-rank ${i < 3 ? "stats-rank-worst" : ""}`}>{i + 1}</span>
-                    </td>
-                    <td><strong>{emp.prenom} {emp.nom}</strong><br /><small style={{ color: "#888" }}>{emp.matricule}</small></td>
-                    <td>{emp.departement || "—"}</td>
-                    <td>{emp.totalPresences}</td>
-                    <td style={{ color: "#ef4444", fontWeight: 600 }}>{emp.arriveesEnRetard}</td>
-                    <td>
-                      <div className="stats-bar-wrap">
-                        <div className="stats-bar" style={{ width: `${100 - emp.ponctualite}%`, background: "#ef4444" }} />
-                        <span className="stats-bar-text">{100 - emp.ponctualite}%</span>
-                      </div>
+                {topRetards?.length > 0 ? (
+                  topRetards.map((emp, i) => (
+                    <tr key={emp.id}>
+                      <td>
+                        <span className={`stats-rank ${getWorstRankClass(i)}`}>{i + 1}</span>
+                      </td>
+                      <td>
+                        <div className="stats-employe-cell">
+                          <span className="stats-employe-name">{emp.prenom} {emp.nom}</span>
+                          <span className="stats-employe-matricule">{emp.matricule}</span>
+                        </div>
+                      </td>
+                      <td><span className="stats-dept-badge">{emp.departement || "—"}</span></td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-bold">{emp.totalPresences}</span></td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-red">{emp.arriveesEnRetard}</span></td>
+                      <td style={{ textAlign: "right" }}>
+                        <div className="stats-bar-wrap" style={{ justifyContent: "flex-end" }}>
+                          <div className="stats-bar stats-bar-red" style={{ width: `${100 - emp.ponctualite}%` }} />
+                          <span className="stats-bar-text stats-bar-text-red">{100 - emp.ponctualite}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="stats-empty">
+                      <span className="stats-empty-icon">🎉</span>
+                      <p className="stats-empty-text">Aucun retard enregistré ! Félicitations !</p>
                     </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan={6} style={{ textAlign: "center", color: "#888" }}>Aucune donnée</td></tr>
                 )}
               </tbody>
             </table>
@@ -207,51 +279,60 @@ function Stats() {
         </div>
       </div>
 
-      {/* Stats jour par jour */}
-      <div className="stats-table-section" style={{ marginTop: 24 }}>
-        <h3 className="stats-section-title">📅 Jour par jour</h3>
-        <div className="dashboard-table-container">
-          <table className="dashboard-table">
+      {/* ===== STATS JOUR PAR JOUR ===== */}
+      <div className="stats-daily-section">
+        <div className="stats-daily-header">
+          <div className="stats-daily-icon">
+            📅
+          </div>
+          <span className="stats-daily-title">Jour par jour</span>
+          <span className="stats-daily-subtitle">
+            {statsParJour?.length || 0} jour(s) analysé(s)
+          </span>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table className="stats-table">
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Total</th>
-                <th>À l'heure</th>
-                <th>En retard</th>
-                <th>Taux</th>
+                <th style={{ textAlign: "center" }}>Total</th>
+                <th style={{ textAlign: "center" }}>À l'heure</th>
+                <th style={{ textAlign: "center" }}>En retard</th>
+                <th style={{ textAlign: "right", minWidth: 160 }}>Taux</th>
               </tr>
             </thead>
             <tbody>
-              {statsParJour?.length > 0 ? statsParJour.map((jour) => (
-                <tr key={jour.date}>
-                  <td>{formatDate(jour.date)}</td>
-                  <td><strong>{jour.total}</strong></td>
-                  <td style={{ color: "#22c55e" }}>{jour.ponctuels}</td>
-                  <td style={{ color: "#ef4444" }}>{jour.retards}</td>
-                  <td>
-                    <div className="stats-bar-wrap">
-                      <div
-                        className="stats-bar"
-                        style={{
-                          width: `${jour.total > 0 ? Math.round((jour.ponctuels / jour.total) * 100) : 0}%`,
-                          background: "#3b82f6",
-                        }}
-                      />
-                      <span className="stats-bar-text">
-                        {jour.total > 0 ? Math.round((jour.ponctuels / jour.total) * 100) : 0}%
-                      </span>
-                    </div>
+              {statsParJour?.length > 0 ? (
+                statsParJour.map((jour) => {
+                  const taux = jour.total > 0 ? Math.round((jour.ponctuels / jour.total) * 100) : 0;
+                  return (
+                    <tr key={jour.date}>
+                      <td className="stats-date-cell">
+                        {formatDate(jour.date)}
+                      </td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-bold">{jour.total}</span></td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-green">{jour.ponctuels}</span></td>
+                      <td style={{ textAlign: "center" }}><span className="stats-num-red">{jour.retards}</span></td>
+                      <td style={{ textAlign: "right" }}>
+                        <div className="stats-bar-wrap" style={{ justifyContent: "flex-end" }}>
+                          <div className="stats-bar stats-bar-blue" style={{ width: `${taux}%` }} />
+                          <span className="stats-bar-text">{taux}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="stats-empty">
+                    <span className="stats-empty-icon">📭</span>
+                    <p className="stats-empty-text">Aucune donnée journalière pour cette période</p>
                   </td>
                 </tr>
-              )) : (
-                <tr><td colSpan={5} style={{ textAlign: "center", color: "#888" }}>Aucune donnée</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        <button onClick={loadData} className="employes-btn employes-btn-primary" style={{ marginTop: 16, background: "#6c757d" }}>
-          Actualiser
-        </button>
       </div>
     </div>
   );
