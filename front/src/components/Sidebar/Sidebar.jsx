@@ -18,6 +18,11 @@ function Sidebar({ onClose }) {
   const [companyName, setCompanyName] = useState("PRÉSENCIA");
 
   useEffect(() => {
+    // SuperAdmin ne doit pas voir le nom d'une entreprise spécifique
+    if (user?.role === "SuperAdmin") {
+      setCompanyName("PRÉSENCIA");
+      return;
+    }
     const load = async () => {
       try {
         const res = await parametresService.get();
@@ -25,7 +30,7 @@ function Sidebar({ onClose }) {
       } catch { /* fallback */ }
     };
     load();
-  }, []);
+  }, [user]);
 
   const isAdmin = user?.role === "Administrateur" || user?.role === "RH" || user?.role === "Directeur";
   const isSuperAdmin = user?.role === "SuperAdmin";

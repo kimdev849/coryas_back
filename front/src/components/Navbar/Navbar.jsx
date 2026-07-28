@@ -15,6 +15,11 @@ function Navbar({ onToggleSidebar }) {
   const [company, setCompany] = useState({ nom: "PRÉSENCIA", logo: null });
 
   useEffect(() => {
+    // SuperAdmin ne doit pas voir le nom d'une entreprise spécifique
+    if (user?.role === "SuperAdmin") {
+      setCompany({ nom: "PRÉSENCIA", logo: null });
+      return;
+    }
     const load = async () => {
       try {
         const res = await parametresService.get();
@@ -27,7 +32,7 @@ function Navbar({ onToggleSidebar }) {
       } catch { /* fallback silencieux */ }
     };
     load();
-  }, []);
+  }, [user]);
 
   const avatarLetter = user?.prenom ? user.prenom.charAt(0).toUpperCase() : "A";
   const displayName = user?.prenom ? user.prenom + " " + user.nom : "Utilisateur";
