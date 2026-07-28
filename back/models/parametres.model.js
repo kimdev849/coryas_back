@@ -10,11 +10,13 @@ const pool = require("../config/database");
 // ----------------------------------------------------------------
 // get(entrepriseId) - Récupère les paramètres d'une entreprise
 // ----------------------------------------------------------------
+// ⚠️ IMPORTANT : si entrepriseId est null (SuperAdmin, employé sans
+// entreprise), on retourne NULL. Surtout PAS de fallback LIMIT 1
+// qui retournerait les paramètres d'une AUTRE entreprise aléatoire !
+// ----------------------------------------------------------------
 async function get(entrepriseId = null) {
     if (!entrepriseId) {
-        // Fallback pour SuperAdmin ou données legacy
-        const result = await pool.query(`SELECT * FROM parametres LIMIT 1`);
-        return result.rows[0] || null;
+        return null;
     }
     const result = await pool.query(`
         SELECT * FROM parametres WHERE entreprise_id = $1

@@ -103,14 +103,30 @@ export default function PresenceDetailScreen() {
     );
   }
 
-  const dateFormatee = presence.date_presence
-    ? new Date(presence.date_presence + "T12:00:00").toLocaleDateString("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Date inconnue";
+  const dateFormatee = (() => {
+    if (!presence.date_presence) return "Date inconnue";
+    try {
+      // Extraire les parties de la date manuellement pour éviter le bug "Invalid Date"
+      // sur certains fuseaux horaires/mobiles
+      const parts = presence.date_presence.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
+        if (isNaN(d.getTime())) throw new Error("Date invalide");
+        return d.toLocaleDateString("fr-FR", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+        });
+      }
+      // Fallback avec l'heure de midi (évite le décalage fuseau)
+      const d = new Date(presence.date_presence + "T12:00:00");
+      if (isNaN(d.getTime())) throw new Error("Date invalide");
+      return d.toLocaleDateString("fr-FR", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      });
+    } catch {
+      // Dernier fallback : afficher la date brute
+      return presence.date_presence || "Date inconnue";
+    }
+  })();
 
   return (
     <View style={styles.container}>
