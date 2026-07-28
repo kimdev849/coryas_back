@@ -108,7 +108,7 @@ function AppRoutes() {
         <Route path="/departements" element={<AdminRoute><Departements /></AdminRoute>} />
         <Route path="/sites" element={<AdminRoute><Sites /></AdminRoute>} />
         <Route path="/equipes" element={<AdminRoute><Equipes /></AdminRoute>} />
-        <Route path="/heures-sup" element={<HeuresSup />} />
+        <Route path="/heures-sup" element={<AdminRoute><HeuresSup /></AdminRoute>} />
         <Route path="/audit" element={<AdminRoute><AuditLog /></AdminRoute>} />
         <Route path="/super-admin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
         <Route path="/super-admin/entreprise/:id" element={<SuperAdminRoute><EntrepriseDetail /></SuperAdminRoute>} />

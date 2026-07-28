@@ -151,16 +151,17 @@
 
 .login-input-wrapper {
   position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .login-input-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #9CA3AF;
   pointer-events: none;
   transition: color 0.2s;
+  flex-shrink: 0;
 }
 
 .login-input-wrapper:focus-within .login-input-icon {
@@ -169,19 +170,20 @@
 
 .login-input {
   width: 100%;
-  padding: 12px 14px 12px 42px;
+  padding: 14px 16px 14px 46px;
   border: 2px solid #E5E7EB;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 15px;
   font-family: inherit;
   transition: all 0.2s;
   outline: none;
   background: #F9FAFB;
   color: #1F2937;
+  box-sizing: border-box;
 }
 
 .login-input-password {
-  padding-right: 42px;
+  padding-right: 46px;
 }
 
 .login-input:focus {
@@ -207,13 +209,15 @@
 
 .login-password-toggle {
   position: absolute;
-  right: 10px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
   color: #9CA3AF;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -301,6 +305,6 @@
   .login-card { padding: 32px 24px 28px; margin: 12px; border-radius: 16px; }
   .login-logo { width: 60px; height: 60px; padding: 12px; }
   .login-title { font-size: 22px; }
-  .login-input { font-size: 14px; padding: 11px 14px 11px 38px; }
-  .login-input-icon { left: 12px; }
+  .login-input { font-size: 14px; padding: 13px 14px 13px 42px; }
+  .login-input-icon { left: 14px; }
 }
