@@ -238,21 +238,43 @@ function Configuration() {
               <div className="config-row">
                 <div className="config-row-label">
                   <strong>Logo de l'entreprise</strong>
-                  <p className="config-row-desc">Image carrée recommandée (200x200px). Entrez l'URL de votre logo.</p>
+                  <p className="config-row-desc">Image carrée recommandée (200x200px). Sélectionnez un fichier sur votre appareil.</p>
                 </div>
                 <div className="config-logo-area">
                   <div className="config-logo-preview">
                     {settings.logo_url ? (
-                      <img src={settings.logo_url} alt="Logo" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="config-logo-fallback"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4z"/></svg><span style="font-size:11px;color:#9CA3AF;margin-top:4px">Erreur</span></div>'; }} />
+                      <img src={settings.logo_url} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        onError={(e) => { e.target.style.display = 'none'; }} />
                     ) : (
                       <Building2 size={32} />
                     )}
                   </div>
                   <div className="config-logo-input-group">
-                    <input type="text" name="logo_url" value={settings.logo_url}
-                      onChange={handleChange} className="config-input"
-                      placeholder="https://exemple.com/logo.png" />
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 500 * 1024) {
+                          alert("Image trop volumineuse. Maximum 500 Ko.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setSettings(prev => ({ ...prev, logo_url: ev.target?.result || "" }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="config-input-file"
+                    />
                   </div>
+                  {settings.logo_url && settings.logo_url.startsWith('data:') && (
+                    <button type="button" className="config-btn-remove"
+                      onClick={() => setSettings(prev => ({ ...prev, logo_url: "" }))}>
+                      Supprimer
+                    </button>
+                  )}
                 </div>
               </div>
 

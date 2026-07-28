@@ -1,159 +1,36 @@
 /* ================================================================
-   style.css — Page Employés
-   ================================================================
-   Thème : Bleu Présencia 🔵 | Inter font | Responsive
-   ============================================================ */
+   Employés — Design Premium
+   ================================================================ */
 
-/* Boutons d'action (Ajouter, Recharger) */
+/* Boutons d'action */
 .employes-actions {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* Style de base pour tous les boutons */
 .employes-btn {
-  padding: 10px 20px;
+  padding: 11px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-/* Bouton principal (jaune) */
-.employes-btn-primary {
-  background: var(--color-primary);
-  color: var(--color-black);
+  transition: all 0.25s;
   font-weight: 600;
 }
 
+.employes-btn-primary {
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+}
+
 .employes-btn-primary:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37,99,235,0.35);
 }
-
-/* Conteneur du tableau avec scroll horizontal si trop large */
-.employes-table-container {
-  background: var(--color-white);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  overflow-x: auto; /* Scroll sur mobile */
-}
-
-.employes-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 700px; /* Largeur minimale pour éviter l'écrasement */
-}
-
-.employes-table th {
-  background: var(--color-primary-bg);
-  padding: 14px 16px;
-  text-align: left;
-  font-size: 12px;
-  color: var(--color-gray-700);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 700;
-  border-bottom: 2px solid var(--color-primary);
-  white-space: nowrap;
-}
-
-.employes-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--color-gray-200);
-  font-size: 14px;
-  color: var(--color-gray-900);
-}
-
-.employes-table tbody tr:hover {
-  background: var(--color-primary-light);
-}
-
-.employes-empty {
-  text-align: center;
-  padding: 60px;
-  color: var(--color-gray-500);
-  font-size: 15px;
-}
-
-.employes-empty small {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-gray-500);
-}
-
-/* Champ de saisie (pour les formulaires) */
-.login-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 2px solid var(--color-gray-200);
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s;
-  background: var(--color-white);
-}
-
-.login-input:focus {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-  outline: none;
-}
-
-/* ===============================================================
-   RESPONSIVE
-   ============================================================ */
-
-/* Tablette */
-@media (max-width: 1024px) {
-  .employes-table {
-    min-width: 650px;
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .employes-actions {
-    flex-direction: column;
-  }
-
-  .employes-btn {
-    width: 100%;
-    text-align: center;
-  }
-
-  .employes-table th,
-  .employes-table td {
-    padding: 10px 12px;
-    font-size: 13px;
-  }
-
-  .employes-empty {
-    padding: 40px;
-  }
-}
-
-/* Très petit mobile */
-@media (max-width: 480px) {
-  .employes-table {
-    min-width: 500px;
-  }
-
-  .employes-table th,
-  .employes-table td {
-    padding: 8px 8px;
-    font-size: 12px;
-  }
-}
-
-/* ===============================================================
-   PRINT — Impression de la liste des employés
-   ============================================================ */
 
 .employes-btn-print {
   background: #374151;
@@ -162,67 +39,186 @@
 
 .employes-btn-print:hover {
   background: #1F2937;
+  transform: translateY(-1px);
 }
 
+/* Tableau */
+.employes-table-container {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.employes-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 750px;
+}
+
+.employes-table thead {
+  background: #F9FAFB;
+  border-bottom: 2px solid #E5E7EB;
+}
+
+.employes-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 12px;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.employes-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F3F4F6;
+  font-size: 14px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.employes-table tbody tr {
+  transition: background 0.15s;
+}
+
+.employes-table tbody tr:hover {
+  background: #F9FAFB;
+}
+
+.employes-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.employes-empty {
+  text-align: center;
+  padding: 60px !important;
+  color: #9CA3AF;
+  font-size: 15px;
+}
+
+.employes-empty small {
+  display: block;
+  margin-top: 8px;
+  color: #9CA3AF;
+}
+
+/* Badge statut */
+.employes-statut-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.employes-statut-badge.actif {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.employes-statut-badge.inactif {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.employes-statut-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.employes-statut-badge.actif .employes-statut-dot {
+  background: #059669;
+}
+
+.employes-statut-badge.inactif .employes-statut-dot {
+  background: #DC2626;
+}
+
+/* Badge contrat */
+.employes-contrat-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 11px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+/* Champ login-input partagé */
+.login-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  background: #FFFFFF;
+  color: #1F2937;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.login-input:focus {
+  border-color: #2563EB !important;
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.1) !important;
+}
+
+/* =============================================================
+   PRINT
+   ============================================================ */
 @media print {
   body * { visibility: hidden; }
-  
-  .page-title,
-  .page-description,
-  .employes-table-container,
-  .employes-table-container * {
+  .page-title, .page-description,
+  .employes-table-container, .employes-table-container * {
     visibility: visible;
   }
-  
   .page-title {
-    position: absolute;
-    top: 0;
-    left: 20px;
-    font-size: 18px;
+    position: absolute; top: 0; left: 20px; font-size: 18px;
   }
-  
   .page-description {
-    position: absolute;
-    top: 28px;
-    left: 20px;
-    font-size: 11px;
-    color: #666;
+    position: absolute; top: 28px; left: 20px; font-size: 11px; color: #666;
   }
-  
   .employes-actions,
   .employes-table th:last-child,
   .employes-table td:last-child {
     display: none !important;
   }
-  
   .employes-table-container {
-    position: absolute;
-    top: 55px;
-    left: 10px;
-    right: 10px;
-    box-shadow: none !important;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    position: absolute; top: 55px; left: 10px; right: 10px;
+    box-shadow: none !important; border: 1px solid #ccc; border-radius: 4px;
   }
-  
   .employes-table { min-width: auto; font-size: 11px; }
   .employes-table th {
-    background: #f0f0f0 !important;
-    color: #000 !important;
-    border-bottom: 2px solid #333 !important;
-    padding: 7px 8px;
-    font-size: 9px;
+    background: #f0f0f0 !important; color: #000 !important;
+    border-bottom: 2px solid #333 !important; padding: 7px 8px; font-size: 9px;
   }
   .employes-table td {
-    padding: 5px 8px;
-    border-bottom: 1px solid #eee;
-    color: #000 !important;
+    padding: 5px 8px; border-bottom: 1px solid #eee; color: #000 !important;
   }
   .employes-table tbody tr:hover { background: transparent !important; }
-  
-  .sidebar, .navbar, .page-content > header,
-  .page-content > nav,
-  .page-content > .employes-actions {
-    display: none !important;
-  }
+  .sidebar, .navbar { display: none !important; }
+}
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .employes-actions { flex-direction: column; }
+  .employes-btn { width: 100%; text-align: center; justify-content: center; }
+  .employes-table th, .employes-table td { padding: 10px 12px; font-size: 13px; }
+  .employes-empty { padding: 40px; }
+}
+
+@media (max-width: 480px) {
+  .employes-table { min-width: 500px; }
+  .employes-table th, .employes-table td { padding: 8px 8px; font-size: 12px; }
 }
