@@ -53,6 +53,8 @@ async function createEmploye(req, res) {
         const {
             matricule, nom, prenom, sexe, telephone,
             date_naissance, date_embauche, departement_id,
+            type_contrat_id, poste, salaire, site_id, equipe_id,
+            date_fin_contrat, periode_essai_jours,
             email, password, role_id
         } = req.body;
 
@@ -98,12 +100,16 @@ async function createEmploye(req, res) {
         const entrepriseId = req.user?.entreprise_id;
         const employeRes = await client.query(`
             INSERT INTO employes (matricule, nom, prenom, sexe, telephone,
-                                  date_naissance, date_embauche, departement_id, entreprise_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                                  date_naissance, date_embauche, departement_id, entreprise_id,
+                                  type_contrat_id, poste, salaire,
+                                  site_id, equipe_id, date_fin_contrat, periode_essai_jours)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING *
         `, [nouveauMatricule, nom, prenom, sexe || null, telephone || null,
             date_naissance || null, date_embauche || new Date().toISOString().split('T')[0],
-            departement_id, entrepriseId]);
+            departement_id, entrepriseId,
+            type_contrat_id || null, poste || null, salaire || null,
+            site_id || null, equipe_id || null, date_fin_contrat || null, periode_essai_jours || null]);
 
         const newEmploye = employeRes.rows[0];
 
@@ -281,9 +287,25 @@ async function deactivateEmploye(req, res) {
 // ----------------------------------------------------------------
 // GET /api/employes/:id/stats - Statistiques d'un employé
 // ----------------------------------------------------------------
+// Vérifie que l'employé appartient à l'entreprise de l'utilisateur connecté
+// (sauf SuperAdmin qui voit tout)
+// ----------------------------------------------------------------
 async function getEmployeStats(req, res) {
     try {
-        const stats = await employeModel.getEmployeStats(req.params.id);
+        const { id } = req.params;
+        const entreprise_id = req.user?.entreprise_id;
+
+        // Vérifier que l'employé appartient à la même entreprise
+        if (entreprise_id) {
+            const empCheck = await require("../config/database").query(`
+                SELECT id FROM employes WHERE id = $1 AND entreprise_id = $2
+            `, [id, entreprise_id]);
+            if (empCheck.rows.length === 0) {
+                return res.status(404).json({ message: "Employe introuvable dans votre entreprise", data: null });
+            }
+        }
+
+        const stats = await employeModel.getEmployeStats(id);
         if (!stats) {
             return res.status(404).json({ message: "Employe introuvable", data: null });
         }

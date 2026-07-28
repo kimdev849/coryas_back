@@ -19,10 +19,13 @@ function SuperAdmin() {
   const [stats, setStats] = useState(null);
   const [entreprises, setEntreprises] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showCredentials, setShowCredentials] = useState(null);
   const [formData, setFormData] = useState({ nom: "", email: "", telephone: "", ville: "", plan_id: "" });
+  const [acceptingId, setAcceptingId] = useState(null);
+  const [acceptPlan, setAcceptPlan] = useState({});
 
   const isSuperAdmin = user?.role === "SuperAdmin";
 
@@ -33,15 +36,17 @@ function SuperAdmin() {
 
   const loadData = async () => {
     try {
-      const [statsRes, entreprisesRes, plansRes] = await Promise.all([
+      const [statsRes, entreprisesRes, plansRes, demandesRes] = await Promise.all([
         entreprisesService.getStats(),
         entreprisesService.getAll(),
         plansService.getAll(),
+        entreprisesService.getDemandes(),
       ]);
       // Les services renvoient { message, data } - on extrait .data
       setStats(statsRes?.data || statsRes);
       setEntreprises(entreprisesRes?.data || entreprisesRes || []);
       setPlans(plansRes?.data || plansRes || []);
+      setDemandes(demandesRes?.data || demandesRes || []);
     } catch (err) {
       console.error("Erreur chargement SuperAdmin:", err);
     } finally {
@@ -59,6 +64,33 @@ function SuperAdmin() {
       if (res?.data?.admin) {
         setShowCredentials(res.data.admin);
       }
+      loadData();
+    } catch (err) {
+      alert("Erreur: " + err.message);
+    }
+  };
+
+  const handleAccepterDemande = async (id, nom) => {
+    const plan_id = acceptPlan[id] || "";
+    if (!window.confirm(`Accepter la demande de "${nom}" ? L'entreprise sera créée automatiquement.`)) return;
+    setAcceptingId(id);
+    try {
+      const res = await entreprisesService.accepterDemande(id, { plan_id: plan_id || null, nb_employes_max: 50 });
+      if (res?.data?.admin) {
+        setShowCredentials(res.data.admin);
+      }
+      loadData();
+    } catch (err) {
+      alert("Erreur: " + err.message);
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  const handleRefuserDemande = async (id, nom) => {
+    if (!window.confirm(`Refuser la demande de "${nom}" ?`)) return;
+    try {
+      await entreprisesService.refuserDemande(id);
       loadData();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -126,6 +158,86 @@ function SuperAdmin() {
           </div>
         </div>
       </div>
+
+      {/* ===== DEMANDES D'INSCRIPTION ===== */}
+      {demandes.filter(d => d.statut === 'En attente' || !d.statut).length > 0 && (
+        <div className="table-container" style={{ borderLeft: "4px solid #F59E0B", marginBottom: 24 }}>
+          <div style={{ padding: "16px 24px", background: "#FFFBEB", borderBottom: "1px solid #FDE68A", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 20 }}>📩</span>
+            <div>
+              <strong style={{ color: "#92400E", fontSize: 15 }}>
+                Demandes d'inscription ({demandes.filter(d => d.statut === 'En attente' || !d.statut).length})
+              </strong>
+              <p style={{ color: "#B45309", fontSize: 13, margin: "2px 0 0" }}>
+                Ces entreprises ont rempli le formulaire public et attendent votre validation
+              </p>
+            </div>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Entreprise</th>
+                  <th>Email</th>
+                  <th>Téléphone</th>
+                  <th>Ville / Pays</th>
+                  <th>Plan</th>
+                  <th>Message</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {demandes.filter(d => d.statut === 'En attente' || !d.statut).map((d) => (
+                  <tr key={d.id}>
+                    <td><strong>{d.nom_entreprise}</strong></td>
+                    <td>{d.email}</td>
+                    <td>{d.telephone || "—"}</td>
+                    <td>{[d.ville, d.pays].filter(Boolean).join(", ") || "—"}</td>
+                    <td><span className="badge badge-warning">{d.plan_souhaite || "Pro"}</span></td>
+                    <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", fontSize: 13, color: "#6B7280" }}>
+                      {d.message || "—"}
+                    </td>
+                    <td style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+                      {d.created_at ? new Date(d.created_at).toLocaleDateString("fr-FR") : "—"}
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                        <select
+                          className="form-select"
+                          style={{ width: 100, fontSize: 12, padding: "4px 6px" }}
+                          value={acceptPlan[d.id] || ""}
+                          onChange={(e) => setAcceptPlan(prev => ({ ...prev, [d.id]: e.target.value }))}
+                        >
+                          <option value="">Plan...</option>
+                          {plans.map(p => (
+                            <option key={p.id} value={p.id}>{p.nom}</option>
+                          ))}
+                        </select>
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => handleAccepterDemande(d.id, d.nom_entreprise)}
+                          disabled={acceptingId === d.id}
+                          title="Accepter et créer l'entreprise"
+                        >
+                          {acceptingId === d.id ? "..." : "✓ Accepter"}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleRefuserDemande(d.id, d.nom_entreprise)}
+                          title="Refuser la demande"
+                        >
+                          ✕ Refuser
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Companies table */}
       <div className="table-container">

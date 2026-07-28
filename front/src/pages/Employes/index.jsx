@@ -10,6 +10,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import employesService from "../../services/employesService";
 import departementsService from "../../services/departementsService";
+import typeContratService from "../../services/typeContratService";
+import sitesService from "../../services/sitesService";
+import equipesService from "../../services/equipesService";
 import "./style.css";
 
 function Employes() {
@@ -27,13 +30,23 @@ function Employes() {
     telephone: "",      // Téléphone
     date_naissance: "", // Date de naissance
     date_embauche: "",  // Date d'embauche
-    departement_id: "", // ID du département (lié à la table departements)
+    departement_id: "", // ID du département
+    type_contrat_id: "", // Type de contrat
+    poste: "",          // Poste / Fonction
+    salaire: "",        // Salaire
+    site_id: "",        // Site de travail
+    equipe_id: "",      // Équipe
+    date_fin_contrat: "", // Date fin contrat
+    periode_essai_jours: 0, // Période d'essai (jours)
     email: "",          // Email pour le compte utilisateur
     password: "",       // Mot de passe pour le compte utilisateur
     role_id: 3,         // Rôle : 3=Employé (défaut)
   });
 
   const [departements, setDepartements] = useState([]);
+  const [typesContrat, setTypesContrat] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [equipes, setEquipes] = useState([]);
   const [roles] = useState([
     { id: 1, nom: "Administrateur" },
     { id: 2, nom: "RH" },
@@ -46,7 +59,31 @@ function Employes() {
   useEffect(() => {
     loadEmployes();
     loadDepartements();
+    loadTypesContrat();
+    loadSites();
+    loadEquipes();
   }, []);
+
+  const loadTypesContrat = async () => {
+    try {
+      const res = await typeContratService.getAll();
+      setTypesContrat(res.data || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadSites = async () => {
+    try {
+      const res = await sitesService.getAll();
+      setSites(res.data || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadEquipes = async () => {
+    try {
+      const res = await equipesService.getAll();
+      setEquipes(res.data || []);
+    } catch (e) { console.error(e); }
+  };
 
   // Charge les departements depuis la base Supabase
   const loadDepartements = async () => {
@@ -95,6 +132,13 @@ function Employes() {
       date_naissance: "",
       date_embauche: new Date().toISOString().split("T")[0],
       departement_id: "",
+      type_contrat_id: "",
+      poste: "",
+      salaire: "",
+      site_id: "",
+      equipe_id: "",
+      date_fin_contrat: "",
+      periode_essai_jours: 0,
       email: "",
       password: "",
       role_id: 3,
@@ -113,6 +157,13 @@ function Employes() {
       date_naissance: employe.date_naissance ? employe.date_naissance.split("T")[0] : "",
       date_embauche: employe.date_embauche ? employe.date_embauche.split("T")[0] : "",
       departement_id: employe.departement_id || "",
+      type_contrat_id: employe.type_contrat_id || "",
+      poste: employe.poste || "",
+      salaire: employe.salaire || "",
+      site_id: employe.site_id || "",
+      equipe_id: employe.equipe_id || "",
+      date_fin_contrat: employe.date_fin_contrat ? employe.date_fin_contrat.split("T")[0] : "",
+      periode_essai_jours: employe.periode_essai_jours || 0,
       statut: employe.statut || "Actif",
       email: employe.email || "",
       password: "",
@@ -318,7 +369,7 @@ function Employes() {
             </div>
 
             {/* LIGNE 3 : Date naissance + Date embauche + Departement + Statut */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
               <div>
                 <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
                   Date naissance
@@ -357,6 +408,84 @@ function Employes() {
                   </select>
                 </div>
               )}
+            </div>
+
+            {/* SEPARATEUR : Informations contrat */}
+            <hr style={{ border: "none", borderTop: "2px dashed #e0e0e0", margin: "8px 0" }} />
+            <p style={{ fontSize: "13px", color: "#888", fontWeight: 600 }}>
+              📋 Informations contrat
+            </p>
+
+            {/* LIGNE 4 : Type contrat + Poste + Salaire */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Type de contrat
+                </label>
+                <select name="type_contrat_id" value={formData.type_contrat_id}
+                  onChange={handleChange} className="login-input">
+                  <option value="">-- Selectionner --</option>
+                  {typesContrat.map((tc) => (
+                    <option key={tc.id} value={tc.id}>{tc.nom}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Poste / Fonction
+                </label>
+                <input type="text" name="poste" value={formData.poste}
+                  onChange={handleChange} className="login-input" placeholder="Développeur Full Stack" />
+              </div>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Salaire (FCFA)
+                </label>
+                <input type="number" name="salaire" value={formData.salaire}
+                  onChange={handleChange} className="login-input" placeholder="500000" min="0" />
+              </div>
+            </div>
+
+            {/* LIGNE 5 : Site + Équipe + Période essai + Fin contrat */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Site de travail
+                </label>
+                <select name="site_id" value={formData.site_id}
+                  onChange={handleChange} className="login-input">
+                  <option value="">-- Selectionner --</option>
+                  {sites.map((s) => (
+                    <option key={s.id} value={s.id}>{s.nom}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Équipe
+                </label>
+                <select name="equipe_id" value={formData.equipe_id}
+                  onChange={handleChange} className="login-input">
+                  <option value="">-- Selectionner --</option>
+                  {equipes.map((eq) => (
+                    <option key={eq.id} value={eq.id}>{eq.nom}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Période essai (jours)
+                </label>
+                <input type="number" name="periode_essai_jours" value={formData.periode_essai_jours}
+                  onChange={handleChange} className="login-input" min="0" placeholder="0" />
+              </div>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", fontSize: "14px" }}>
+                  Fin contrat
+                </label>
+                <input type="date" name="date_fin_contrat" value={formData.date_fin_contrat}
+                  onChange={handleChange} className="login-input" />
+              </div>
             </div>
 
             {/* LIGNE 4 : Email + Role (en mode édition) */}
@@ -451,11 +580,11 @@ function Employes() {
               <th>Matricule</th>
               <th>Nom</th>
               <th>Prénom</th>
-              <th>Sexe</th>
+              <th>Poste</th>
               <th>Département</th>
+              <th>Contrat</th>
               <th>Tél.</th>
               <th>Statut</th>
-              <th>Rôle</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -484,8 +613,19 @@ function Employes() {
                 <td><strong>{emp.matricule}</strong></td>
                 <td>{emp.nom}</td>
                 <td>{emp.prenom}</td>
-                <td>{getSexeLabel(emp.sexe)}</td>
+                <td style={{ fontSize: 13, color: "#374151" }}>{emp.poste || "—"}</td>
                 <td>{emp.departement_nom || "-"}</td>
+                <td>
+                  {emp.type_contrat_nom ? (
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: "8px",
+                      fontWeight: 600, fontSize: "11px",
+                      background: "#EFF6FF", color: "#1D4ED8"
+                    }}>
+                      {emp.type_contrat_nom}
+                    </span>
+                  ) : "—"}
+                </td>
                 <td>{emp.telephone || "-"}</td>
                 <td>
                   <span style={{
@@ -497,7 +637,6 @@ function Employes() {
                     {emp.statut || "Actif"}
                   </span>
                 </td>
-                <td>{getRoleLabel(emp.role_id)}</td>
                 <td>
                   <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                     <button className="employes-btn"

@@ -62,6 +62,35 @@ const entreprisesService = {
     });
     return data;
   },
+
+  // ================================================================
+  // GET /api/entreprises/demandes - Demandes d'inscription (SuperAdmin)
+  // ================================================================
+  getDemandes: async () => {
+    const data = await fetchWithAuth("/entreprises/demandes");
+    return data;
+  },
+
+  // ================================================================
+  // PUT /api/entreprises/demande/:id/accepter - Accepter une demande
+  // ================================================================
+  accepterDemande: async (id, body) => {
+    const data = await fetchWithAuth(`/entreprises/demande/${id}/accepter`, {
+      method: "PUT",
+      body,
+    });
+    return data;
+  },
+
+  // ================================================================
+  // DELETE /api/entreprises/demande/:id/refuser - Refuser une demande
+  // ================================================================
+  refuserDemande: async (id) => {
+    const data = await fetchWithAuth(`/entreprises/demande/${id}/refuser`, {
+      method: "DELETE",
+    });
+    return data;
+  },
 };
 
 export default entreprisesService;

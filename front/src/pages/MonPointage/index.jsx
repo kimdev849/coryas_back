@@ -182,11 +182,13 @@ function MonPointage() {
               <p className="mp-empty">Aucun pointage aujourd'hui</p>
             ) : (
               todayPresences.map((p, idx) => (
-                <div key={p.id || idx} className="mp-timeline-item">
-                  <div className="mp-timeline-dot" />
-                  <div className="mp-timeline-content">
-                    <span className="mp-timeline-label">Arrivée</span>
-                    <span className="mp-timeline-time">{p.heure_entree || "--:--"}</span>
+                <div key={p.id || idx} className="mp-day-block">
+                  <div className="mp-timeline-item">
+                    <div className="mp-timeline-dot" />
+                    <div className="mp-timeline-content">
+                      <span className="mp-timeline-label">Arrivée</span>
+                      <span className="mp-timeline-time">{p.heure_entree || "--:--"}</span>
+                    </div>
                   </div>
                   {p.heure_sortie && (
                     <div className="mp-timeline-item">

@@ -5,7 +5,7 @@ import "./style.css";
 function Landing() {
   const [showSignup, setShowSignup] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [signupData, setSignupData] = useState({ nom_entreprise: "", email: "", telephone: "", ville: "" });
+  const [signupData, setSignupData] = useState({ nom_entreprise: "", email: "", telephone: "", ville: "", pays: "", plan_souhaite: "Pro", message: "" });
   const [signupSent, setSignupSent] = useState(false);
 
   const handleSignup = async (e) => {
@@ -235,12 +235,12 @@ function Landing() {
                     onChange={e => setSignupData({...signupData, email: e.target.value})}
                     placeholder="contact@entreprise.cg" className="landing-form-input" />
                 </div>
-                <div className="landing-form-group">
-                  <label>Téléphone</label>
-                  <input type="tel" value={signupData.telephone}
-                    onChange={e => setSignupData({...signupData, telephone: e.target.value})}
-                    placeholder="+242 06 000 0000" className="landing-form-input" />
-                </div>
+              <div className="landing-form-group">
+                <label>Téléphone *</label>
+                <input type="tel" required value={signupData.telephone}
+                  onChange={e => setSignupData({...signupData, telephone: e.target.value})}
+                  placeholder="+242 06 000 0000" className="landing-form-input" />
+              </div>
               </div>
               <div className="landing-form-group">
                 <label>Ville</label>
@@ -248,7 +248,32 @@ function Landing() {
                   onChange={e => setSignupData({...signupData, ville: e.target.value})}
                   placeholder="Brazzaville" className="landing-form-input" />
               </div>
-              <button type="submit" className="landing-btn landing-btn-primary landing-btn-block landing-btn-lg" style={{ marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div className="landing-form-group">
+                  <label>Pays</label>
+                  <input type="text" value={signupData.pays}
+                    onChange={e => setSignupData({...signupData, pays: e.target.value})}
+                    placeholder="Congo" className="landing-form-input" />
+                </div>
+                <div className="landing-form-group">
+                  <label>Plan souhaité</label>
+                  <select value={signupData.plan_souhaite}
+                    onChange={e => setSignupData({...signupData, plan_souhaite: e.target.value})}
+                    className="landing-form-input">
+                    <option value="Starter">Starter</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Entreprise">Entreprise</option>
+                  </select>
+                </div>
+              </div>
+              <div className="landing-form-group">
+                <label>Message (optionnel)</label>
+                <textarea value={signupData.message}
+                  onChange={e => setSignupData({...signupData, message: e.target.value})}
+                  placeholder="Parlez-nous de vos besoins..." className="landing-form-input"
+                  rows={3} style={{ resize: "vertical" }} />
+              </div>
+              <button type="submit", className="landing-btn landing-btn-primary landing-btn-block landing-btn-lg" style={{ marginTop: 8 }}>
                 Envoyer la demande
               </button>
             </form>

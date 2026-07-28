@@ -13,7 +13,8 @@ const statsModel = require("../models/stats.model");
 const getPunctualite = async (req, res) => {
     try {
         const periode = req.query.periode || "mois";
-        const data = await statsModel.getPunctualite(periode);
+        const entreprise_id = req.user?.entreprise_id;
+        const data = await statsModel.getPunctualite(periode, entreprise_id);
         res.json({ message: "Statistiques de ponctualité", data });
     } catch (error) {
         console.error("❌ Erreur getPunctualite:", error);

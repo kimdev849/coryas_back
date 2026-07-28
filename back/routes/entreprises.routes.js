@@ -14,4 +14,8 @@ router.get("/:id", verifyToken, checkRole(["SuperAdmin"]), controller.getById);
 router.post("/", verifyToken, checkRole(["SuperAdmin"]), controller.create);
 router.put("/:id", verifyToken, checkRole(["SuperAdmin"]), controller.update);
 
+// Routes pour gérer les demandes d'inscription
+router.put("/demande/:id/accepter", verifyToken, checkRole(["SuperAdmin"]), controller.accepterDemande);
+router.delete("/demande/:id/refuser", verifyToken, checkRole(["SuperAdmin"]), controller.refuserDemande);
+
 module.exports = router;

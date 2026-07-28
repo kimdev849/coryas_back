@@ -58,7 +58,11 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://coryas-api.onrender.com",
+        // ⚠️ En DEV : pointe vers le backend local (port 3000)
+        //    Assurez-vous que le backend tourne : cd back && npm start
+        // 🚀 En PROD : déployez le backend séparément et définissez
+        //    VITE_API_URL dans votre environnement de build
+        target: "http://localhost:3000",
         changeOrigin: true,
       },
     },

@@ -20,9 +20,9 @@ const parametresModel = require("./parametres.model");
 //   - statsGlobales : résumé (total, ponctuels, retards)
 //   - statsParJour : stats jour par jour sur la période
 // ----------------------------------------------------------------
-async function getPunctualite(periode = "mois") {
+async function getPunctualite(periode = "mois", entrepriseId = null) {
     // 1. Récupérer les paramètres (heure d'ouverture + retard_apres)
-    const params = await parametresModel.get();
+    const params = await parametresModel.get(entrepriseId);
     const heureOuverture = params?.heure_ouverture || "08:00";
     const retardApres = params?.retard_apres || 0;
 
@@ -48,7 +48,17 @@ async function getPunctualite(periode = "mois") {
         dateDebut = `${maintenant.getFullYear()}-01-01`;
     }
 
-    // 3. Requête : tous les employés avec leurs stats de présence sur la période
+    // 3. Build the filter params and SQL
+    const queryParams = [dateDebut, heureLimite];
+    let entrepriseFilter = '';
+    let paramIndex = 2;
+    if (entrepriseId) {
+        paramIndex++;
+        entrepriseFilter = ` AND e.entreprise_id = $${paramIndex}`;
+        queryParams.push(entrepriseId);
+    }
+
+    // Requête : tous les employés avec leurs stats de présence sur la période
     const result = await pool.query(`
         SELECT
             e.id,
@@ -76,10 +86,10 @@ async function getPunctualite(periode = "mois") {
         LEFT JOIN presences p ON p.employe_id = e.id
             AND p.date_presence >= $1::date
             AND p.date_presence <= CURRENT_DATE
-        WHERE e.statut = 'Actif'
+        WHERE e.statut = 'Actif'${entrepriseFilter}
         GROUP BY e.id, e.nom, e.prenom, e.matricule, d.nom
         ORDER BY arrivees_a_l_heure DESC
-    `, [dateDebut, heureLimite]);
+    `, queryParams);
 
     const employes = result.rows;
 

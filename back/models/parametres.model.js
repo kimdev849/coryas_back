@@ -32,8 +32,21 @@ async function save(data) {
         nom_entreprise, heure_ouverture, heure_fermeture,
         retard_apres, depart_anticipe, duree_pause,
         email_entreprise, telephone, adresse,
-        theme, entreprise_id
+        theme, entreprise_id,
+        slogan, description, site_web, logo_url,
+        jours_ouvrables, tolerance_retard,
+        auto_checkout, heure_auto_checkout, geo_restriction,
+        conges_annuel_default, conges_maladie_annee,
+        jours_max_consecutifs, delai_demande_jours,
+        notif_pointage, notif_retard, notif_absence,
+        notif_conge_demande, notif_conge_valide, notif_rapport_hebdo,
+        ip_restriction, ip_autorisees, double_auth, session_timeout
     } = data;
+
+    // Convertir jours_ouvrables array -> JSON pour stockage
+    const joursOuvrablesJson = Array.isArray(jours_ouvrables)
+        ? JSON.stringify(jours_ouvrables)
+        : (jours_ouvrables || null);
 
     if (!entreprise_id) {
         const result = await pool.query(`
@@ -48,22 +61,41 @@ async function save(data) {
                 telephone = COALESCE($8, telephone),
                 adresse = COALESCE($9, adresse),
                 theme = COALESCE($10, theme),
+                slogan = COALESCE($11, slogan),
+                description = COALESCE($12, description),
+                site_web = COALESCE($13, site_web),
+                logo_url = COALESCE($14, logo_url),
+                jours_ouvrables = COALESCE($15::jsonb, jours_ouvrables),
+                tolerance_retard = COALESCE($16, tolerance_retard),
+                auto_checkout = COALESCE($17, auto_checkout),
+                heure_auto_checkout = COALESCE($18, heure_auto_checkout),
+                geo_restriction = COALESCE($19, geo_restriction),
                 updated_at = NOW()
             WHERE id = 1
             RETURNING *
         `, [nom_entreprise, heure_ouverture, heure_fermeture,
             retard_apres, depart_anticipe, duree_pause,
             email_entreprise, telephone, adresse,
-            theme || 'bleu']);
+            theme || 'bleu', slogan, description, site_web, logo_url,
+            joursOuvrablesJson, tolerance_retard,
+            auto_checkout, heure_auto_checkout, geo_restriction]);
         return result.rows[0];
     }
 
     // UPSERT avec entreprise_id
     const result = await pool.query(`
-        INSERT INTO parametres (entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
-                                retard_apres, depart_anticipe, duree_pause,
-                                email_entreprise, telephone, adresse, theme, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+        INSERT INTO parametres (
+            entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
+            retard_apres, depart_anticipe, duree_pause,
+            email_entreprise, telephone, adresse, theme,
+            slogan, description, site_web, logo_url,
+            jours_ouvrables, tolerance_retard,
+            auto_checkout, heure_auto_checkout, geo_restriction,
+            updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                $12, $13, $14, $15, $16::jsonb, $17,
+                $18, $19, $20, NOW())
         ON CONFLICT (entreprise_id) DO UPDATE SET
             nom_entreprise = COALESCE($2, parametres.nom_entreprise),
             heure_ouverture = COALESCE($3, parametres.heure_ouverture),
@@ -75,12 +107,23 @@ async function save(data) {
             telephone = COALESCE($9, parametres.telephone),
             adresse = COALESCE($10, parametres.adresse),
             theme = COALESCE($11, parametres.theme),
+            slogan = COALESCE($12, parametres.slogan),
+            description = COALESCE($13, parametres.description),
+            site_web = COALESCE($14, parametres.site_web),
+            logo_url = COALESCE($15, parametres.logo_url),
+            jours_ouvrables = COALESCE($16::jsonb, parametres.jours_ouvrables),
+            tolerance_retard = COALESCE($17, parametres.tolerance_retard),
+            auto_checkout = COALESCE($18, parametres.auto_checkout),
+            heure_auto_checkout = COALESCE($19, parametres.heure_auto_checkout),
+            geo_restriction = COALESCE($20, parametres.geo_restriction),
             updated_at = NOW()
         RETURNING *
     `, [entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
         retard_apres, depart_anticipe, duree_pause,
         email_entreprise, telephone, adresse,
-        theme || 'bleu']);
+        theme || 'bleu', slogan, description, site_web, logo_url,
+        joursOuvrablesJson, tolerance_retard,
+        auto_checkout, heure_auto_checkout, geo_restriction]);
     return result.rows[0];
 }
 

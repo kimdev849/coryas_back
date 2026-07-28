@@ -69,12 +69,31 @@ function Dashboard() {
     setIsLoading(true);
     setError("");
     try {
-      const [statsRes, todayStatsRes] = await Promise.all([
+      // On lance les deux appels en parallèle mais on les gère séparément
+      // pour qu'un échec de l'un ne bloque pas l'autre
+      const [statsRes, todayStatsRes] = await Promise.allSettled([
         dashboardService.getStats(),
         presencesService.getTodayStats(),
       ]);
-      setStats(statsRes.data);
-      setTodayStats(todayStatsRes.data);
+      
+      if (statsRes.status === "fulfilled") {
+        setStats(statsRes.value.data);
+      } else {
+        console.warn("⚠️ Dashboard stats échoué:", statsRes.reason?.message);
+        setStats(null);
+      }
+      
+      if (todayStatsRes.status === "fulfilled") {
+        setTodayStats(todayStatsRes.value.data);
+      } else {
+        console.warn("⚠️ TodayStats échoué:", todayStatsRes.reason?.message);
+        setTodayStats(null);
+      }
+
+      // Si les DEUX ont échoué, on affiche une erreur
+      if (statsRes.status === "rejected" && todayStatsRes.status === "rejected") {
+        setError(statsRes.reason?.message || "Erreur de chargement des données");
+      }
     } catch (err) {
       setError(err.message || "Erreur de chargement");
     } finally { setIsLoading(false); }
