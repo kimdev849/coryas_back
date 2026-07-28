@@ -23,9 +23,16 @@ async function get(entrepriseId = null) {
 }
 
 // ----------------------------------------------------------------
-// save(data) - Sauvegarde les paramètres d'une entreprise
+// save(data) - Sauvegarde résiliente des paramètres
 // ----------------------------------------------------------------
-// UPSERT avec entreprise_id comme clé unique
+// ESSAI en 3 niveaux (du plus complet au plus minimal) :
+//
+// Niveau 1 (complet) : toutes les colonnes modernes
+// Niveau 2 (moyen)   : colonnes de base + anciens noms (email_contact)
+// Niveau 3 (minimal) : juste nom_entreprise + horaires
+//
+// Chaque niveau peut échouer si la colonne n'existe pas dans la table.
+// On descend au niveau suivant jusqu'à ce que ça passe.
 // ----------------------------------------------------------------
 async function save(data) {
     const {
@@ -36,11 +43,6 @@ async function save(data) {
         slogan, description, site_web, logo_url,
         jours_ouvrables, tolerance_retard,
         auto_checkout, heure_auto_checkout, geo_restriction,
-        conges_annuel_default, conges_maladie_annee,
-        jours_max_consecutifs, delai_demande_jours,
-        notif_pointage, notif_retard, notif_absence,
-        notif_conge_demande, notif_conge_valide, notif_rapport_hebdo,
-        ip_restriction, ip_autorisees, double_auth, session_timeout
     } = data;
 
     // Convertir jours_ouvrables array -> JSON pour stockage
@@ -48,8 +50,25 @@ async function save(data) {
         ? JSON.stringify(jours_ouvrables)
         : (jours_ouvrables || null);
 
-    if (!entreprise_id) {
-        const result = await pool.query(`
+    const defaultTheme = theme || 'bleu';
+
+    // Helper : exécute une requête et retourne la ligne, ou null si échec
+    const safeQuery = async (sql, params) => {
+        try {
+            const result = await pool.query(sql, params);
+            return result.rows[0] || null;
+        } catch (e) {
+            return null; // La colonne n'existe probablement pas
+        }
+    };
+
+    // ================================================================
+    // NIVEAU 1 : Sauvegarde COMPLÈTE (toutes les colonnes)
+    // ================================================================
+
+    // UPDATE sans entreprise_id
+    const tryFullUpdate = async () => {
+        const sql = `
             UPDATE parametres SET
                 nom_entreprise = COALESCE($1, nom_entreprise),
                 heure_ouverture = COALESCE($2, heure_ouverture),
@@ -60,7 +79,7 @@ async function save(data) {
                 email_entreprise = COALESCE($7, email_entreprise),
                 telephone = COALESCE($8, telephone),
                 adresse = COALESCE($9, adresse),
-                theme = COALESCE($10, theme),
+                theme = COALESCE($10, theme || 'bleu'),
                 slogan = COALESCE($11, slogan),
                 description = COALESCE($12, description),
                 site_web = COALESCE($13, site_web),
@@ -73,58 +92,141 @@ async function save(data) {
                 updated_at = NOW()
             WHERE id = 1
             RETURNING *
-        `, [nom_entreprise, heure_ouverture, heure_fermeture,
+        `;
+        const params = [nom_entreprise, heure_ouverture, heure_fermeture,
             retard_apres, depart_anticipe, duree_pause,
             email_entreprise, telephone, adresse,
-            theme || 'bleu', slogan, description, site_web, logo_url,
+            defaultTheme, slogan, description, site_web, logo_url,
             joursOuvrablesJson, tolerance_retard,
-            auto_checkout, heure_auto_checkout, geo_restriction]);
-        return result.rows[0];
-    }
+            auto_checkout, heure_auto_checkout, geo_restriction];
+        return safeQuery(sql, params);
+    };
 
     // UPSERT avec entreprise_id
-    const result = await pool.query(`
-        INSERT INTO parametres (
-            entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
+    const tryFullUpsert = async () => {
+        const sql = `
+            INSERT INTO parametres (
+                entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
+                retard_apres, depart_anticipe, duree_pause,
+                email_entreprise, telephone, adresse, theme,
+                slogan, description, site_web, logo_url,
+                jours_ouvrables, tolerance_retard,
+                auto_checkout, heure_auto_checkout, geo_restriction,
+                updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                    $12, $13, $14, $15, $16::jsonb, $17,
+                    $18, $19, $20, NOW())
+            ON CONFLICT (entreprise_id) DO UPDATE SET
+                nom_entreprise = COALESCE($2, parametres.nom_entreprise),
+                heure_ouverture = COALESCE($3, parametres.heure_ouverture),
+                heure_fermeture = COALESCE($4, parametres.heure_fermeture),
+                retard_apres = COALESCE($5, parametres.retard_apres),
+                depart_anticipe = COALESCE($6, parametres.depart_anticipe),
+                duree_pause = COALESCE($7, parametres.duree_pause),
+                email_entreprise = COALESCE($8, parametres.email_entreprise),
+                telephone = COALESCE($9, parametres.telephone),
+                adresse = COALESCE($10, parametres.adresse),
+                theme = COALESCE($11, parametres.theme),
+                slogan = COALESCE($12, parametres.slogan),
+                description = COALESCE($13, parametres.description),
+                site_web = COALESCE($14, parametres.site_web),
+                logo_url = COALESCE($15, parametres.logo_url),
+                jours_ouvrables = COALESCE($16::jsonb, parametres.jours_ouvrables),
+                tolerance_retard = COALESCE($17, parametres.tolerance_retard),
+                auto_checkout = COALESCE($18, parametres.auto_checkout),
+                heure_auto_checkout = COALESCE($19, parametres.heure_auto_checkout),
+                geo_restriction = COALESCE($20, parametres.geo_restriction),
+                updated_at = NOW()
+            RETURNING *
+        `;
+        const params = [entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
             retard_apres, depart_anticipe, duree_pause,
-            email_entreprise, telephone, adresse, theme,
-            slogan, description, site_web, logo_url,
-            jours_ouvrables, tolerance_retard,
-            auto_checkout, heure_auto_checkout, geo_restriction,
-            updated_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                $12, $13, $14, $15, $16::jsonb, $17,
-                $18, $19, $20, NOW())
-        ON CONFLICT (entreprise_id) DO UPDATE SET
-            nom_entreprise = COALESCE($2, parametres.nom_entreprise),
-            heure_ouverture = COALESCE($3, parametres.heure_ouverture),
-            heure_fermeture = COALESCE($4, parametres.heure_fermeture),
-            retard_apres = COALESCE($5, parametres.retard_apres),
-            depart_anticipe = COALESCE($6, parametres.depart_anticipe),
-            duree_pause = COALESCE($7, parametres.duree_pause),
-            email_entreprise = COALESCE($8, parametres.email_entreprise),
-            telephone = COALESCE($9, parametres.telephone),
-            adresse = COALESCE($10, parametres.adresse),
-            theme = COALESCE($11, parametres.theme),
-            slogan = COALESCE($12, parametres.slogan),
-            description = COALESCE($13, parametres.description),
-            site_web = COALESCE($14, parametres.site_web),
-            logo_url = COALESCE($15, parametres.logo_url),
-            jours_ouvrables = COALESCE($16::jsonb, parametres.jours_ouvrables),
-            tolerance_retard = COALESCE($17, parametres.tolerance_retard),
-            auto_checkout = COALESCE($18, parametres.auto_checkout),
-            heure_auto_checkout = COALESCE($19, parametres.heure_auto_checkout),
-            geo_restriction = COALESCE($20, parametres.geo_restriction),
-            updated_at = NOW()
+            email_entreprise, telephone, adresse,
+            defaultTheme, slogan, description, site_web, logo_url,
+            joursOuvrablesJson, tolerance_retard,
+            auto_checkout, heure_auto_checkout, geo_restriction];
+        return safeQuery(sql, params);
+    };
+
+    // ================================================================
+    // NIVEAU 2 : Colonnes DE BASE + anciens noms (email_contact, telephone_contact)
+    // ================================================================
+
+    const tryBaseUpdate = async () => {
+        const sql = `
+            UPDATE parametres SET
+                nom_entreprise = COALESCE($1, nom_entreprise),
+                heure_ouverture = COALESCE($2, heure_ouverture),
+                heure_fermeture = COALESCE($3, heure_fermeture),
+                retard_apres = COALESCE($4, retard_apres),
+                depart_anticipe = COALESCE($5, depart_anticipe),
+                duree_pause = COALESCE($6, duree_pause),
+                email_contact = COALESCE($7, email_contact),
+                telephone_contact = COALESCE($8, telephone_contact),
+                adresse = COALESCE($9, adresse),
+                theme = COALESCE($10, theme || 'bleu'),
+                updated_at = NOW()
+            WHERE id = 1
+            RETURNING *
+        `;
+        const params = [nom_entreprise, heure_ouverture, heure_fermeture,
+            retard_apres, depart_anticipe, duree_pause,
+            email_entreprise, telephone, adresse, defaultTheme];
+        return safeQuery(sql, params);
+    };
+
+    // ================================================================
+    // NIVEAU 3 : Ultra MINIMAL — juste nom + horaires
+    // ================================================================
+
+    const tryMinimalUpdate = async () => {
+        const sql = `
+            UPDATE parametres SET
+                nom_entreprise = COALESCE($1, nom_entreprise),
+                heure_ouverture = COALESCE($2, heure_ouverture),
+                heure_fermeture = COALESCE($3, heure_fermeture),
+                updated_at = NOW()
+            WHERE id = 1
+            RETURNING *
+        `;
+        const params = [nom_entreprise, heure_ouverture, heure_fermeture];
+        return safeQuery(sql, params);
+    };
+
+    // ================================================================
+    // EXÉCUTION : Tente chaque niveau dans l'ordre
+    // ================================================================
+
+    // Niveau 1 complet : rows[0] = UPSERT (si entreprise_id existe)
+    if (entreprise_id) {
+        const fullResult = await tryFullUpsert();
+        if (fullResult) return fullResult;
+    }
+
+    // Niveau 1 complet: UPDATE WHERE id=1
+    const fullUpdate = await tryFullUpdate();
+    if (fullUpdate) return fullUpdate;
+
+    // Niveau 2 : colonnes de base avec anciens noms (email_contact, telephone_contact)
+    const baseResult = await tryBaseUpdate();
+    if (baseResult) return baseResult;
+
+    // Niveau 3 : ultra minimal (nom + horaires)
+    const minimalResult = await tryMinimalUpdate();
+    if (minimalResult) return minimalResult;
+
+    // Si tout a échoué : faire un INSERT minimal
+    const insertResult = await safeQuery(`
+        INSERT INTO parametres (nom_entreprise, heure_ouverture, heure_fermeture, updated_at)
+        VALUES ($1, $2, $3, NOW())
         RETURNING *
-    `, [entreprise_id, nom_entreprise, heure_ouverture, heure_fermeture,
-        retard_apres, depart_anticipe, duree_pause,
-        email_entreprise, telephone, adresse,
-        theme || 'bleu', slogan, description, site_web, logo_url,
-        joursOuvrablesJson, tolerance_retard,
-        auto_checkout, heure_auto_checkout, geo_restriction]);
-    return result.rows[0];
+    `, [nom_entreprise, heure_ouverture, heure_fermeture]);
+
+    if (insertResult) return insertResult;
+
+    // Dernier recours : la requête échoue pour de bon
+    throw new Error("Impossible de sauvegarder les paramètres — vérifiez que la table 'parametres' existe.");
 }
 
 // ----------------------------------------------------------------
