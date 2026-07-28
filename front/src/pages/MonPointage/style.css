@@ -277,6 +277,10 @@
   flex-shrink: 0;
 }
 
+.mp-timeline-dot.pause {
+  background: #f59e0b;
+}
+
 .mp-timeline-dot.depart {
   background: #fbbf24;
 }
@@ -296,4 +300,208 @@
   font-size: 14px;
   font-weight: 600;
   color: #111;
+}
+
+.mp-config-info {
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 16px;
+}
+
+.mp-config-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ccc;
+  margin: 4px 0;
+}
+
+.mp-worked-time {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.mp-worked-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #ccc;
+}
+
+.mp-worked-total {
+  border-top: 1px dashed rgba(255,255,255,0.15);
+  margin-top: 4px;
+  padding-top: 8px;
+  font-weight: 700;
+  color: #fff;
+  font-size: 15px;
+}
+
+.mp-worked-hs {
+  color: #22c55e;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.mp-hs-strong {
+  color: #22c55e;
+  font-size: 16px;
+}
+
+/* ===== PAUSE TRACKER ===== */
+.mp-pause-zone {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.mp-pause-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mp-pause-btn.start {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.mp-pause-btn.start:hover {
+  background: rgba(251, 191, 36, 0.3);
+  transform: scale(1.02);
+}
+
+.mp-pause-btn.end {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.mp-pause-btn.end:hover {
+  background: rgba(34, 197, 94, 0.3);
+  transform: scale(1.02);
+}
+
+.mp-pause-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.mp-pause-active {
+  text-align: center;
+}
+
+.mp-pause-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.mp-pause-timer {
+  margin-bottom: 4px;
+}
+
+.mp-pause-countdown {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.mp-pause-over {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ef4444;
+  animation: mp-pulse 1s infinite;
+}
+
+@keyframes mp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.mp-pause-sub {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.mp-pause-done {
+  margin-top: 8px;
+}
+
+.mp-pause-done-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #aaa;
+}
+
+/* ===== HEURES SUP CARD ===== */
+.mp-hs-card {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.mp-hs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fbbf24;
+  margin-bottom: 10px;
+}
+
+.mp-hs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.mp-hs-row span:first-child {
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.mp-hs-statut {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  color: #fbbf24;
+}
+
+/* ===== STATUT PAUSE ===== */
+.mp-status-dot.pause {
+  background: #f59e0b;
+  animation: mp-pulse 1.5s infinite;
+}
+
+.mp-day-block {
+  margin-bottom: 8px;
+}
+
+.mp-day-block:last-child {
+  margin-bottom: 0;
 }

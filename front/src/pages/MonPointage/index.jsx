@@ -1,18 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import presencesService from "../../services/presencesService";
+import heuresSupService from "../../services/heuresSupService";
 import parametresService from "../../services/parametresService";
-import { Clock, Coffee } from "lucide-react";
+import { Clock, Coffee, Zap, Play } from "lucide-react";
 import "./style.css";
 
 function MonPointage() {
   const { user } = useAuth();
   const [activePresence, setActivePresence] = useState(null);
   const [todayPresences, setTodayPresences] = useState([]);
-  const [settings, setSettings] = useState({ heure_ouverture: "08:00", heure_fermeture: "17:00", duree_pause: 60, pause_debut: "12:00" });
+  const [settings, setSettings] = useState({
+    heure_ouverture: "08:00", heure_fermeture: "17:00",
+    duree_pause: 60, pause_debut: "12:00"
+  });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+
+  // Pause state
+  const [pauseTimer, setPauseTimer] = useState(null); // seconds remaining
+  const [pauseInterval, setPauseInterval] = useState(null);
+
+  // Heures sup state (après checkout)
+  const [todayHs, setTodayHs] = useState(null);
 
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -20,6 +31,17 @@ function MonPointage() {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: "", type: "" }), 4000);
   };
+
+  const cleanupPauseTimer = useCallback(() => {
+    if (pauseInterval) {
+      clearInterval(pauseInterval);
+      setPauseInterval(null);
+    }
+  }, [pauseInterval]);
+
+  useEffect(() => {
+    return () => cleanupPauseTimer();
+  }, [cleanupPauseTimer]);
 
   const loadData = async () => {
     setLoading(true);
@@ -32,8 +54,10 @@ function MonPointage() {
         parametresService.get(),
       ]);
 
-      setActivePresence(activeRes.data || null);
+      const active = activeRes.data || null;
+      setActivePresence(active);
       setTodayPresences(todayRes.data || []);
+
       if (settingsRes.data) {
         setSettings({
           heure_ouverture: settingsRes.data.heure_ouverture || "08:00",
@@ -41,6 +65,14 @@ function MonPointage() {
           duree_pause: settingsRes.data.duree_pause || 60,
           pause_debut: settingsRes.data.pause_debut?.slice(0, 5) || "12:00",
         });
+      }
+
+      // Si en pause, démarrer le timer
+      if (active?.pause_statut === "En pause" && active?.pause_entree) {
+        startPauseTimer(active.pause_entree, settingsRes.data?.duree_pause || 60);
+      } else {
+        cleanupPauseTimer();
+        setPauseTimer(null);
       }
     } catch {
       // silencieux
@@ -53,15 +85,37 @@ function MonPointage() {
     loadData();
   }, [user]);
 
+  const startPauseTimer = (pauseEntree, dureePause) => {
+    cleanupPauseTimer();
+    const [h, m] = pauseEntree.split(":").map(Number);
+    const pauseStartMin = h * 60 + m;
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const elapsed = nowMin - pauseStartMin;
+    const remaining = Math.max(0, dureePause - elapsed);
+
+    setPauseTimer(remaining);
+
+    const interval = setInterval(() => {
+      setPauseTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    setPauseInterval(interval);
+  };
+
   const nowTime = () => {
     const d = new Date();
     return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
   };
 
-  // Vérifier si l'employé a déjà pointé aujourd'hui (même après départ)
   const alreadyCheckedInToday = todayPresences.length > 0 && !activePresence;
 
-  // Récupère la position GPS du navigateur
   const getPosition = () => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
@@ -81,12 +135,7 @@ function MonPointage() {
     try {
       const { latitude, longitude } = await getPosition();
       const res = await presencesService.checkIn(user.employe_id, nowTime(), latitude, longitude);
-      const autoClosed = res.autoClosed;
-      if (autoClosed && autoClosed.length > 0) {
-        showMessage(`✅ Arrivée enregistrée — ${autoClosed.length} présence(s) précédente(s) fermée(s) automatiquement`);
-      } else {
-        showMessage("✅ Arrivée enregistrée avec succès");
-      }
+      showMessage("✅ Arrivée enregistrée avec succès");
       loadData();
     } catch (err) {
       showMessage("❌ " + (err.message || "Erreur lors du pointage"), "error");
@@ -100,7 +149,16 @@ function MonPointage() {
     setActionLoading(true);
     try {
       await presencesService.checkOut(activePresence.id, nowTime());
-      showMessage("✅ Départ enregistré avec succès");
+      showMessage("✅ Départ enregistré. Bonne fin de journée !");
+
+      // Charger les heures sup du jour après checkout
+      try {
+        const hsRes = await heuresSupService.getAll({ employe_id: user.employe_id, date_debut: todayStr, date_fin: todayStr });
+        if (hsRes.data && hsRes.data.length > 0) {
+          setTodayHs(hsRes.data);
+        }
+      } catch { /* silencieux */ }
+
       loadData();
     } catch (err) {
       showMessage("❌ " + (err.message || "Erreur lors du pointage"), "error");
@@ -109,12 +167,72 @@ function MonPointage() {
     }
   };
 
+  const handleStartPause = async () => {
+    if (!activePresence?.id) return;
+    setActionLoading(true);
+    try {
+      const res = await presencesService.startPause(activePresence.id);
+      if (res.data) {
+        showMessage("☕ Pause débutée ! Profitez-en bien.");
+        startPauseTimer(res.data.pause_entree, settings.duree_pause);
+        setActivePresence(res.data);
+      }
+    } catch (err) {
+      showMessage("❌ " + (err.message || "Erreur"), "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEndPause = async () => {
+    if (!activePresence?.id) return;
+    setActionLoading(true);
+    try {
+      const res = await presencesService.endPause(activePresence.id);
+      if (res.data) {
+        showMessage("✅ Pause terminée ! Au travail !");
+        cleanupPauseTimer();
+        setPauseTimer(null);
+        setActivePresence(res.data);
+      }
+    } catch (err) {
+      showMessage("❌ " + (err.message || "Erreur"), "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatTime = (str) => str || "--:--";
+
   const getStatus = () => {
+    if (activePresence?.pause_statut === "En pause") return "En pause ☕";
     if (activePresence) return "Présent";
     if (todayPresences.length > 0) return "Départ enregistré";
     return "Absent";
   };
+
+  const getStatusClass = () => {
+    if (activePresence?.pause_statut === "En pause") return "pause";
+    if (activePresence) return "present";
+    if (todayPresences.length > 0) return "depart";
+    return "absent";
+  };
+
+  // Calcul du temps restant de pause
+  const pauseTimerDisplay = () => {
+    if (pauseTimer === null) return null;
+    const mins = Math.floor(pauseTimer / 60);
+    const secs = pauseTimer % 60;
+    const isOver = pauseTimer <= 0;
+    return {
+      display: isOver
+        ? "⏰ Temps de pause terminé !"
+        : `${String(mins).padStart(2, "0")}min ${String(secs).padStart(2, "0")}s`,
+      isOver,
+    };
+  };
+
+  const pauseInfo = pauseTimerDisplay();
 
   return (
     <div className="mp-container">
@@ -122,10 +240,7 @@ function MonPointage() {
         <h1>Mon Pointage</h1>
         <p className="mp-date">
           {new Date().toLocaleDateString("fr-FR", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
+            weekday: "long", year: "numeric", month: "long", day: "numeric",
           })}
         </p>
       </div>
@@ -144,7 +259,7 @@ function MonPointage() {
           <div className="mp-status-card">
             <div className="mp-status-header">
               <span>Statut actuel</span>
-              <span className={`mp-status-dot ${activePresence ? "present" : todayPresences.length > 0 ? "depart" : "absent"}`} />
+              <span className={`mp-status-dot ${getStatusClass()}`} />
             </div>
             <div className="mp-status-value">{getStatus()}</div>
             {activePresence ? (
@@ -155,7 +270,7 @@ function MonPointage() {
               </div>
             ) : null}
 
-            {/* Infos pause + horaires */}
+            {/* Infos horaires + pause */}
             <div className="mp-config-info">
               <div className="mp-config-item">
                 <Clock size={14} />
@@ -163,15 +278,61 @@ function MonPointage() {
               </div>
               <div className="mp-config-item">
                 <Coffee size={14} />
-                <span>Pause déjeuner : {settings.pause_debut || "12:00"} → {(() => {
-                  const [h, m] = (settings.pause_debut || "12:00").split(":").map(Number);
-                  const totalMin = h * 60 + m + (settings.duree_pause || 60);
+                <span>Pause déjeuner : {settings.pause_debut} → {(() => {
+                  const [h, m] = settings.pause_debut.split(":").map(Number);
+                  const totalMin = h * 60 + m + settings.duree_pause;
                   const finH = Math.floor(totalMin / 60) % 24;
                   const finM = totalMin % 60;
                   return String(finH).padStart(2, "0") + ":" + String(finM).padStart(2, "0");
                 })()} ({settings.duree_pause} min)</span>
               </div>
             </div>
+
+            {/* Zone pause tracker - seulement si présent */}
+            {activePresence && (
+              <div className="mp-pause-zone">
+                {activePresence.pause_statut === "En pause" ? (
+                  /* En pause - timer + bouton retour */
+                  <div className="mp-pause-active">
+                    <div className="mp-pause-icon">☕</div>
+                    <div className="mp-pause-timer">
+                      {pauseInfo?.isOver ? (
+                        <span className="mp-pause-over">⏰ Pause terminée !</span>
+                      ) : (
+                        <span className="mp-pause-countdown">{pauseInfo?.display}</span>
+                      )}
+                    </div>
+                    <div className="mp-pause-sub">
+                      Début pause : {activePresence.pause_entree}
+                    </div>
+                    <button
+                      className="mp-pause-btn end"
+                      onClick={handleEndPause}
+                      disabled={actionLoading}
+                    >
+                      <Play size={18} /> Je reprends le travail
+                    </button>
+                  </div>
+                ) : activePresence.pause_statut === "Terminee" ? (
+                  /* Pause déjà prise */
+                  <div className="mp-pause-done">
+                    <div className="mp-pause-done-row">
+                      <Coffee size={16} />
+                      <span>Pause : {activePresence.pause_entree} → {activePresence.pause_sortie}</span>
+                    </div>
+                  </div>
+                ) : (
+                  /* Pas encore en pause - bouton pause */
+                  <button
+                    className="mp-pause-btn start"
+                    onClick={handleStartPause}
+                    disabled={actionLoading}
+                  >
+                    <Coffee size={20} /> Je vais en pause
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Calcul du temps travaillé */}
             {todayPresences.length > 0 && todayPresences[0]?.heure_entree && todayPresences[0]?.heure_sortie && (
@@ -186,6 +347,15 @@ function MonPointage() {
                   const travailMin = totalMin - pause;
                   const tHeures = Math.floor(travailMin / 60);
                   const tMinutes = travailMin % 60;
+
+                  // Heures sup
+                  const [oh, om] = settings.heure_fermeture.split(":").map(Number);
+                  const fermetureMin = oh * 60 + om;
+                  const tempsNormal = fermetureMin - pause;
+                  const hsMinutes = Math.max(0, travailMin - tempsNormal);
+                  const hsHeures = Math.floor(hsMinutes / 60);
+                  const hsMinRest = hsMinutes % 60;
+
                   return (
                     <>
                       <div className="mp-worked-row">
@@ -200,12 +370,36 @@ function MonPointage() {
                         <span>Temps travaillé</span>
                         <strong>{tHeures}h{String(tMinutes).padStart(2, "0")}</strong>
                       </div>
+                      {hsMinutes > 0 && (
+                        <div className="mp-worked-row mp-worked-hs">
+                          <span><Zap size={14} /> Heures supplémentaires</span>
+                          <strong className="mp-hs-strong">
+                            +{hsHeures}h{String(hsMinRest).padStart(2, "0")}
+                          </strong>
+                        </div>
+                      )}
                     </>
                   );
                 })()}
               </div>
             )}
           </div>
+
+          {/* Heures sup auto du jour */}
+          {todayHs && todayHs.length > 0 && !activePresence && (
+            <div className="mp-hs-card">
+              <div className="mp-hs-header">
+                <Zap size={18} />
+                <span>Heures supplémentaires aujourd'hui</span>
+              </div>
+              {todayHs.map((hs, i) => (
+                <div key={i} className="mp-hs-row">
+                  <span>+{hs.nb_heures}h</span>
+                  <span className="mp-hs-statut">{hs.statut}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Bouton pointer */}
           <div className="mp-pointer-area">
@@ -253,6 +447,20 @@ function MonPointage() {
                       <span className="mp-timeline-time">{p.heure_entree || "--:--"}</span>
                     </div>
                   </div>
+                  {/* Ligne pause si prise */}
+                  {p.pause_entree && (
+                    <div className="mp-timeline-item">
+                      <div className="mp-timeline-dot pause" />
+                      <div className="mp-timeline-content">
+                        <span className="mp-timeline-label">
+                          <Coffee size={12} /> Pause
+                        </span>
+                        <span className="mp-timeline-time">
+                          {p.pause_entree} → {p.pause_sortie || "..."}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {p.heure_sortie && (
                     <div className="mp-timeline-item">
                       <div className="mp-timeline-dot depart" />

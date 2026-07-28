@@ -543,6 +543,65 @@ const rattrapage = async (req, res) => {
 };
 
 // ----------------------------------------------------------------
+// POST /api/presences/start-pause - Démarrer la pause
+// ----------------------------------------------------------------
+// L'employé clique "Je vais en pause" → enregistre l'heure de début de pause.
+// Nécessite : presenceId (ID de la présence active)
+// ----------------------------------------------------------------
+const startPause = async (req, res) => {
+    try {
+        const { presenceId } = req.body;
+        if (!presenceId) {
+            return res.status(400).json({ message: "presenceId obligatoire", data: null });
+        }
+
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, "0");
+        const m = String(now.getMinutes()).padStart(2, "0");
+        const pause_entree = h + ":" + m;
+
+        const presence = await presencesModel.startPause(presenceId, pause_entree);
+        if (!presence) {
+            return res.status(400).json({ message: "Impossible de démarrer la pause. Vous n'avez pas pointé ou vous avez déjà terminé votre pause.", data: null });
+        }
+
+        res.json({ message: "Pause débutée", data: presence });
+    } catch (error) {
+        console.error("❌ startPause:", error);
+        res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+    }
+};
+
+// ----------------------------------------------------------------
+// POST /api/presences/end-pause - Terminer la pause
+// ----------------------------------------------------------------
+// L'employé clique "Je reviens de pause" → enregistre l'heure de fin de pause.
+// ----------------------------------------------------------------
+const endPause = async (req, res) => {
+    try {
+        const { presenceId } = req.body;
+        if (!presenceId) {
+            return res.status(400).json({ message: "presenceId obligatoire", data: null });
+        }
+
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, "0");
+        const m = String(now.getMinutes()).padStart(2, "0");
+        const pause_sortie = h + ":" + m;
+
+        const presence = await presencesModel.endPause(presenceId, pause_sortie);
+        if (!presence) {
+            return res.status(400).json({ message: "Impossible de terminer la pause. Vous n'êtes pas en pause actuellement.", data: null });
+        }
+
+        res.json({ message: "Pause terminée", data: presence });
+    } catch (error) {
+        console.error("❌ endPause:", error);
+        res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+    }
+};
+
+// ----------------------------------------------------------------
 // GET /api/presences/stats/aujourdhui - Stats du jour
 // ----------------------------------------------------------------
 const getTodayStats = async (req, res) => {
@@ -559,5 +618,6 @@ module.exports = {
     getAllPresences, checkIn, checkOut,
     getPresenceById, getActivePresence,
     rattrapage, getTodayStats,
+    startPause, endPause,
 };
 

@@ -70,6 +70,24 @@ const presencesService = {
     });
     return data;
   },
+
+  // POST /api/presences/start-pause
+  startPause: async (presenceId) => {
+    const data = await fetchWithAuth("/presences/start-pause", {
+      method: "POST",
+      body: { presenceId },
+    });
+    return data;
+  },
+
+  // POST /api/presences/end-pause
+  endPause: async (presenceId) => {
+    const data = await fetchWithAuth("/presences/end-pause", {
+      method: "POST",
+      body: { presenceId },
+    });
+    return data;
+  },
 };
 
 export default presencesService;

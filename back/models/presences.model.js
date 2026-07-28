@@ -264,6 +264,44 @@ async function getTodayStats(entrepriseId = null) {
 }
 
 // ----------------------------------------------------------------
+// startPause(id, pause_entree) - Démarrer la pause
+// ----------------------------------------------------------------
+// Enregistre l'heure de début de pause pour une présence active.
+// ----------------------------------------------------------------
+async function startPause(id, pause_entree) {
+    const result = await pool.query(`
+        UPDATE presences SET
+            pause_entree = $2::time,
+            pause_statut = 'En pause',
+            updated_at = NOW()
+        WHERE id = $1
+          AND heure_sortie IS NULL
+          AND (pause_statut IS NULL OR pause_statut != 'Terminee')
+        RETURNING *
+    `, [id, pause_entree]);
+    return result.rows[0];
+}
+
+// ----------------------------------------------------------------
+// endPause(id, pause_sortie) - Terminer la pause
+// ----------------------------------------------------------------
+// Enregistre l'heure de fin de pause.
+// ----------------------------------------------------------------
+async function endPause(id, pause_sortie) {
+    const result = await pool.query(`
+        UPDATE presences SET
+            pause_sortie = $2::time,
+            pause_statut = 'Terminee',
+            updated_at = NOW()
+        WHERE id = $1
+          AND heure_sortie IS NULL
+          AND pause_statut = 'En pause'
+        RETURNING *
+    `, [id, pause_sortie]);
+    return result.rows[0];
+}
+
+// ----------------------------------------------------------------
 // autoCloseStalePresences(employe_id, heureAutoCheckout) - Fermeture auto des oublis
 // ----------------------------------------------------------------
 // Quand un employe check-in le matin, si une presence de la veille
@@ -285,4 +323,4 @@ async function autoCloseStalePresences(employe_id, heureAutoCheckout = '19:00') 
     return result.rows;
 }
 
-module.exports = { getAll, getById, getActivePresence, getTodayPresence, checkIn, checkOut, rattrapage, updateStatut, getTodayStats, autoCloseStalePresences };
+module.exports = { getAll, getById, getActivePresence, getTodayPresence, checkIn, checkOut, rattrapage, updateStatut, getTodayStats, autoCloseStalePresences, startPause, endPause };

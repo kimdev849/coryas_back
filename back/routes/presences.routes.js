@@ -18,6 +18,8 @@ router.post("/checkout", presencesController.checkOut);                 // POST 
 router.get("/active", presencesController.getActivePresence);           // GET /api/presences/active -> presence en cours
 router.get("/:id", presencesController.getPresenceById);                // GET /api/presences/5 -> detail (accessible à tous : utilisé par le mobile)
 router.put("/:id/rattrapage", checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]), presencesController.rattrapage);         // PUT /api/presences/5/rattrapage -> corriger
+router.post("/start-pause", presencesController.startPause);               // POST /api/presences/start-pause -> début pause
+router.post("/end-pause", presencesController.endPause);                   // POST /api/presences/end-pause -> fin pause
 
 module.exports = router;
 
