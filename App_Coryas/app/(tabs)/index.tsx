@@ -206,7 +206,9 @@ export default function HomeScreen() {
             ) : null}
           </View>
           <Pressable style={styles.notificationIcon} onPress={() => router.push("/(tabs)/absences")}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.black} />
+            <View style={styles.notifIconWrap}>
+              <Ionicons name="notifications-outline" size={22} color={Colors.primary} />
+            </View>
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
@@ -248,16 +250,16 @@ export default function HomeScreen() {
         {/* ============================================================ */}
         {/* RÉSUMÉ DE LA JOURNÉE                                         */}
         {/* ============================================================ */}
-        {/* Montre les heures configurées (ouverture/fermeture) à côté    */}
-        {/* des heures réelles pointées par l'employé.                    */}
-        {/* ============================================================ */}
-        <View style={styles.scheduleSection}>
-          <Text style={styles.scheduleTitle}>Aujourd'hui</Text>
+        <View style={styles.scheduleCard}>
+          <View style={styles.scheduleCardHeader}>
+            <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
+            <Text style={styles.scheduleTitle}>Aujourd'hui</Text>
+          </View>
           
           {/* Heure d'ouverture configurée */}
           {heureOuverture && (
             <View style={styles.scheduleItem}>
-              <View style={[styles.scheduleDot, { backgroundColor: Colors.textLight }]} />
+              <Ionicons name="enter-outline" size={16} color={Colors.primary} />
               <Text style={styles.scheduleLabel}>Ouverture</Text>
               <Text style={styles.scheduleTimeConfig}>{heureOuverture}</Text>
             </View>
@@ -265,7 +267,7 @@ export default function HomeScreen() {
           
           {/* Arrivée réelle */}
           <View style={styles.scheduleItem}>
-            <View style={[styles.scheduleDot, { backgroundColor: Colors.success }]} />
+            <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
             <Text style={styles.scheduleLabel}>Arrivée</Text>
             <Text style={styles.scheduleTime}>{isCheckedIn ? checkInTime : "--:--"}</Text>
           </View>
@@ -273,7 +275,7 @@ export default function HomeScreen() {
           {/* Heure de fermeture configurée */}
           {heureFermeture && (
             <View style={styles.scheduleItem}>
-              <View style={[styles.scheduleDot, { backgroundColor: Colors.textLight }]} />
+              <Ionicons name="exit-outline" size={16} color={Colors.primary} />
               <Text style={styles.scheduleLabel}>Fermeture</Text>
               <Text style={styles.scheduleTimeConfig}>{heureFermeture}</Text>
             </View>
@@ -281,7 +283,7 @@ export default function HomeScreen() {
           
           {/* Départ réel */}
           <View style={styles.scheduleItem}>
-            <View style={[styles.scheduleDot, { backgroundColor: isCheckedIn ? Colors.success : Colors.textLight }]} />
+            <Ionicons name={isCheckedIn ? "checkmark-circle" : "ellipse-outline"} size={16} color={isCheckedIn ? Colors.success : Colors.textLight} />
             <Text style={styles.scheduleLabel}>Départ</Text>
             <Text style={styles.scheduleTime}>--:--</Text>
           </View>
@@ -342,11 +344,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   notificationIcon: {
-    width: 40,
-    height: 40,
+    position: "relative",
+  },
+  notifIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.primary + "10",
     alignItems: "center",
     justifyContent: "center",
-    position: "relative",
   },
   badge: {
     position: "absolute",
@@ -410,25 +416,38 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.white,
   },
-  scheduleSection: {
-    marginBottom: 120, // Leave space for the floating button
+  scheduleCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 120,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  scheduleCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bgLight,
   },
   scheduleTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.black,
-    marginBottom: 16,
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.textPrimary,
   },
   scheduleItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-  },
-  scheduleDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 16,
+    gap: 12,
   },
   scheduleLabel: {
     flex: 1,

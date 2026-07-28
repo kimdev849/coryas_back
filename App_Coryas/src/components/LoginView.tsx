@@ -2,7 +2,7 @@
 // LOGIN VIEW - Connexion PRÉSENCIA — Design Premium
 // ============================================================
 
-import { StyleSheet, Text, View, TextInput, Pressable, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import { StyleSheet, Text, View, TextInput, Pressable, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/Colors";
@@ -15,14 +15,16 @@ export function LoginView() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const handleLogin = async () => {
+    setLoginError("");
     if (!email.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir votre email.");
+      setLoginError("Veuillez saisir votre email");
       return;
     }
     if (!password.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir votre mot de passe.");
+      setLoginError("Veuillez saisir votre mot de passe");
       return;
     }
 
@@ -31,7 +33,7 @@ export function LoginView() {
       await auth.login(email.trim(), password);
     } catch (error: any) {
       const message = error?.friendlyMessage || error?.response?.data?.message || "Email ou mot de passe incorrect.";
-      Alert.alert("Erreur de connexion", message);
+      setLoginError(message);
     } finally {
       setLoading(false);
     }
@@ -114,6 +116,14 @@ export function LoginView() {
               </View>
             </View>
           </View>
+
+          {/* Message d'erreur inline */}
+          {loginError !== "" && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={16} color={Colors.danger} />
+              <Text style={styles.errorText}>{loginError}</Text>
+            </View>
+          )}
 
           {/* Bouton de connexion */}
           <Pressable
@@ -283,6 +293,26 @@ const styles = StyleSheet.create({
   },
   inputIconRight: {
     paddingRight: 16,
+  },
+
+  // Erreur inline
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.danger + "10",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.danger + "20",
+  },
+  errorText: {
+    fontSize: 13,
+    color: Colors.danger,
+    fontWeight: "500",
+    flex: 1,
+    lineHeight: 18,
   },
 
   // Bouton

@@ -23,6 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "../../src/constants/Colors";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { CustomModal } from "../../src/components/CustomModal";
 
 
 
@@ -58,36 +59,18 @@ export default function ProfilTab() {
   );
 
   // ============================================================
-  // handleLogout : déconnexion de l'utilisateur
+  // Modale de déconnexion
   // ============================================================
-  // 1. Demande confirmation à l'utilisateur
-  // 2. logout() supprime le token JWT + données utilisateur
-  // 3. Redirige DIRECTEMENT vers /login (sans passer par le splash)
-  // ============================================================
-  const handleLogout = () => {
-    Alert.alert(
-      "Déconnexion",
-      "Êtes-vous sûr de vouloir vous déconnecter ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Se déconnecter",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // ✅ La déconnexion est gérée par AuthContext dans le layout
-              // racine. Il n'y a PAS d'appel à router.replace / nav.reset
-              // ici car ces appels échouent depuis les tabs imbriqués.
-              // C'est AuthContext (dans _layout.tsx) qui reset la
-              // navigation racine après avoir vidé le token.
-              await auth.logout();
-            } catch (error) {
-              Alert.alert("Erreur", "Impossible de se déconnecter");
-            }
-          },
-        },
-      ]
-    );
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogoutConfirm = async () => {
+    try {
+      await auth.logout();
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de se déconnecter");
+    } finally {
+      setShowLogoutModal(false);
+    }
   };
 
   return (
@@ -175,10 +158,25 @@ export default function ProfilTab() {
       </View>
 
       {/* Déconnexion */}
-      <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
+      <Pressable style={styles.logoutButton} onPress={() => setShowLogoutModal(true)}>
+        <View style={styles.logoutIconWrap}>
+          <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
+        </View>
         <Text style={styles.logoutText}>Déconnexion</Text>
       </Pressable>
+
+      {/* Modale de confirmation */}
+      <CustomModal
+        visible={showLogoutModal}
+        icon="log-out-outline"
+        title="Déconnexion"
+        message="Êtes-vous sûr de vouloir vous déconnecter ?"
+        confirmLabel="Se déconnecter"
+        cancelLabel="Annuler"
+        confirmStyle="danger"
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </View>
   );
 }
@@ -304,11 +302,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.danger + "30",
+    backgroundColor: Colors.white,
+  },
+  logoutIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.danger + "12",
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoutText: {
     fontSize: 16,
     fontWeight: "600",
     color: Colors.danger,
-    marginLeft: 8,
+    marginLeft: 10,
   },
 });
