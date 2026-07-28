@@ -21,6 +21,10 @@ function Profil() {
   const [message, setMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
+    if (user?.role === "SuperAdmin") {
+      setCompany({ nom: "PRÉSENCIA", logo: null });
+      return;
+    }
     const load = async () => {
       try {
         const res = await parametresService.get();
@@ -33,7 +37,7 @@ function Profil() {
       } catch { /* fallback */ }
     };
     load();
-  }, []);
+  }, [user]);
 
   const showMessage = (text, type = "success") => {
     setMessage({ text, type });
