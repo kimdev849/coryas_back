@@ -206,32 +206,52 @@ async function save(data) {
     // EXÉCUTION : Tente chaque niveau dans l'ordre
     // ================================================================
 
+    let result = null;
+
     // Niveau 1 complet : rows[0] = UPSERT (si entreprise_id existe)
     if (entreprise_id) {
-        const fullResult = await tryFullUpsert();
-        if (fullResult) return fullResult;
+        result = await tryFullUpsert();
     }
 
-    // Niveau 1 complet: UPDATE WHERE id=1
-    const fullUpdate = await tryFullUpdate();
-    if (fullUpdate) return fullUpdate;
+    if (!result) {
+        // Niveau 1 complet: UPDATE WHERE id=1
+        result = await tryFullUpdate();
+    }
 
-    // Niveau 2 : colonnes de base avec anciens noms (email_contact, telephone_contact)
-    const baseResult = await tryBaseUpdate();
-    if (baseResult) return baseResult;
+    if (!result) {
+        // Niveau 2 : colonnes de base avec anciens noms (email_contact, telephone_contact)
+        result = await tryBaseUpdate();
+    }
 
-    // Niveau 3 : ultra minimal (nom + horaires)
-    const minimalResult = await tryMinimalUpdate();
-    if (minimalResult) return minimalResult;
+    if (!result) {
+        // Niveau 3 : ultra minimal (nom + horaires)
+        result = await tryMinimalUpdate();
+    }
 
-    // Si tout a échoué : faire un INSERT minimal
-    const insertResult = await safeQuery(`
-        INSERT INTO parametres (nom_entreprise, heure_ouverture, heure_fermeture, updated_at)
-        VALUES ($1, $2, $3, NOW())
-        RETURNING *
-    `, [nom_entreprise, heure_ouverture, heure_fermeture]);
+    if (!result) {
+        // Si tout a échoué : faire un INSERT minimal
+        result = await safeQuery(`
+            INSERT INTO parametres (nom_entreprise, heure_ouverture, heure_fermeture, updated_at)
+            VALUES ($1, $2, $3, NOW())
+            RETURNING *
+        `, [nom_entreprise, heure_ouverture, heure_fermeture]);
+    }
 
-    if (insertResult) return insertResult;
+    // ================================================================
+    // SYNCHRONISATION : Si le nom de l'entreprise a été modifié,
+    // on le propage aussi dans la table `entreprises` (source autoritaire
+    // pour la page de connexion et l'affichage mobile).
+    // ================================================================
+    if (result && nom_entreprise && entreprise_id) {
+        try {
+            await pool.query(`UPDATE entreprises SET nom = $1, updated_at = NOW() WHERE id = $2`, [nom_entreprise, entreprise_id]);
+            console.log(`🔄 Nom entreprise synchronisé : entreprises.id=${entreprise_id} → "${nom_entreprise}"`);
+        } catch (e) {
+            console.warn("⚠️ Impossible de synchroniser le nom dans la table entreprises:", e.message);
+        }
+    }
+
+    if (result) return result;
 
     // Dernier recours : la requête échoue pour de bon
     throw new Error("Impossible de sauvegarder les paramètres — vérifiez que la table 'parametres' existe.");
