@@ -169,6 +169,8 @@ async function updateEmploye(req, res) {
         const {
             matricule, nom, prenom, sexe, telephone,
             date_naissance, date_embauche, departement_id, statut,
+            type_contrat_id, poste, salaire, site_id, equipe_id,
+            date_fin_contrat, periode_essai_jours,
             email, role_id
         } = req.body;
 
@@ -187,10 +189,19 @@ async function updateEmploye(req, res) {
                 date_embauche = COALESCE($8, date_embauche),
                 departement_id = COALESCE($9, departement_id),
                 statut = COALESCE($10, statut),
+                type_contrat_id = COALESCE($11, type_contrat_id),
+                poste = COALESCE($12, poste),
+                salaire = COALESCE($13, salaire),
+                site_id = COALESCE($14, site_id),
+                equipe_id = COALESCE($15, equipe_id),
+                date_fin_contrat = COALESCE($16, date_fin_contrat),
+                periode_essai_jours = COALESCE($17, periode_essai_jours),
                 updated_at = NOW()
             WHERE id = $1
             RETURNING *
-        `, [id, matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id, statut]);
+        `, [id, matricule, nom, prenom, sexe, telephone, date_naissance, date_embauche, departement_id, statut,
+            type_contrat_id || null, poste || null, salaire || null, site_id || null, equipe_id || null,
+            date_fin_contrat || null, periode_essai_jours || null]);
 
         const updatedEmploye = updateRes.rows[0];
 

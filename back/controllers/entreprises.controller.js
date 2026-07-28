@@ -240,7 +240,7 @@ const accepterDemande = async (req, res) => {
 
         // 5. Marquer la demande comme acceptée
         await client.query(`
-            UPDATE demandes_inscription SET statut = 'Acceptee', traitee_le = NOW() WHERE id = $1
+            UPDATE demandes_inscription SET statut = 'Acceptee' WHERE id = $1
         `, [id]);
 
         await client.query("COMMIT");
@@ -274,7 +274,7 @@ const refuserDemande = async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(`
-            UPDATE demandes_inscription SET statut = 'Refusee', traitee_le = NOW() WHERE id = $1 RETURNING *
+            UPDATE demandes_inscription SET statut = 'Refusee' WHERE id = $1 RETURNING *
         `, [id]);
         if (!result.rows[0]) {
             return res.status(404).json({ message: "Demande introuvable", data: null });
