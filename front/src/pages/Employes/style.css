@@ -279,25 +279,52 @@
   
   .employes-table {
     min-width: auto;
-    font-size: 10px;
+    width: 100%;
+    table-layout: fixed;
+    font-size: 9px;
+  }
+  
+  .employes-table th,
+  .employes-table td {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .employes-table th {
     background: #F3F4F6 !important;
     color: #1F2937 !important;
     border-bottom: 2px solid #D1D5DB !important;
-    padding: 6px 8px;
-    font-size: 9px;
+    padding: 5px 6px;
+    font-size: 8px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
   }
   
   .employes-table td {
-    padding: 5px 8px;
+    padding: 4px 6px;
     border-bottom: 1px solid #E5E7EB;
     color: #1F2937 !important;
-    font-size: 10px;
+    font-size: 9px;
   }
+  
+  /* Largeurs fixes pour chaque colonne */
+  .employes-table th:nth-child(1),
+  .employes-table td:nth-child(1) { width: 11%; }  /* Matricule */
+  .employes-table th:nth-child(2),
+  .employes-table td:nth-child(2) { width: 14%; }  /* Nom */
+  .employes-table th:nth-child(3),
+  .employes-table td:nth-child(3) { width: 14%; }  /* Prénom */
+  .employes-table th:nth-child(4),
+  .employes-table td:nth-child(4) { width: 16%; }  /* Poste */
+  .employes-table th:nth-child(5),
+  .employes-table td:nth-child(5) { width: 13%; }  /* Département */
+  .employes-table th:nth-child(6),
+  .employes-table td:nth-child(6) { width: 10%; }  /* Contrat */
+  .employes-table th:nth-child(7),
+  .employes-table td:nth-child(7) { width: 13%; }  /* Tél. */
+  .employes-table th:nth-child(8),
+  .employes-table td:nth-child(8) { width: 9%; }   /* Statut */
   
   .employes-table tbody tr:hover {
     background: transparent !important;
