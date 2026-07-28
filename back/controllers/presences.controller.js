@@ -146,9 +146,10 @@ const checkIn = async (req, res) => {
 
         // ============================================================
         // 8. VÉRIFICATION GPS (géolocalisation) — BLOQUANTE
-        //     SKIP si geo_restriction est désactivé dans la config
+        //     Si l'employé a un site avec des coordonnées GPS configurées,
+        //     le contrôle est TOUJOURS fait (peu importe le toggle).
         // ============================================================
-        if (params?.geo_restriction !== false && emp.site_id) {
+        if (emp.site_id) {
             const siteRes = await pool.query(`
                 SELECT latitude, longitude, rayon_gps FROM sites WHERE id = $1
             `, [emp.site_id]);
