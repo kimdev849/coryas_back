@@ -43,8 +43,9 @@ async function getEmployes(entrepriseId = null) {
     }
     // Exclure les utilisateurs sans entreprise (seed SuperAdmin, utilisateurs legacy)
     sql += ` AND e.entreprise_id IS NOT NULL`;
-    // Exclure les SuperAdmin (role_id=5) de la liste employés
-    sql += ` AND (u.role_id IS NULL OR u.role_id != 5)`;
+    // Exclure les Administrateur (role_id=1) et SuperAdmin (role_id=5) de la liste employés
+    // La liste employés est réservée aux rôles : RH (2), Employé (3), Directeur (4)
+    sql += ` AND (u.role_id IS NULL OR (u.role_id NOT IN (1, 5)))`;
     sql += ` ORDER BY e.id ASC`;
     const result = await pool.query(sql, params);
     return result.rows;

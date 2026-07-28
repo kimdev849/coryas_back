@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import heuresSupService from "../../services/heuresSupService";
+import { Clock, Zap } from "lucide-react";
 import "./style.css";
 
 function HeuresSup() {
     const { user } = useAuth();
     const canManage = user?.role === "Administrateur" || user?.role === "RH";
     const [list, setList] = useState([]);
-    const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({ nb_heures: "1", motif: "", date_heure_sup: new Date().toISOString().split("T")[0] });
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("success");
-    const today = new Date().toISOString().split("T")[0];
 
     useEffect(() => { load(); }, []);
 
@@ -20,21 +18,6 @@ function HeuresSup() {
             const res = await heuresSupService.getAll();
             setList(res.data || []);
         } catch (e) { console.error(e); }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await heuresSupService.create(formData);
-            setMessage("Heure sup enregistrée !");
-            setMessageType("success");
-            setShowForm(false);
-            load();
-            setTimeout(() => setMessage(""), 3000);
-        } catch (err) {
-            setMessage("Erreur : " + (err.message || ""));
-            setMessageType("error");
-        }
     };
 
     const handleAction = async (id, action) => {
@@ -60,52 +43,17 @@ function HeuresSup() {
 
     return (
         <div>
-            <h1 className="page-title">Heures supplémentaires</h1>
-            <p className="page-description">Gérez les heures supplémentaires des employés</p>
+            <h1 className="page-title">
+                <Zap size={22} style={{ verticalAlign: "middle", marginRight: 8 }} />
+                Heures supplémentaires
+            </h1>
+            <p className="page-description">
+                <Clock size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />
+                Les heures sup sont calculées automatiquement au pointage de départ.
+                {canManage ? " Approuvez ou refusez les demandes ci-dessous." : ""}
+            </p>
 
             {message && <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", fontWeight: "bold", background: messageType === "success" ? "#d4edda" : "#f8d7da", color: messageType === "success" ? "#155724" : "#721c24" }}>{message}</div>}
-
-            {/* Seul l'admin peut ajouter manuellement des heures sup */}
-            {/* Les employés voient uniquement l'historique - le calcul est auto */}
-            {canManage && (
-                <div className="employes-actions">
-                    <button className="employes-btn employes-btn-primary" onClick={() => setShowForm(!showForm)}>
-                        {showForm ? "Fermer" : "+ Nouvelle heure sup"}
-                    </button>
-                </div>
-            )}
-
-            {showForm && (
-                <div className="config-section" style={{ marginBottom: 24 }}>
-                    <h3 className="config-section-title">Nouvelle heure supplémentaire</h3>
-                    <form onSubmit={handleSubmit}>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                            <div className="config-option">
-                                <div><strong>Date</strong></div>
-                                <input type="date" className="config-input" value={formData.date_heure_sup}
-                                    onChange={(e) => setFormData({ ...formData, date_heure_sup: e.target.value })} max={today} required />
-                            </div>
-                            <div className="config-option">
-                                <div><strong>Nombre d'heures</strong></div>
-                                <input type="number" step="0.5" min="0.5" max="12" className="config-input"
-                                    value={formData.nb_heures}
-                                    onChange={(e) => setFormData({ ...formData, nb_heures: e.target.value })} required />
-                            </div>
-                        </div>
-                        <div className="config-option">
-                            <div><strong>Motif</strong></div>
-                            <textarea className="config-input" rows={2} value={formData.motif}
-                                onChange={(e) => setFormData({ ...formData, motif: e.target.value })}
-                                placeholder="Raison des heures supplémentaires..." style={{ resize: "vertical", fontFamily: "inherit" }} />
-                        </div>
-                        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                            <button type="submit" className="employes-btn employes-btn-primary">Enregistrer</button>
-                            <button type="button" className="employes-btn" onClick={() => setShowForm(false)}
-                                style={{ background: "#dc3545", color: "white" }}>Annuler</button>
-                        </div>
-                    </form>
-                </div>
-            )}
 
             <div className="employes-table-container">
                 <table className="employes-table">
