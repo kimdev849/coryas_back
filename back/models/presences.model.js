@@ -215,9 +215,9 @@ async function getTodayStats(entrepriseId = null) {
         pool.query(`
             SELECT
                 COUNT(*) AS total,
-                COUNT(*) FILTER (WHERE statut = 'Present') AS presents,
-                COUNT(*) FILTER (WHERE statut = 'Retard') AS retards,
-                COUNT(*) FILTER (WHERE heure_sortie IS NULL) AS en_cours
+                COUNT(*) FILTER (WHERE p.statut = 'Present') AS presents,
+                COUNT(*) FILTER (WHERE p.statut = 'Retard') AS retards,
+                COUNT(*) FILTER (WHERE p.heure_sortie IS NULL) AS en_cours
             FROM presences p
             JOIN employes e ON e.id = p.employe_id
             WHERE p.date_presence = CURRENT_DATE${entrepriseFilterEmp}
