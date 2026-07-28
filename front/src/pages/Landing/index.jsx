@@ -273,7 +273,7 @@ function Landing() {
                   placeholder="Parlez-nous de vos besoins..." className="landing-form-input"
                   rows={3} style={{ resize: "vertical" }} />
               </div>
-              <button type="submit", className="landing-btn landing-btn-primary landing-btn-block landing-btn-lg" style={{ marginTop: 8 }}>
+              <button type="submit" className="landing-btn landing-btn-primary landing-btn-block landing-btn-lg" style={{ marginTop: 8 }}>
                 Envoyer la demande
               </button>
             </form>
