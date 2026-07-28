@@ -110,42 +110,66 @@ export const getActivePresence = async (): Promise<Presence | null> => {
 };
 
 /**
- * checkIn : pointe l'arrivée
- * Envoie l'heure du téléphone + position GPS pour éviter la triche.
+ * getCurrentPosition : demande la permission GPS et retourne la position
+ * @returns { latitude, longitude } ou null si refusé/erreur
+ * Lance une erreur avec un message clair si la permission est refusée
  */
-export const checkIn = async (): Promise<Presence> => {
+export const getCurrentPosition = async (): Promise<{ latitude: number; longitude: number } | null> => {
   try {
-    const employeId = await getEmployeId();
-    const now = new Date();
-    const heure = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const { requestForegroundPermissionsAsync, getCurrentPositionAsync } = await import("expo-location");
     
-    // Tentative de récupération de la position GPS
-    let latitude = null;
-    let longitude = null;
-    try {
-      const { getCurrentPositionAsync } = await import("expo-location");
-      const { requestForegroundPermissionsAsync } = await import("expo-location");
-      const { status } = await requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        const pos = await getCurrentPositionAsync({ accuracy: 6 });
-        latitude = pos.coords.latitude;
-        longitude = pos.coords.longitude;
-      }
-    } catch {
-      // GPS non disponible ou permission refusée
+    // 1. Demander la permission
+    const { status } = await requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      throw new Error("Permission de localisation refusée. Activez la localisation dans les paramètres de votre téléphone pour pouvoir pointer.");
     }
     
-    const response = await api.post("/presences/checkin", {
-      employe_id: employeId,
-      heure_entree: `${heure}:${minutes}`,
-      latitude,
-      longitude,
+    // 2. Obtenir la position (haute précision)
+    const pos = await getCurrentPositionAsync({
+      accuracy: 6, // highest accuracy
+      timeout: 10000, // 10 secondes max
     });
-    return response.data.data;
-  } catch (error) {
-    throw error;
+    
+    return {
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+    };
+  } catch (error: any) {
+    // Si c'est déjà une erreur avec message, on la propage
+    if (error.message && error.message.includes("Permission")) {
+      throw error;
+    }
+    // Sinon, erreur technique GPS
+    throw new Error("Impossible d'obtenir votre position GPS. Vérifiez que le GPS est activé et réessayez.");
   }
+};
+
+/**
+ * checkIn : pointe l'arrivée
+ * Envoie l'heure du téléphone + position GPS (OBLIGATOIRE).
+ * La position GPS est récupérée AVANT l'appel API pour garantir
+ * qu'elle est disponible au moment du pointage.
+ */
+export const checkIn = async (): Promise<Presence> => {
+  const employeId = await getEmployeId();
+  if (!employeId) {
+    throw new Error("Utilisateur non connecté. Veuillez vous reconnecter.");
+  }
+  
+  const now = new Date();
+  const heure = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  
+  // Récupération de la position GPS (obligatoire)
+  const position = await getCurrentPosition();
+  
+  const response = await api.post("/presences/checkin", {
+    employe_id: employeId,
+    heure_entree: `${heure}:${minutes}`,
+    latitude: position?.latitude || null,
+    longitude: position?.longitude || null,
+  });
+  return response.data.data;
 };
 
 /**

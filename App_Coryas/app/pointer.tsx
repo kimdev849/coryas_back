@@ -120,16 +120,16 @@ export default function PointerScreen() {
     setLoadingAction(true);
     try {
       if (isCheckedIn && activePresenceId) {
-        // CHECK-OUT : l'utilisateur est déjà présent → on enregistre le départ
+        // CHECK-OUT
         await checkOut(activePresenceId);
         setSuccess(true);
         setSuccessTime(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
         setTimeout(() => {
-          setSuccess(false);  // Cache l'écran de succès
-          loadData();          // Recharge les données
+          setSuccess(false);
+          loadData();
         }, 2000);
       } else {
-        // CHECK-IN : l'utilisateur n'est pas présent → on enregistre l'arrivée
+        // CHECK-IN (le GPS est géré dans checkIn() avec messages d'erreur clairs)
         const presence = await checkIn();
         setSuccess(true);
         setSuccessTime(presence.heure_entree);
@@ -140,19 +140,15 @@ export default function PointerScreen() {
       }
     } catch (error: any) {
       if (error?.response?.status === 401) {
-        // Token expiré ou invalide → redirection vers la connexion
         Alert.alert(
           "Session expirée",
-          "Votre session a expiré. Veuillez vous reconnecter pour continuer.",
-          [
-            { text: "OK", onPress: () => router.replace("/login") }
-          ]
+          "Votre session a expiré. Veuillez vous reconnecter.",
+          [{ text: "OK", onPress: () => router.replace("/login") }]
         );
         return;
       }
-      const message = error?.response?.data?.message || "Impossible d'enregistrer le pointage";
+      const message = error?.response?.data?.message || error.message || "Impossible d'enregistrer le pointage";
       Alert.alert("Erreur", message);
-      console.error(error);
     } finally {
       setLoadingAction(false);
     }
