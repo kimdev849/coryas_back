@@ -60,6 +60,7 @@ function Configuration() {
     heure_ouverture: "08:00",
     heure_fermeture: "17:00",
     duree_pause: 60,
+    pause_debut: "12:00",
     
     // Jours ouvrables
     jours_ouvrables: ["lundi", "mardi", "mercredi", "jeudi", "vendredi"],
@@ -123,6 +124,7 @@ function Configuration() {
           heure_ouverture: result.data.heure_ouverture?.slice(0, 5) || "08:00",
           heure_fermeture: result.data.heure_fermeture?.slice(0, 5) || "17:00",
           duree_pause: result.data.duree_pause || 60,
+          pause_debut: result.data.pause_debut?.slice(0, 5) || "12:00",
           jours_ouvrables: result.data.jours_ouvrables || ["lundi", "mardi", "mercredi", "jeudi", "vendredi"],
           retard_apres: result.data.retard_apres ?? 15,
           depart_anticipe: result.data.depart_anticipe ?? 15,
@@ -369,6 +371,16 @@ function Configuration() {
                   <input type="number" name="duree_pause" className="config-input config-input-number"
                     value={settings.duree_pause} onChange={handleChange} min="0" max="180" />
                   <span className="config-input-suffix">minutes</span>
+                </div>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong><Coffee size={14} /> Début de la pause</strong>
+                  <p className="config-row-desc">À quelle heure commence la pause déjeuner</p>
+                </div>
+                <div className="config-input-with-icon">
+                  <input type="time" name="pause_debut" className="config-input config-input-time"
+                    value={settings.pause_debut} onChange={handleChange} />
                 </div>
               </div>
             </div>

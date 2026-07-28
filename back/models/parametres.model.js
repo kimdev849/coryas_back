@@ -43,6 +43,7 @@ async function save(data) {
         slogan, description, site_web, logo_url,
         jours_ouvrables, tolerance_retard,
         auto_checkout, heure_auto_checkout, geo_restriction,
+        pause_debut,
     } = data;
 
     // Convertir jours_ouvrables array -> JSON pour stockage
@@ -89,6 +90,7 @@ async function save(data) {
                 auto_checkout = COALESCE($17, auto_checkout),
                 heure_auto_checkout = COALESCE($18, heure_auto_checkout),
                 geo_restriction = COALESCE($19, geo_restriction),
+                pause_debut = COALESCE($20, pause_debut),
                 updated_at = NOW()
             WHERE id = 1
             RETURNING *
@@ -98,7 +100,8 @@ async function save(data) {
             email_entreprise, telephone, adresse,
             defaultTheme, slogan, description, site_web, logo_url,
             joursOuvrablesJson, tolerance_retard,
-            auto_checkout, heure_auto_checkout, geo_restriction];
+            auto_checkout, heure_auto_checkout, geo_restriction,
+            pause_debut];
         return safeQuery(sql, params);
     };
 
@@ -112,11 +115,12 @@ async function save(data) {
                 slogan, description, site_web, logo_url,
                 jours_ouvrables, tolerance_retard,
                 auto_checkout, heure_auto_checkout, geo_restriction,
+                pause_debut,
                 updated_at
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
                     $12, $13, $14, $15, $16::jsonb, $17,
-                    $18, $19, $20, NOW())
+                    $18, $19, $20, $21, NOW())
             ON CONFLICT (entreprise_id) DO UPDATE SET
                 nom_entreprise = COALESCE($2, parametres.nom_entreprise),
                 heure_ouverture = COALESCE($3, parametres.heure_ouverture),
@@ -137,6 +141,7 @@ async function save(data) {
                 auto_checkout = COALESCE($18, parametres.auto_checkout),
                 heure_auto_checkout = COALESCE($19, parametres.heure_auto_checkout),
                 geo_restriction = COALESCE($20, parametres.geo_restriction),
+                pause_debut = COALESCE($21, parametres.pause_debut),
                 updated_at = NOW()
             RETURNING *
         `;
@@ -145,7 +150,8 @@ async function save(data) {
             email_entreprise, telephone, adresse,
             defaultTheme, slogan, description, site_web, logo_url,
             joursOuvrablesJson, tolerance_retard,
-            auto_checkout, heure_auto_checkout, geo_restriction];
+            auto_checkout, heure_auto_checkout, geo_restriction,
+            pause_debut];
         return safeQuery(sql, params);
     };
 

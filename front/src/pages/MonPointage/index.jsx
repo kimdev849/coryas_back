@@ -9,7 +9,7 @@ function MonPointage() {
   const { user } = useAuth();
   const [activePresence, setActivePresence] = useState(null);
   const [todayPresences, setTodayPresences] = useState([]);
-  const [settings, setSettings] = useState({ heure_ouverture: "08:00", heure_fermeture: "17:00", duree_pause: 60 });
+  const [settings, setSettings] = useState({ heure_ouverture: "08:00", heure_fermeture: "17:00", duree_pause: 60, pause_debut: "12:00" });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -39,6 +39,7 @@ function MonPointage() {
           heure_ouverture: settingsRes.data.heure_ouverture || "08:00",
           heure_fermeture: settingsRes.data.heure_fermeture || "17:00",
           duree_pause: settingsRes.data.duree_pause || 60,
+          pause_debut: settingsRes.data.pause_debut?.slice(0, 5) || "12:00",
         });
       }
     } catch {
@@ -162,7 +163,13 @@ function MonPointage() {
               </div>
               <div className="mp-config-item">
                 <Coffee size={14} />
-                <span>Pause déjeuner : {settings.duree_pause} min</span>
+                <span>Pause déjeuner : {settings.pause_debut || "12:00"} → {(() => {
+                  const [h, m] = (settings.pause_debut || "12:00").split(":").map(Number);
+                  const totalMin = h * 60 + m + (settings.duree_pause || 60);
+                  const finH = Math.floor(totalMin / 60) % 24;
+                  const finM = totalMin % 60;
+                  return String(finH).padStart(2, "0") + ":" + String(finM).padStart(2, "0");
+                })()} ({settings.duree_pause} min)</span>
               </div>
             </div>
 

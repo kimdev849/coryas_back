@@ -56,7 +56,12 @@ ALTER TABLE parametres ADD COLUMN IF NOT EXISTS double_auth BOOLEAN DEFAULT FALS
 ALTER TABLE parametres ADD COLUMN IF NOT EXISTS session_timeout INTEGER DEFAULT 60;
 
 -- ================================================================
--- 7. VÉRIFICATION
+-- 7. HEURE DE DÉBUT DE PAUSE
+-- ================================================================
+ALTER TABLE parametres ADD COLUMN IF NOT EXISTS pause_debut TIME WITHOUT TIME ZONE DEFAULT '12:00';
+
+-- ================================================================
+-- 8. VÉRIFICATION
 -- ================================================================
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns
