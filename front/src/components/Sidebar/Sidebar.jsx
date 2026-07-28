@@ -71,7 +71,7 @@ function Sidebar({ onClose }) {
         {/* Liens employé (cachés pour SuperAdmin) */}
         {!isSuperAdmin && (
           <NavLink to="/conges" className="sidebar-link" onClick={handleNavClick}>
-            Mes Congés
+            Congés
           </NavLink>
         )}
 

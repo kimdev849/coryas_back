@@ -6,14 +6,14 @@
 // Notifications, Sécurité, Thème
 // ================================================================
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import parametresService from "../../services/parametresService";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
   Building2, Clock, Palette, Shield, Bell, Calendar,
-  Mail, Phone, MapPin, Save, Upload, CheckCircle2, AlertCircle,
-  Globe, Eye, EyeOff, Settings2, Users, Timer, Coffee,
-  UserCheck, Briefcase, ChevronDown, ChevronUp, Sun, Moon
+  Mail, Phone, MapPin, Save, CheckCircle2, AlertCircle,
+  Globe, Settings2, Timer, Coffee,
+  UserCheck, Briefcase, ChevronDown, ChevronUp
 } from "lucide-react";
 import "./style.css";
 
@@ -30,7 +30,6 @@ const JOURS = [
 
 function Configuration() {
   const { currentTheme, themes, changeTheme } = useTheme();
-  const logoInputRef = useRef(null);
 
   // Sections dépliables
   const [sections, setSections] = useState({
@@ -239,22 +238,21 @@ function Configuration() {
               <div className="config-row">
                 <div className="config-row-label">
                   <strong>Logo de l'entreprise</strong>
-                  <p className="config-row-desc">Image carrée recommandée (200x200px)</p>
+                  <p className="config-row-desc">Image carrée recommandée (200x200px). Entrez l'URL de votre logo.</p>
                 </div>
                 <div className="config-logo-area">
                   <div className="config-logo-preview">
                     {settings.logo_url ? (
-                      <img src={settings.logo_url} alt="Logo" />
+                      <img src={settings.logo_url} alt="Logo" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="config-logo-fallback"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4z"/></svg><span style="font-size:11px;color:#9CA3AF;margin-top:4px">Erreur</span></div>'; }} />
                     ) : (
                       <Building2 size={32} />
                     )}
                   </div>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => logoInputRef.current?.click()}>
-                    <Upload size={14} /> Choisir
-                  </button>
-                  <input ref={logoInputRef} type="text" name="logo_url" value={settings.logo_url}
-                    onChange={handleChange} className="config-input config-input-sm"
-                    placeholder="URL du logo (ou upload)" style={{ display: "none" }} />
+                  <div className="config-logo-input-group">
+                    <input type="text" name="logo_url" value={settings.logo_url}
+                      onChange={handleChange} className="config-input"
+                      placeholder="https://exemple.com/logo.png" />
+                  </div>
                 </div>
               </div>
 

@@ -1,36 +1,35 @@
 /* ================================================================
- * 📄 FICHIER : src/pages/Conges/style.css
- * Thème : Bleu Présencia 🔵 | Blanc ⚪
- * ================================================================ */
+   Congés — Design Premium
+   ================================================================ */
 
-/* EN-TÊTE */
+/* ----- HEADER ACTIONS ----- */
 .conges-header {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
-.conges-btn-new,
-.conges-btn-reload {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  font-size: 14px;
-}
-
 .conges-btn-new {
-  background-color: var(--color-primary);
-  color: var(--color-black);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+  transition: all 0.25s;
+  font-family: inherit;
 }
 
 .conges-btn-new:hover {
-  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 20px rgba(37,99,235,0.35);
 }
 
 .conges-btn-new:active {
@@ -38,60 +37,83 @@
 }
 
 .conges-btn-reload {
-  background-color: var(--color-gray-900);
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 18px;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  background: #FFFFFF;
+  color: #374151;
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
 .conges-btn-reload:hover {
-  background-color: var(--color-black);
-  transform: translateY(-2px);
+  background: #F9FAFB;
+  border-color: #D1D5DB;
 }
 
-/* MESSAGES */
+/* ----- MESSAGES ----- */
 .conges-message {
-  padding: 15px 20px;
-  border-radius: 5px;
+  padding: 14px 18px;
+  border-radius: 10px;
   margin-bottom: 20px;
-  font-weight: bold;
-  animation: slideIn 0.3s ease;
+  font-weight: 500;
+  font-size: 14px;
+  animation: congesSlideIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .conges-message-success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
 }
 
 .conges-message-error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
 }
 
-@keyframes slideIn {
+@keyframes congesSlideIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* FORMULAIRE */
+/* ----- FORMULAIRE ----- */
 .conges-form-container {
-  background-color: var(--color-primary-bg);
-  border: 1px solid var(--color-primary-light);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  animation: congesFadeIn 0.3s ease;
+}
+
+@keyframes congesFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .conges-form-container h2 {
-  color: var(--color-black);
-  margin-bottom: 15px;
   font-size: 18px;
+  font-weight: 700;
+  color: #0B1120;
+  margin: 0 0 20px;
 }
 
 .conges-form {
-  display: grid;
-  gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .conges-form-group {
@@ -100,120 +122,123 @@
 }
 
 .conges-form-group label {
-  font-weight: bold;
-  color: var(--color-gray-900);
-  margin-bottom: 5px;
-  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  font-size: 13px;
 }
 
 .conges-form-group input,
 .conges-form-group select {
-  padding: 10px;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 5px;
+  padding: 11px 14px;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
   font-size: 14px;
-  font-family: Arial, sans-serif;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  transition: all 0.2s;
+  outline: none;
+  background: #FFFFFF;
+  color: #1F2937;
 }
 
 .conges-form-group input:focus,
 .conges-form-group select:focus {
-  outline: none;
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 5px rgba(37, 99, 235, 0.3) !important;
-  background-color: #fff;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
+  background: #FFFFFF;
 }
 
 .conges-form-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 4px;
 }
 
 .conges-btn-submit,
 .conges-btn-cancel {
   flex: 1;
-  padding: 12px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
+  font-weight: 600;
   font-size: 14px;
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
 .conges-btn-submit {
-  background-color: var(--color-primary);
-  color: var(--color-black);
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.2);
 }
 
 .conges-btn-submit:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.3);
 }
 
 .conges-btn-submit:disabled {
-  background-color: #ccc;
+  background: #9CA3AF;
   cursor: not-allowed;
-  opacity: 0.7;
+  box-shadow: none;
 }
 
 .conges-btn-cancel {
-  background-color: var(--color-gray-900);
-  color: white;
+  background: #F3F4F6;
+  color: #374151;
 }
 
 .conges-btn-cancel:hover:not(:disabled) {
-  background-color: var(--color-black);
-  transform: translateY(-2px);
+  background: #E5E7EB;
 }
 
 .conges-btn-cancel:disabled {
-  background-color: #ccc;
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
-/* FILTRES */
+/* ----- FILTRES ----- */
 .conges-filter {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
 .conges-filter-btn {
-  padding: 8px 15px;
-  border: 1px solid var(--color-gray-300);
-  background-color: white;
-  border-radius: 5px;
+  padding: 8px 18px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
+  transition: all 0.2s;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--color-gray-900);
+  color: #6B7280;
+  font-family: inherit;
 }
 
 .conges-filter-btn:hover {
-  background-color: var(--color-primary-light);
-  border-color: var(--color-primary);
+  border-color: #2563EB;
+  color: #2563EB;
+  background: #EFF6FF;
 }
 
 .conges-filter-btn.active {
-  background-color: var(--color-primary);
-  color: var(--color-black);
-  border-color: var(--color-primary);
+  background: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
   font-weight: 600;
 }
 
-/* TABLEAU */
+/* ----- TABLEAU ----- */
 .conges-table-container {
-  background-color: white;
-  border: 1px solid var(--color-gray-200);
-  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .conges-table {
@@ -222,176 +247,200 @@
 }
 
 .conges-table thead {
-  background-color: var(--color-primary-bg);
-  border-bottom: 2px solid var(--color-primary);
+  background: #F9FAFB;
+  border-bottom: 2px solid #E5E7EB;
 }
 
 .conges-table th {
-  padding: 15px;
+  padding: 14px 18px;
   text-align: left;
-  font-weight: bold;
-  color: var(--color-gray-700);
-  font-size: 14px;
+  font-weight: 700;
+  color: #6B7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
 }
 
 .conges-table tbody tr {
-  border-bottom: 1px solid var(--color-gray-200);
-  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #F3F4F6;
+  transition: background 0.15s;
+}
+
+.conges-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .conges-table tbody tr:hover {
-  background-color: var(--color-primary-light);
+  background: #F9FAFB;
 }
 
 .conges-table td {
-  padding: 12px 15px;
-  color: var(--color-gray-900);
+  padding: 14px 18px;
+  color: #374151;
   font-size: 14px;
+  vertical-align: middle;
 }
 
-.conges-empty,
-.conges-loading {
+.conges-empty {
   text-align: center;
-  padding: 30px !important;
-  color: var(--color-gray-500);
+  padding: 40px !important;
+  color: #9CA3AF;
   font-style: italic;
 }
 
-/* BADGES STATUT */
+/* ----- BADGES STATUT ----- */
 .conges-statut {
-  display: inline-block;
-  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
   border-radius: 20px;
-  font-weight: bold;
+  font-weight: 600;
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .conges-statut-en-attente {
-  background-color: #fff3cd;
-  color: #856404;
+  background: #FEF3C7;
+  color: #92400E;
 }
 
-.conges-statut-Approuvé {
-  background-color: #d4edda;
-  color: #155724;
+.conges-statut-Approuvé,
+.conges-statut-Approved,
+.conges-statut-Acceptee {
+  background: #D1FAE5;
+  color: #065F46;
 }
 
-.conges-statut-Rejeté {
-  background-color: #f8d7da;
-  color: #721c24;
+.conges-statut-Rejeté,
+.conges-statut-Refuse {
+  background: #FEE2E2;
+  color: #991B1B;
 }
 
 .conges-jours {
   text-align: center;
-  font-weight: bold;
+  font-weight: 700;
+  color: #0B1120 !important;
 }
 
-/* ACTIONS */
+/* ----- COMMENTAIRE RH ----- */
+.conges-commentaire-rh {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  border-left: 3px solid #93C5FD;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.conges-commentaire-rh small {
+  display: block;
+  line-height: 1.4;
+}
+
+/* ----- ACTIONS ----- */
 .conges-actions {
   display: flex;
-  gap: 5px;
-  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .conges-btn-action {
-  padding: 6px 10px;
+  padding: 7px 14px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.2s ease;
-  font-size: 13px;
-  min-width: 35px;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
 }
 
 .conges-btn-approve {
-  background-color: #28a745;
-  color: white;
+  background: #D1FAE5;
+  color: #065F46;
 }
 
 .conges-btn-approve:hover {
-  background-color: #218838;
-  transform: scale(1.05);
+  background: #A7F3D0;
+  transform: translateY(-1px);
 }
 
 .conges-btn-reject {
-  background-color: #dc3545;
-  color: white;
+  background: #FEE2E2;
+  color: #991B1B;
 }
 
 .conges-btn-reject:hover {
-  background-color: #c82333;
-  transform: scale(1.05);
+  background: #FECACA;
+  transform: translateY(-1px);
 }
 
-.conges-btn-delete {
-  background-color: var(--color-warning);
-  color: var(--color-black);
+.conges-no-action {
+  color: #D1D5DB;
+  font-size: 13px;
 }
 
-.conges-btn-delete:hover {
-  background-color: #e0a800;
-  transform: scale(1.05);
-}
-
-/* ================================================================
-   MODALE D'APPROBATION / RÉJECTION
-   ================================================================ */
+/* ===== MODALE ===== */
 .conges-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeInOverlay 0.2s ease;
+  padding: 20px;
+  animation: congesFadeOverlay 0.2s ease;
 }
 
-@keyframes fadeInOverlay {
+@keyframes congesFadeOverlay {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 .conges-modal {
-  background: white;
-  border-radius: 14px;
-  padding: 28px;
-  width: 90%;
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 32px 28px 24px;
+  width: 100%;
   max-width: 460px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.25s ease;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+  animation: congesModalUp 0.25s ease;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes congesModalUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .conges-modal-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 .conges-modal-icon {
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .conges-modal-header h3 {
   font-size: 18px;
-  color: var(--color-black);
+  font-weight: 700;
+  color: #0B1120;
   margin: 0;
 }
 
 .conges-modal-desc {
-  color: var(--color-gray-700);
+  color: #6B7280;
   font-size: 14px;
   margin-bottom: 20px;
   line-height: 1.5;
@@ -404,27 +453,27 @@
 .conges-modal-field label {
   display: block;
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: var(--color-gray-900);
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #374151;
 }
 
 .conges-modal-textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 8px;
+  padding: 12px 14px;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  outline: none;
 }
 
 .conges-modal-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
 }
 
 .conges-modal-actions {
@@ -436,53 +485,23 @@
   flex: 1;
 }
 
-.conges-commentaire-rh {
-  margin-top: 6px;
-  padding: 6px 10px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  border-left: 3px solid var(--color-primary);
-  font-size: 13px;
-  color: var(--color-gray-700);
-}
-
-.conges-commentaire-rh small {
-  display: block;
-  line-height: 1.4;
-}
-
-.conges-no-action {
-  color: #ccc;
-  font-weight: bold;
-}
-
-/* RESPONSIVE */
-@media (max-width: 1024px) {
-  .conges-form-container { padding: 16px; }
-}
-
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .conges-table-container { overflow-x: auto; margin: 0 -4px; }
-  .conges-table { min-width: 600px; }
-  .conges-btn-new, .conges-btn-reload { padding: 8px 15px; font-size: 12px; }
-  .conges-form { gap: 12px; }
+  .conges-table-container { overflow-x: auto; }
+  .conges-table { min-width: 620px; }
+  .conges-form-container { padding: 20px; }
   .conges-form-actions { flex-direction: column; }
-  .conges-filter { flex-wrap: wrap; }
-  .conges-filter-btn { padding: 6px 12px; font-size: 12px; flex: 1; text-align: center; }
-  .conges-table th, .conges-table td { padding: 8px 10px; font-size: 12px; }
-  .conges-btn-action { padding: 4px 8px; min-width: 30px; font-size: 11px; }
-  .conges-commentaire-rh { font-size: 11px; padding: 4px 8px; }
-  .conges-actions { flex-direction: column; gap: 4px; }
+  .conges-filter { gap: 6px; }
+  .conges-filter-btn { flex: 1; text-align: center; font-size: 12px; }
+  .conges-actions { flex-direction: column; }
   .conges-actions button { width: 100%; }
-  .conges-modal { width: 95%; padding: 20px; margin: 10px; }
+  .conges-modal { padding: 24px 20px 20px; }
   .conges-modal-actions { flex-direction: column; }
 }
 
 @media (max-width: 480px) {
   .conges-header { flex-direction: column; }
-  .conges-btn-new, .conges-btn-reload { width: 100%; }
-  .conges-filter { flex-direction: column; }
-  .conges-filter-btn { width: 100%; }
-  .conges-table { min-width: 450px; font-size: 11px; }
-  .conges-table th, .conges-table td { padding: 6px 5px; }
+  .conges-btn-new, .conges-btn-reload { width: 100%; justify-content: center; }
+  .conges-table { min-width: 500px; }
+  .conges-table th, .conges-table td { padding: 10px 12px; font-size: 12px; }
 }
