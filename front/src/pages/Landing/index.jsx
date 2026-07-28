@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Shield, Smartphone, BarChart3, Users, Clock, MapPin, Menu, X } from "lucide-react";
+import entreprisesService from "../../services/entreprisesService";
 import "./style.css";
 
 function Landing() {
@@ -11,12 +12,11 @@ function Landing() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/entreprises/inscription", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupData),
-      });
-      if (res.ok) setSignupSent(true);
-    } catch { /* handled */ }
+      await entreprisesService.creerDemande(signupData);
+      setSignupSent(true);
+    } catch (err) {
+      alert("Erreur : " + (err.message || "Impossible d'envoyer la demande. Veuillez réessayer."));
+    }
   };
 
   return (
