@@ -38,15 +38,18 @@ export default function CongesTab() {
   const insets = useSafeAreaInsets();
   const [conges, setConges] = useState<Conge[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState(false);
 
   const loadData = async () => {
     setChargement(true);
+    setErreurChargement(false);
     try {
       const data = await getConges();
       setConges(data);
     } catch (error) {
       console.error("Erreur chargement congés:", error);
       setConges([]);
+      setErreurChargement(true);
     } finally {
       setChargement(false);
     }
@@ -116,7 +119,14 @@ export default function CongesTab() {
                 {autresConges.map(renderConge)}
               </View>
             )}
-            {conges.length === 0 && (
+            {erreurChargement && (
+              <View style={styles.emptyState}>
+                <Ionicons name="alert-circle-outline" size={48} color={Colors.danger} />
+                <Text style={[styles.emptyText, { color: Colors.danger }]}>Impossible de charger les congés</Text>
+                <Text style={{ fontSize: 13, color: Colors.textLight, marginTop: 4 }}>Vérifiez votre connexion et réessayez</Text>
+              </View>
+            )}
+            {!erreurChargement && conges.length === 0 && (
               <View style={styles.emptyState}>
                 <Ionicons name="calendar-outline" size={48} color={Colors.textLight} />
                 <Text style={styles.emptyText}>Aucune demande de congé</Text>

@@ -199,7 +199,7 @@ export default function DemandeCongePage() {
         ]
       );
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Impossible d'envoyer la demande. Veuillez réessayer.";
+      const msg = error?.friendlyMessage || error?.response?.data?.message || "Impossible d'envoyer la demande. Veuillez réessayer.";
       Alert.alert("Erreur", msg);
     } finally {
       setEnvoiEnCours(false);

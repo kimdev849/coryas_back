@@ -19,14 +19,17 @@ export default function PresencesTab() {
 
   const [presences, setPresences] = useState<Presence[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setErreurChargement(false);
     try {
       const data = await getPresences();
       setPresences(data);
     } catch (error) {
       console.error("Erreur chargement presences:", error);
+      setErreurChargement(true);
     } finally {
       setLoading(false);
     }
@@ -273,11 +276,19 @@ export default function PresencesTab() {
             </>
           }
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Ionicons name="calendar-outline" size={48} color={Colors.lightGray} />
-              <Text style={styles.emptyText}>Aucune présence</Text>
-              <Text style={styles.emptySub}>Les pointages apparaîtront ici</Text>
-            </View>
+            erreurChargement ? (
+              <View style={styles.emptyWrap}>
+                <Ionicons name="alert-circle-outline" size={48} color={Colors.danger} />
+                <Text style={[styles.emptyText, { color: Colors.danger }]}>Impossible de charger les présences</Text>
+                <Text style={styles.emptySub}>Vérifiez votre connexion et réessayez</Text>
+              </View>
+            ) : (
+              <View style={styles.emptyWrap}>
+                <Ionicons name="calendar-outline" size={48} color={Colors.lightGray} />
+                <Text style={styles.emptyText}>Aucune présence</Text>
+                <Text style={styles.emptySub}>Les pointages apparaîtront ici</Text>
+              </View>
+            )
           }
         />
       )}

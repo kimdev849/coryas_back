@@ -39,12 +39,8 @@ export function LoginView() {
     try {
       await auth.login(email.trim(), password);
     } catch (error: any) {
-      if (!error.response) {
-        Alert.alert("Erreur réseau", "Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez.");
-      } else {
-        const message = error.response?.data?.message || "Email ou mot de passe incorrect.";
-        Alert.alert("Erreur de connexion", message);
-      }
+      const message = error?.friendlyMessage || error?.response?.data?.message || "Email ou mot de passe incorrect.";
+      Alert.alert("Erreur de connexion", message);
     } finally {
       setLoading(false);
     }

@@ -54,7 +54,7 @@ export default function ParametresPage() {
         Alert.alert("Erreur", result.message);
       }
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Impossible de changer le mot de passe";
+      const msg = error?.friendlyMessage || error?.response?.data?.message || "Impossible de changer le mot de passe";
       Alert.alert("Erreur", msg);
     } finally {
       setChangementEnCours(false);

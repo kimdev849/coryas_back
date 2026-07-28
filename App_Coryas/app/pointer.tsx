@@ -147,7 +147,7 @@ export default function PointerScreen() {
         );
         return;
       }
-      const message = error?.response?.data?.message || error.message || "Impossible d'enregistrer le pointage";
+      const message = error?.friendlyMessage || error?.response?.data?.message || "Impossible d'enregistrer le pointage";
       Alert.alert("Erreur", message);
     } finally {
       setLoadingAction(false);

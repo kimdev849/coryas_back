@@ -61,6 +61,9 @@ api.interceptors.request.use(
 // Si la réponse est une 401 (non autorisé), on vide le token
 // ET les données utilisateur. L'utilisateur sera redirigé
 // vers la page de connexion au prochain clic.
+//
+// Pour toutes les erreurs, on normalise le message pour que
+// les écrans reçoivent toujours un message user-friendly.
 // ============================================================
 api.interceptors.response.use(
   (response) => response,
@@ -74,9 +77,53 @@ api.interceptors.response.use(
       // et l'utilisateur bloque sur l'écran sans pouvoir se reconnecter.
       emit("auth:unauthorized");
     }
+
+    // ============================================================
+    // NORMALISATION DES MESSAGES D'ERREUR
+    // ============================================================
+    // On transforme TOUTES les erreurs axios en un format standard
+    // avec un message user-friendly, pour que les écrans n'aient
+    // JAMAIS à afficher "Network Error" ou "AxiosError" bruts.
+    // ============================================================
+    let friendlyMessage = "Une erreur est survenue. Veuillez réessayer.";
+
+    if (error.response) {
+      // ✅ Le serveur a répondu (4xx, 5xx)
+      // On prend le message du serveur s'il existe
+      friendlyMessage = error.response.data?.message 
+        || error.response.data?.error 
+        || getHttpErrorMessage(error.response.status);
+    } else if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      // ❌ Pas de réponse (hors ligne, DNS, etc.)
+      friendlyMessage = "Impossible de contacter le serveur. Vérifiez votre connexion internet.";
+    } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+      // ⏱️ Timeout
+      friendlyMessage = "Le serveur ne répond pas. Réessayez dans quelques instants.";
+    }
+
+    // On attache le message normalisé à l'erreur pour que les écrans l'utilisent
+    error.friendlyMessage = friendlyMessage;
     return Promise.reject(error);
   }
 );
+
+/**
+ * getHttpErrorMessage : retourne un message user-friendly selon le code HTTP
+ */
+function getHttpErrorMessage(status: number): string {
+  switch (status) {
+    case 400: return "Données invalides. Vérifiez les informations saisies.";
+    case 403: return "Accès refusé. Vous n'avez pas les droits nécessaires.";
+    case 404: return "Ressource introuvable.";
+    case 409: return "Conflit : cette donnée existe déjà.";
+    case 422: return "Données invalides. Vérifiez les champs du formulaire.";
+    case 429: return "Trop de requêtes. Veuillez patienter quelques secondes.";
+    case 500: return "Erreur serveur. Veuillez réessayer plus tard.";
+    case 502: return "Service temporairement indisponible. Réessayez dans un instant.";
+    case 503: return "Service en maintenance. Réessayez plus tard.";
+    default: return "Une erreur est survenue. Veuillez réessayer.";
+  }
+}
 
 /**
  * getToken : récupère le token JWT stocké

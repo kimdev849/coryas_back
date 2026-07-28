@@ -79,9 +79,9 @@ export const getPresences = async (params?: { date_debut?: string; date_fin?: st
       params: { employe_id: employeId, ...params },
     });
     return response.data?.data || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur getPresences:", error);
-    throw error;
+    throw new Error(error.friendlyMessage || "Impossible de charger les présences.");
   }
 };
 
@@ -177,18 +177,14 @@ export const checkIn = async (): Promise<Presence> => {
  * Envoie l'heure du téléphone pour éviter les décalages de fuseau horaire serveur.
  */
 export const checkOut = async (presenceId: string | number): Promise<Presence> => {
-  try {
-    const now = new Date();
-    const heure = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const response = await api.post("/presences/checkout", {
-      presenceId,
-      heure_sortie: `${heure}:${minutes}`,
-    });
-    return response.data.data;
-  } catch (error) {
-    throw error;
-  }
+  const now = new Date();
+  const heure = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const response = await api.post("/presences/checkout", {
+    presenceId,
+    heure_sortie: `${heure}:${minutes}`,
+  });
+  return response.data.data;
 };
 
 // ============================================================
@@ -335,32 +331,23 @@ export const postDemandeConge = async (
   motif: string,
   commentaire?: string,
 ): Promise<Conge> => {
-  try {
-    const employeId = await getEmployeId();
-    const response = await api.post("/conges", {
-      employe_id: employeId,
-      date_debut: convertirDateEnISO(dateDebut),
-      date_fin: convertirDateEnISO(dateFin),
-      motif,
-      commentaire,
-    });
-    return response.data.data;
-  } catch (error) {
-    throw error;
-  }
+  const employeId = await getEmployeId();
+  const response = await api.post("/conges", {
+    employe_id: employeId,
+    date_debut: convertirDateEnISO(dateDebut),
+    date_fin: convertirDateEnISO(dateFin),
+    motif,
+    commentaire,
+  });
+  return response.data.data;
 };
 
 /**
  * getPresenceById : récupère une présence par son ID
  */
 export const getPresenceById = async (id: string): Promise<Presence> => {
-  try {
-    const response = await api.get(`/presences/${id}`);
-    return response.data?.data;
-  } catch (error) {
-    console.error("Erreur getPresenceById:", error);
-    throw error;
-  }
+  const response = await api.get(`/presences/${id}`);
+  return response.data?.data;
 };
 
 /**

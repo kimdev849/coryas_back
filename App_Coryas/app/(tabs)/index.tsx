@@ -37,6 +37,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [todayCompleted, setTodayCompleted] = useState(false);
+  const [erreurChargement, setErreurChargement] = useState(false);
   // Paramètres de l'entreprise (heures configurées)
   const [heureOuverture, setHeureOuverture] = useState<string | null>(null);
   const [heureFermeture, setHeureFermeture] = useState<string | null>(null);
@@ -130,6 +131,7 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error("Erreur chargement home:", error);
+      setErreurChargement(true);
     } finally {
       setLoading(false);
     }
@@ -175,6 +177,17 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* ============================================================ */}
+        {/* BANNIÈRE D'ERREUR (affichée si le chargement a échoué)       */}
+        {/* ============================================================ */}
+        {erreurChargement && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={16} color="#fff" />
+            <Text style={styles.errorBannerText}>
+              Certaines données n'ont pas pu être chargées. Revenez sur cet onglet pour réessayer.
+            </Text>
+          </View>
+        )}
         {/* ============================================================ */}
         {/* HEADER : Message de bienvenue + nom entreprise + notification */}
         {/* ============================================================ */}
@@ -452,5 +465,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.white,
     letterSpacing: 0.5,
+  },
+  // Error banner
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#F44336",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+    marginHorizontal: 0,
+  },
+  errorBannerText: {
+    color: "#fff",
+    fontSize: 12,
+    flex: 1,
   },
 });
