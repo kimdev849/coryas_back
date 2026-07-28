@@ -17,7 +17,7 @@ import {
   LogIn, LogOut, Bell, ArrowRight, RefreshCw, BarChart3, Award,
   TrendingUp, TrendingDown, Activity, Calendar, CheckCircle2,
   XCircle, Clock4, Moon, Sun, MapPin, Mail, Phone, Building2,
-  ChevronRight, Sparkles, Timer, Zap
+  ChevronRight, Sparkles, Zap
 } from "lucide-react";
 import "./style.css";
 
@@ -394,21 +394,21 @@ function Dashboard() {
         ))}
       </div>
 
-      {/* Heures Supplémentaires */}
-      <div className="dash-hs-section">
-        <div className="dash-hs-header">
-          <h3 className="dash-section-title">
-            <Zap size={18} />
-            Heures supplémentaires aujourd'hui
-          </h3>
-          <Link to="/heures-sup" className="dash-hs-link">
-            Voir tout <ChevronRight size={14} />
-          </Link>
-        </div>
-        {heuresSupData && (
+      {/* Heures Supplémentaires - visible seulement si des heures sup existent */}
+      {heuresSupData && (parseInt(heuresSupData.total) > 0 || parseFloat(heuresSupData.total_heures) > 0) && (
+        <div className="dash-hs-section">
+          <div className="dash-hs-header">
+            <h3 className="dash-section-title">
+              <Zap size={18} />
+              Heures supplémentaires aujourd'hui
+            </h3>
+            <Link to="/heures-sup" className="dash-hs-link">
+              Voir tout <ChevronRight size={14} />
+            </Link>
+          </div>
           <div className="dash-hs-stats">
             <div className="dash-hs-stat">
-              <span className="dash-hs-value">{heuresSupData.total || 0}</span>
+              <span className="dash-hs-value">{heuresSupData.total}</span>
               <span className="dash-hs-label">Demandes</span>
             </div>
             <div className="dash-hs-stat">
@@ -420,14 +420,8 @@ function Dashboard() {
               <span className="dash-hs-label">Approuvées</span>
             </div>
           </div>
-        )}
-        {!heuresSupData && (
-          <div className="dash-hs-empty">
-            <Timer size={24} />
-            <p>Aucune heure supplémentaire aujourd'hui</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="dash-admin-actions">
