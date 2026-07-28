@@ -3,19 +3,37 @@
 // Changement de mot de passe operationnel pour tous les roles
 // ================================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import authService from "../../services/authService";
+import parametresService from "../../services/parametresService";
+import { Building2 } from "lucide-react";
 import "./style.css";
 
 function Profil() {
   const { user } = useAuth();
+  const [company, setCompany] = useState({ nom: "", logo: null });
 
   const [ancienMdp, setAncienMdp] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
   const [confirmMdp, setConfirmMdp] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await parametresService.get();
+        if (res.data) {
+          setCompany({
+            nom: res.data.nom_entreprise || "",
+            logo: res.data.logo_url || null,
+          });
+        }
+      } catch { /* fallback */ }
+    };
+    load();
+  }, []);
 
   const showMessage = (text, type = "success") => {
     setMessage({ text, type });
@@ -68,15 +86,26 @@ function Profil() {
       </p>
 
       <div className="profil-card">
-        <div className="profil-avatar">
-          <span className="profil-avatar-letter">{avatarLetter}</span>
+        <div className="profil-card-top">
+          <div className="profil-avatar">
+            {company.logo ? (
+              <img src={company.logo} alt={company.nom} className="profil-company-logo" />
+            ) : (
+              <span className="profil-avatar-letter">{avatarLetter}</span>
+            )}
+          </div>
+          <div className="profil-info">
+            <h2 className="profil-name">{displayName}</h2>
+            <p className="profil-email">{displayEmail}</p>
+            <p className="profil-role">{displayRole}</p>
+          </div>
         </div>
-
-        <div className="profil-info">
-          <h2 className="profil-name">{displayName}</h2>
-          <p className="profil-email">{displayEmail}</p>
-          <p className="profil-role">{displayRole}</p>
-        </div>
+        {company.nom && (
+          <div className="profil-company">
+            <Building2 size={14} />
+            <span>{company.nom}</span>
+          </div>
+        )}
       </div>
 
       {message.text && (

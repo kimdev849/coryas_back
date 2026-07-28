@@ -59,6 +59,7 @@ async function getPunctualite(periode = "mois", entrepriseId = null) {
     }
 
     // Requête : tous les employés avec leurs stats de présence sur la période
+    // Exclut les SuperAdmin (role_id=5) via LEFT JOIN utilisateurs
     const result = await pool.query(`
         SELECT
             e.id,
@@ -83,10 +84,12 @@ async function getPunctualite(periode = "mois", entrepriseId = null) {
             MAX(p.heure_entree) AS heure_la_plus_tard
         FROM employes e
         LEFT JOIN departements d ON d.id = e.departement_id
+        LEFT JOIN utilisateurs u ON u.employe_id = e.id
         LEFT JOIN presences p ON p.employe_id = e.id
             AND p.date_presence >= $1::date
             AND p.date_presence <= CURRENT_DATE
-        WHERE e.statut = 'Actif'${entrepriseFilter}
+        WHERE e.statut = 'Actif'
+          AND (u.role_id IS NULL OR u.role_id != 5)${entrepriseFilter}
         GROUP BY e.id, e.nom, e.prenom, e.matricule, d.nom
         ORDER BY arrivees_a_l_heure DESC
     `, queryParams);

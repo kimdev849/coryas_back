@@ -23,12 +23,14 @@ const pool = require("../config/database");
 async function findByEmail(email) {
     const result = await pool.query(`
         -- On selectionne les colonnes des 3 tables liees
-        SELECT u.id, u.email, u.mot_de_passe, u.actif, u.entreprise_id,
+        -- IMPORTANT: e.entreprise_id (pas u.entreprise_id) car la colonne est sur employes
+        SELECT u.id, u.email, u.mot_de_passe, u.actif,
                e.id AS employe_id, e.nom AS employe_nom, e.prenom AS employe_prenom,
+               e.entreprise_id,
                r.nom AS role_nom
         -- Table principale : utilisateurs (alias u)
         FROM utilisateurs u
-        -- JOIN avec la table employes pour avoir le nom et prenom
+        -- JOIN avec la table employes pour avoir le nom, prenom ET entreprise_id
         JOIN employes e ON e.id = u.employe_id
         -- JOIN avec la table roles pour avoir le nom du role
         JOIN roles r ON r.id = u.role_id

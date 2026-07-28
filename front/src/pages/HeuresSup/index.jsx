@@ -65,13 +65,15 @@ function HeuresSup() {
 
             {message && <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", fontWeight: "bold", background: messageType === "success" ? "#d4edda" : "#f8d7da", color: messageType === "success" ? "#155724" : "#721c24" }}>{message}</div>}
 
-            <div className="employes-actions">
-                {canManage && (
+            {/* Seul l'admin peut ajouter manuellement des heures sup */}
+            {/* Les employés voient uniquement l'historique - le calcul est auto */}
+            {canManage && (
+                <div className="employes-actions">
                     <button className="employes-btn employes-btn-primary" onClick={() => setShowForm(!showForm)}>
                         {showForm ? "Fermer" : "+ Nouvelle heure sup"}
                     </button>
-                )}
-            </div>
+                </div>
+            )}
 
             {showForm && (
                 <div className="config-section" style={{ marginBottom: 24 }}>
