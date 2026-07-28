@@ -54,7 +54,7 @@ function Sidebar({ onClose }) {
       </button>
       <div className="sidebar-brand">
         <div className="sidebar-brand-text">{companyName}</div>
-        <div className="sidebar-brand-sub">Gestion RH Intelligente</div>
+        <div className="sidebar-brand-sub">PRÉSENCIA</div>
       </div>
       <nav className="sidebar-nav">
         <NavLink to="/dashboard" className="sidebar-link" onClick={handleNavClick}>

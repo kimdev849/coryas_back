@@ -152,7 +152,7 @@ function Login() {
         </div>
 
         <p className="login-footer">
-          <strong>Présencia</strong> — Gestion RH Intelligente
+          <strong>PRÉSENCIA</strong>
         </p>
       </div>
     </div>
