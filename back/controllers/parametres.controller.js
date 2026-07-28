@@ -44,6 +44,7 @@ async function getEntrepriseId(req) {
 async function getParametres(req, res) {
     try {
         const entrepriseId = await getEntrepriseId(req);
+        console.log(`📋 GET /parametres — user.id=${req.user?.id} employe_id=${req.user?.employe_id} jwt_entreprise_id=${req.user?.entreprise_id} db_entreprise_id=${entrepriseId}`);
         const data = await parametresModel.get(entrepriseId);
         res.json({ message: "Parametres", data });
     } catch (error) {
