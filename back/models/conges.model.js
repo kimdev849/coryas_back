@@ -25,7 +25,13 @@ async function getAll(filters = {}) {
     let query = `
         SELECT c.id, c.employe_id,
                e.nom || ' ' || e.prenom AS employe_nom,
-               c.date_debut, c.date_fin, c.motif, c.statut,
+               c.date_debut, c.date_fin, c.motif,
+               -- ⚠️ Statut auto : un congé approuvé dont la date de fin est
+               -- passée devient 'Termine' (il n'a plus de sens de rester actif)
+               CASE
+                 WHEN c.statut = 'Approuve' AND c.date_fin < CURRENT_DATE THEN 'Termine'
+                 ELSE c.statut
+               END AS statut,
                c.commentaire, c.commentaire_rh, c.created_at, c.updated_at
         FROM conges c
         JOIN employes e ON e.id = c.employe_id
@@ -58,7 +64,11 @@ async function getById(id) {
     const result = await pool.query(`
         SELECT c.id, c.employe_id,
                e.nom || ' ' || e.prenom AS employe_nom,
-               c.date_debut, c.date_fin, c.motif, c.statut,
+               c.date_debut, c.date_fin, c.motif,
+               CASE
+                 WHEN c.statut = 'Approuve' AND c.date_fin < CURRENT_DATE THEN 'Termine'
+                 ELSE c.statut
+               END AS statut,
                c.commentaire, c.commentaire_rh, c.created_at, c.updated_at
         FROM conges c
         JOIN employes e ON e.id = c.employe_id

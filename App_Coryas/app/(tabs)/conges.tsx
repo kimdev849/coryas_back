@@ -14,6 +14,7 @@ const transformeStatut = (statut: string): string => {
   if (!statut) return "En attente";
   if (statut === "Approuve") return "Approuvé";
   if (statut === "Rejete") return "Refusé";
+  if (statut === "Termine") return "Terminé";
   return statut;
 };
 
@@ -22,6 +23,7 @@ const getCouleurStatut = (statut: string): string => {
     case "Approuve":    return "#4CAF50";
     case "En attente": return "#FF9800";
     case "Rejete":   return "#F44336";
+    case "Termine":   return "#6B7280"; // gris : congé terminé
     default:         return "#999";
   }
 };

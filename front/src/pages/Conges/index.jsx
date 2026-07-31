@@ -197,7 +197,9 @@ function Conges() {
   };
 
   const formatStatutClass = (statut) => {
-    return statut === "En attente" ? "en-attente" : statut;
+    if (statut === "En attente") return "en-attente";
+    if (statut === "Termine") return "termine";
+    return statut;
   };
 
   const filteredConges = filtreStatut === "Tous"
@@ -325,7 +327,7 @@ function Conges() {
 
       {estAdmin && (
         <div className="conges-filter">
-          {["Tous", "En attente", "Approuve", "Rejete"].map((statut) => (
+          {["Tous", "En attente", "Approuve", "Rejete", "Termine"].map((statut) => (
             <button
               key={statut}
               className={"conges-filter-btn " + (filtreStatut === statut ? "active" : "")}
@@ -379,9 +381,9 @@ function Conges() {
                   <td className="conges-jours">{conge.nombreJours || "-"}</td>
                   <td>
                     <span className={"conges-statut conges-statut-" + formatStatutClass(conge.statut)}>
-                      {conge.statut}
+                      {conge.statut === "Termine" ? "Terminé" : conge.statut}
                     </span>
-                    {conge.commentaireRh && (conge.statut === "Rejete" || conge.statut === "Approuve") && (
+                    {conge.commentaireRh && (conge.statut === "Rejete" || conge.statut === "Approuve" || conge.statut === "Termine") && (
                       <div className="conges-commentaire-rh">
                         <small>💬 {conge.commentaireRh}</small>
                       </div>
