@@ -19,12 +19,18 @@ const { validateEmploye } = require("../middlewares/validation.middleware");
 
 // router.use = applique verifyToken a TOUTES les routes en dessous
 router.use(verifyToken);
-router.use(checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]));
 
+// ✅ GET /:id/stats doit être déclaré AVANT /:id (sinon Express le masque)
+router.get("/:id/stats", checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]), employesController.getEmployeStats);
+
+// ✅ GET /:id (profil) est accessible à TOUT employé authentifié
+// (MonPointage web + mobile l'appellent pour afficher les horaires du site)
+router.get("/:id", employesController.getEmployeById);
+
+// Routes réservées aux rôles admin
+router.use(checkRole(["SuperAdmin", "Administrateur", "RH", "Directeur"]));
 router.get("/", employesController.getEmployes);         // GET /api/employes -> liste
 router.post("/", validateEmploye, employesController.createEmploye);      // POST /api/employes -> creer
-router.get("/:id/stats", employesController.getEmployeStats);   // GET /api/employes/5/stats -> stats
-router.get("/:id", employesController.getEmployeById);   // GET /api/employes/5 -> voir
 router.put("/:id", employesController.updateEmploye);    // PUT /api/employes/5 -> modifier
 router.put("/:id/deactivate", employesController.deactivateEmploye); // PUT /api/employes/5/deactivate -> desactiver
 

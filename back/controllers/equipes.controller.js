@@ -7,7 +7,7 @@ const auditLogModel = require("../models/auditLog.model");
 
 const getAll = async (req, res) => {
     try {
-        const data = await equipesModel.getAll();
+        const data = await equipesModel.getAll(req.user?.entreprise_id);
         res.json({ message: "Liste des équipes", data });
     } catch (error) {
         console.error("❌ getAllEquipes:", error);
@@ -17,7 +17,7 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
     try {
-        const data = await equipesModel.getById(req.params.id);
+        const data = await equipesModel.getById(req.params.id, req.user?.entreprise_id);
         if (!data) return res.status(404).json({ message: "Équipe introuvable", data: null });
         res.json({ message: "Équipe trouvée", data });
     } catch (error) {
@@ -28,7 +28,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
     try {
-        const data = await equipesModel.create(req.body);
+        const data = await equipesModel.create({ ...req.body, entreprise_id: req.user?.entreprise_id });
         await auditLogModel.create({
             employe_id: req.user?.employe_id, employe_nom: req.user?.email,
             action: "CREATE", table_name: "equipes", record_id: data.id,

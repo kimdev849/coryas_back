@@ -59,6 +59,8 @@ async function getEmployeById(id, entrepriseId = null) {
         SELECT e.*, d.nom AS departement_nom, u.email, u.role_id,
                tc.nom AS type_contrat_nom,
                s.nom AS site_nom,
+               s.horaire_ouverture AS site_horaire_ouverture,
+               s.horaire_fermeture AS site_horaire_fermeture,
                eq.nom AS equipe_nom,
                (resp.nom || ' ' || resp.prenom) AS responsable_nom
         FROM employes e

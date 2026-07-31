@@ -51,6 +51,10 @@ export interface Employe {
   date_naissance?: string;
   date_embauche?: string;
   statut?: string;
+  site_id?: number | null;
+  site_nom?: string | null;
+  site_horaire_ouverture?: string | null;
+  site_horaire_fermeture?: string | null;
 }
 
 // ============================================================

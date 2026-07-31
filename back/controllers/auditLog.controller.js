@@ -7,10 +7,13 @@ const auditLogModel = require("../models/auditLog.model");
 const getAll = async (req, res) => {
     try {
         const { table_name, employe_id, action, limit, offset } = req.query;
+        // Multi-entreprise : chaque entreprise ne voit que SES logs.
+        // Le SuperAdmin (entreprise_id null) voit tout.
         const data = await auditLogModel.getAll({
             table_name, employe_id, action,
             limit: parseInt(limit) || 100,
             offset: parseInt(offset) || 0,
+            entreprise_id: req.user?.entreprise_id || null,
         });
         res.json({ message: "Journal d'audit", data });
     } catch (error) {
@@ -21,7 +24,7 @@ const getAll = async (req, res) => {
 
 const getStats = async (req, res) => {
     try {
-        const data = await auditLogModel.getStats();
+        const data = await auditLogModel.getStats(req.user?.entreprise_id || null);
         res.json({ message: "Statistiques audit", data });
     } catch (error) {
         console.error("❌ getAuditStats:", error);

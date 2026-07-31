@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useState, useCallback, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  getActivePresence, getTodayPresences, getParametres,
+  getActivePresence, getTodayPresences, getParametres, getProfil,
   checkIn, checkOut, startPause, endPause
 } from "../src/services/data";
 import { useFocusEffect } from "expo-router";
@@ -46,6 +46,7 @@ export default function PointerScreen() {
   const [dureePause, setDureePause] = useState<number>(60);
   // Heure limite de pointage (si l'entreprise l'a activée)
   const [heureLimitePointage, setHeureLimitePointage] = useState<string | null>(null);
+  const [siteNom, setSiteNom] = useState<string | null>(null);
 
   // Animation
   const scaleAnim = useState(new Animated.Value(1))[0];
@@ -94,6 +95,23 @@ export default function PointerScreen() {
               ? parametres.heure_limite_pointage.slice(0, 5)
               : null
           );
+
+          // ⚠️ Si l'employé est affecté à un site avec ses propres horaires,
+          // ce sont CEUX du site qui s'affichent (pas ceux de l'entreprise).
+          try {
+            const profil = await getProfil();
+            if (profil?.site_nom) {
+              setSiteNom(profil.site_nom);
+            }
+            if (profil?.site_horaire_ouverture) {
+              setHeureOuverture(profil.site_horaire_ouverture.slice(0, 5));
+            }
+            if (profil?.site_horaire_fermeture) {
+              setHeureFermeture(profil.site_horaire_fermeture.slice(0, 5));
+            }
+          } catch (e2) {
+            console.warn("Erreur chargement horaires du site:", e2);
+          }
         }
       } catch (e) {
         console.warn("Erreur chargement horaires pointer:", e);
@@ -329,8 +347,14 @@ export default function PointerScreen() {
       </View>
 
       {/* Horaires configurés */}
-      {(heureOuverture || heureFermeture || heureLimitePointage) && (
+      {(heureOuverture || heureFermeture || heureLimitePointage || siteNom) && (
         <View style={styles.companySchedule}>
+          {siteNom && (
+            <View style={styles.scheduleChip}>
+              <Ionicons name="location-outline" size={14} color={Colors.primary} />
+              <Text style={styles.scheduleChipText}>Site : {siteNom}</Text>
+            </View>
+          )}
           {heureOuverture && (
             <View style={styles.scheduleChip}>
               <Ionicons name="enter-outline" size={14} color={Colors.textSecondary} />

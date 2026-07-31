@@ -24,6 +24,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "../../src/constants/Colors";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { CustomModal } from "../../src/components/CustomModal";
+import { getProfil } from "../../src/services/data";
 
 
 
@@ -32,6 +33,7 @@ export default function ProfilTab() {
   const auth = useAuth();
   const insets = useSafeAreaInsets();
   const [user, setUser] = useState<any>(null); // Données utilisateur (any car structure variable)
+  const [siteNom, setSiteNom] = useState<string | null>(null); // Site de travail de l'employé
 
   // ============================================================
   // Chargement des données utilisateur depuis AsyncStorage
@@ -49,6 +51,13 @@ export default function ProfilTab() {
           const userStr = await AsyncStorage.getItem("@user_data");
           if (userStr) {
             setUser(JSON.parse(userStr));
+          }
+          // Récupère le site de travail de l'employé depuis l'API
+          try {
+            const profil = await getProfil();
+            setSiteNom(profil?.site_nom || null);
+          } catch (e2) {
+            console.warn("Erreur chargement site profil:", e2);
           }
         } catch (error) {
           console.error("Erreur chargement profil", error);
@@ -106,6 +115,12 @@ export default function ProfilTab() {
             <Text style={styles.userMatricule}>
               {user.poste}
             </Text>
+          )}
+          {siteNom && (
+            <View style={styles.userSite}>
+              <Ionicons name="location-outline" size={13} color={Colors.primary} />
+              <Text style={styles.userSiteText}>Site : {siteNom}</Text>
+            </View>
           )}
         </View>
       </View>
@@ -239,6 +254,17 @@ const styles = StyleSheet.create({
   userMatricule: {
     fontSize: 12,
     color: Colors.textLight,
+  },
+  userSite: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+  },
+  userSiteText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.primary,
   },
   // optionsList supprimé (inutilisé)
   menuItem: {

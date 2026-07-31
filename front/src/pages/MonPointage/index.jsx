@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import presencesService from "../../services/presencesService";
 import heuresSupService from "../../services/heuresSupService";
 import parametresService from "../../services/parametresService";
+import employesService from "../../services/employesService";
 import { Clock, Coffee, Zap, Play, AlertCircle, CheckCircle2 } from "lucide-react";
 import "./style.css";
 
@@ -12,7 +13,7 @@ function MonPointage() {
   const [todayPresences, setTodayPresences] = useState([]);
   const [settings, setSettings] = useState({
     heure_ouverture: "08:00", heure_fermeture: "17:00",
-    duree_pause: 60, pause_debut: "12:00"
+    duree_pause: 60, pause_debut: "12:00", site_nom: null,
   });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -51,10 +52,11 @@ function MonPointage() {
     try {
       if (!user?.employe_id) return;
 
-      const [activeRes, todayRes, settingsRes] = await Promise.all([
+      const [activeRes, todayRes, settingsRes, employeRes] = await Promise.all([
         presencesService.getActivePresence(user.employe_id),
         presencesService.getAll({ employe_id: user.employe_id, date_debut: todayStr, date_fin: todayStr }),
         parametresService.get(),
+        employesService.getById(user.employe_id),
       ]);
 
       const active = activeRes.data || null;
@@ -62,11 +64,18 @@ function MonPointage() {
       setTodayPresences(todayRes.data || []);
 
       if (settingsRes.data) {
+        // ⚠️ Si l'employé est affecté à un site qui a ses propres horaires,
+        // ce sont CEUX du site qui s'affichent (pas ceux de l'entreprise).
+        const employe = employeRes?.data || null;
+        const siteHeureOuverture = employe?.site_horaire_ouverture ? employe.site_horaire_ouverture.slice(0, 5) : null;
+        const siteHeureFermeture = employe?.site_horaire_fermeture ? employe.site_horaire_fermeture.slice(0, 5) : null;
+
         setSettings({
-          heure_ouverture: settingsRes.data.heure_ouverture || "08:00",
-          heure_fermeture: settingsRes.data.heure_fermeture || "17:00",
+          heure_ouverture: siteHeureOuverture || settingsRes.data.heure_ouverture || "08:00",
+          heure_fermeture: siteHeureFermeture || settingsRes.data.heure_fermeture || "17:00",
           duree_pause: settingsRes.data.duree_pause || 60,
           pause_debut: settingsRes.data.pause_debut?.slice(0, 5) || "12:00",
+          site_nom: employe?.site_nom || null,
         });
       }
 
@@ -332,7 +341,10 @@ function MonPointage() {
             <div className="mp-config-info">
               <div className="mp-config-item">
                 <Clock size={14} />
-                <span>Horaires : {settings.heure_ouverture} - {settings.heure_fermeture}</span>
+                <span>
+                  Horaires : {settings.heure_ouverture} - {settings.heure_fermeture}
+                  {settings.site_nom ? ` (site : ${settings.site_nom})` : ""}
+                </span>
               </div>
               <div className="mp-config-item">
                 <Coffee size={14} />

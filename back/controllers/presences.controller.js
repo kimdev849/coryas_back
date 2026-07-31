@@ -137,8 +137,29 @@ const checkIn = async (req, res) => {
         // 5. RÉCUPÉRER LES PARAMÈTRES DE L'ENTREPRISE
         // ============================================================
         const params = await parametresModel.get(entrepriseId);
-        const heureOuverture = params?.heure_ouverture || "07:00";
-        const heureFermeture = params?.heure_fermeture || "19:00";
+        let heureOuverture = params?.heure_ouverture || "07:00";
+        let heureFermeture = params?.heure_fermeture || "19:00";
+
+        // ============================================================
+        // 5b. HORAIRES DU SITE — Si l'employé est affecté à un site qui
+        //     a ses propres horaires, ce sont EUX qui font foi
+        //     (l'entreprise peut avoir des horaires généraux, mais chaque
+        //     site peut avoir les siens : site de nuit, site de jour...)
+        // ============================================================
+        if (emp.site_id) {
+            const siteHoraireRes = await pool.query(`
+                SELECT nom, horaire_ouverture, horaire_fermeture FROM sites WHERE id = $1
+            `, [emp.site_id]);
+            const siteHoraire = siteHoraireRes.rows[0];
+            if (siteHoraire) {
+                if (siteHoraire.horaire_ouverture) {
+                    heureOuverture = siteHoraire.horaire_ouverture.slice(0, 5);
+                }
+                if (siteHoraire.horaire_fermeture) {
+                    heureFermeture = siteHoraire.horaire_fermeture.slice(0, 5);
+                }
+            }
+        }
 
         // ============================================================
         // 6. VALIDATION : Heure de fermeture

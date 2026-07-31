@@ -109,8 +109,9 @@ function Employes() {
         setDepartements(result.data);
       } else {
         console.warn("Aucun departement trouve");
-        setMessage("Aucun departement trouve ! Ajoutez-en depuis la page Departements.");
-        setMessageType("error");
+        // Message INFO (bleu) : ce n'est PAS une erreur, juste une invitation à créer
+        setMessage("Aucun département trouvé. Ajoutez-en depuis la page Départements avant de créer un employé.");
+        setMessageType("info");
         setTimeout(() => setMessage(""), 6000);
       }
     } catch (err) {
@@ -330,9 +331,9 @@ function Employes() {
           borderRadius: "8px",
           marginBottom: "20px",
           fontWeight: "bold",
-          background: messageType === "success" ? "#d4edda" : "#f8d7da",
-          color: messageType === "success" ? "#155724" : "#721c24",
-          border: messageType === "success" ? "1px solid #c3e6cb" : "1px solid #f5c6cb",
+          background: messageType === "error" ? "#f8d7da" : messageType === "info" ? "#d1ecf1" : "#d4edda",
+          color: messageType === "error" ? "#721c24" : messageType === "info" ? "#0c5460" : "#155724",
+          border: messageType === "error" ? "1px solid #f5c6cb" : messageType === "info" ? "1px solid #bee5eb" : "1px solid #c3e6cb",
         }}>
           {message}
         </div>
