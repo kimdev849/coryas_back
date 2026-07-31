@@ -18,6 +18,9 @@ function MonPointage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
+  // Popup de refus (message lisible + bouton OK)
+  const [popup, setPopup] = useState({ visible: false, titre: "", message: "" });
+
   // Pause state
   const [pauseTimer, setPauseTimer] = useState(null); // seconds remaining
   const [pauseInterval, setPauseInterval] = useState(null);
@@ -116,29 +119,57 @@ function MonPointage() {
 
   const alreadyCheckedInToday = todayPresences.length > 0 && !activePresence;
 
+  // Récupère la position avec un délai maximum garanti.
+  // ⚠️ Sans ce garde-fou, si le navigateur n'appelle jamais les callbacks
+  // (permission ignorée, etc.), le bouton restait bloqué sur "Patientez..."
+  // et l'employé ne voyait AUCUN message. Désormais on retombe toujours
+  // sur une réponse en 8s max → le serveur renvoie alors son message clair.
   const getPosition = () => {
     return new Promise((resolve) => {
+      let settled = false;
+      const done = (value) => {
+        if (!settled) {
+          settled = true;
+          resolve(value);
+        }
+      };
+
       if (!navigator.geolocation) {
-        resolve({ latitude: null, longitude: null });
+        done({ latitude: null, longitude: null });
         return;
       }
+
+      // Sécurité : on libère le bouton après 8s quoi qu'il arrive
+      const timeout = setTimeout(() => done({ latitude: null, longitude: null }), 8000);
+
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        () => resolve({ latitude: null, longitude: null }),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+        (pos) => {
+          clearTimeout(timeout);
+          done({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        },
+        () => {
+          clearTimeout(timeout);
+          done({ latitude: null, longitude: null });
+        },
+        { enableHighAccuracy: true, timeout: 7000, maximumAge: 30000 }
       );
     });
+  };
+
+  // Affiche un popup professionnel avec bouton OK
+  const showPopup = (titre, message) => {
+    setPopup({ visible: true, titre, message });
   };
 
   const handleCheckIn = async () => {
     setActionLoading(true);
     try {
       const { latitude, longitude } = await getPosition();
-      const res = await presencesService.checkIn(user.employe_id, nowTime(), latitude, longitude);
+      await presencesService.checkIn(user.employe_id, nowTime(), latitude, longitude);
       showMessage("Arrivée enregistrée avec succès");
       loadData();
     } catch (err) {
-      showMessage(err.message || "Erreur lors du pointage", "error");
+      showPopup("Pointage refusé", err.message || "Erreur lors du pointage");
     } finally {
       setActionLoading(false);
     }
@@ -161,7 +192,7 @@ function MonPointage() {
 
       loadData();
     } catch (err) {
-      showMessage(err.message || "Erreur lors du pointage", "error");
+      showPopup("Pointage refusé", err.message || "Erreur lors du pointage");
     } finally {
       setActionLoading(false);
     }
@@ -178,7 +209,7 @@ function MonPointage() {
         setActivePresence(res.data);
       }
     } catch (err) {
-      showMessage(err.message || "Erreur", "error");
+      showPopup("Erreur", err.message || "Erreur");
     } finally {
       setActionLoading(false);
     }
@@ -196,7 +227,7 @@ function MonPointage() {
         setActivePresence(res.data);
       }
     } catch (err) {
-      showMessage(err.message || "Erreur", "error");
+      showPopup("Erreur", err.message || "Erreur");
     } finally {
       setActionLoading(false);
     }
@@ -253,6 +284,26 @@ function MonPointage() {
             <CheckCircle2 size={18} className="mp-message-icon" />
           )}
           <span>{message.text}</span>
+        </div>
+      )}
+
+      {/* ===== POPUP DE REFUS (message pro + bouton OK) ===== */}
+      {popup.visible && (
+        <div className="mp-popup-overlay">
+          <div className="mp-popup-card">
+            <div className="mp-popup-icon">
+              <AlertCircle size={28} />
+            </div>
+            <h3 className="mp-popup-title">{popup.titre}</h3>
+            <p className="mp-popup-message">{popup.message}</p>
+            {/* L'employé lit le message puis clique sur OK pour l'enlever */}
+            <button
+              className="mp-popup-ok"
+              onClick={() => setPopup(p => ({ ...p, visible: false }))}
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
 

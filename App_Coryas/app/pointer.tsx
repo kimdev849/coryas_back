@@ -17,6 +17,7 @@ import {
 } from "../src/services/data";
 import { useFocusEffect } from "expo-router";
 import { Colors } from "../src/constants/Colors";
+import { CustomModal } from "../src/components/CustomModal";
 
 export default function PointerScreen() {
   const router = useRouter();
@@ -49,6 +50,9 @@ export default function PointerScreen() {
   // Animation
   const scaleAnim = useState(new Animated.Value(1))[0];
   const pauseIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Popup de refus (message lisible + bouton OK)
+  const [popupRefus, setPopupRefus] = useState<{ titre: string; message: string } | null>(null);
 
   // ============================================================
   // Calcul du temps de pause écoulé
@@ -178,7 +182,7 @@ export default function PointerScreen() {
       const msg = error?.friendlyMessage || error?.response?.data?.message || "Impossible d'enregistrer le pointage";
       // Titre plus clair quand le serveur refuse explicitement le pointage (400)
       const titre = error?.response?.status === 400 ? "Pointage refusé" : "Erreur";
-      Alert.alert(titre, msg);
+      setPopupRefus({ titre, message: msg });
     } finally {
       setLoadingAction(false);
     }
@@ -186,10 +190,10 @@ export default function PointerScreen() {
 
   const handleCheckOut = async () => {
     if (pauseStatut === "en_pause") {
-      Alert.alert(
-        "Pause en cours",
-        "Vous devez d'abord terminer votre pause avant de pointer votre départ."
-      );
+      setPopupRefus({
+        titre: "Pause en cours",
+        message: "Vous devez d'abord terminer votre pause avant de pointer votre départ.",
+      });
       return;
     }
     setLoadingAction(true);
@@ -207,7 +211,10 @@ export default function PointerScreen() {
         );
         return;
       }
-      Alert.alert("Erreur", error?.friendlyMessage || error?.response?.data?.message || "Impossible d'enregistrer le départ");
+      setPopupRefus({
+        titre: error?.response?.status === 400 ? "Pointage refusé" : "Erreur",
+        message: error?.friendlyMessage || error?.response?.data?.message || "Impossible d'enregistrer le départ",
+      });
     } finally {
       setLoadingAction(false);
     }
@@ -237,7 +244,10 @@ export default function PointerScreen() {
         );
         return;
       }
-      Alert.alert("Erreur", error?.friendlyMessage || error?.response?.data?.message || "Impossible de démarrer la pause");
+      setPopupRefus({
+        titre: error?.response?.status === 400 ? "Pointage refusé" : "Erreur",
+        message: error?.friendlyMessage || error?.response?.data?.message || "Impossible de démarrer la pause",
+      });
     } finally {
       setLoadingAction(false);
     }
@@ -261,7 +271,10 @@ export default function PointerScreen() {
         );
         return;
       }
-      Alert.alert("Erreur", error?.friendlyMessage || error?.response?.data?.message || "Impossible de terminer la pause");
+      setPopupRefus({
+        titre: error?.response?.status === 400 ? "Pointage refusé" : "Erreur",
+        message: error?.friendlyMessage || error?.response?.data?.message || "Impossible de terminer la pause",
+      });
     } finally {
       setLoadingAction(false);
     }
@@ -419,6 +432,21 @@ export default function PointerScreen() {
           </Pressable>
         </View>
       )}
+
+      {/* ============================================================
+          POPUP DE REFUS (message pro + bouton OK)
+          ============================================================ */}
+      <CustomModal
+        visible={!!popupRefus}
+        icon={popupRefus?.titre === "Pointage refusé" ? "alert-circle" : "information-circle"}
+        title={popupRefus?.titre || ""}
+        message={popupRefus?.message || ""}
+        confirmLabel="OK"
+        hideCancel
+        confirmStyle={popupRefus?.titre === "Pointage refusé" ? "danger" : "primary"}
+        onConfirm={() => setPopupRefus(null)}
+        onCancel={() => setPopupRefus(null)}
+      />
     </View>
   );
 }

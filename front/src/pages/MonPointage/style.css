@@ -34,6 +34,88 @@
   border: 1px solid transparent;
 }
 
+/* ===== POPUP PROFESSIONNEL (bouton OK) ===== */
+.mp-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+  animation: mp-fade-in 0.2s ease;
+}
+
+.mp-popup-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px 28px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: mp-pop-up 0.25s ease;
+}
+
+.mp-popup-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.mp-popup-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 8px;
+}
+
+.mp-popup-message {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.mp-popup-ok {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.mp-popup-ok:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.mp-popup-ok:active {
+  transform: translateY(0);
+}
+
+@keyframes mp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mp-pop-up {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 .mp-message-icon {
   flex-shrink: 0;
 }
@@ -42,12 +124,6 @@
   background: #e8f5e9;
   color: #2e7d32;
   border-color: #c8e6c9;
-}
-
-.mp-message-error {
-  background: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
 }
 
 .mp-loading {
@@ -245,14 +321,15 @@
     font-size: 20px;
   }
 
+  /* Bouton pointer tactile : assez grand pour le pouce (≥ 44px de zone) */
   .mp-pointer-btn {
-    width: 140px;
-    height: 140px;
-    font-size: 13px;
+    width: 175px;
+    height: 175px;
+    font-size: 14px;
   }
 
   .mp-btn-icon {
-    font-size: 28px;
+    font-size: 34px;
   }
 
   .mp-status-card {
@@ -271,6 +348,33 @@
   .mp-already-icon {
     font-size: 36px;
   }
+
+  /* Popup plein écran mobile : plus d'espace pour le pouce */
+  .mp-popup-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .mp-popup-card {
+    max-width: 100%;
+    padding: 28px 20px 20px;
+    border-radius: 20px 20px 0 0;
+    animation-name: mp-pop-up-bottom;
+  }
+
+  .mp-popup-ok {
+    padding: 16px;
+    font-size: 16px;
+  }
+
+  .mp-popup-message {
+    font-size: 14px;
+  }
+}
+
+@keyframes mp-pop-up-bottom {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .mp-timeline-item {

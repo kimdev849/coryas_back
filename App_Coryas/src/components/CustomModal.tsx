@@ -26,6 +26,8 @@ interface CustomModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   confirmStyle?: "primary" | "danger";
+  // hideCancel=true → popup avec un seul bouton (OK) — idéal pour un simple message
+  hideCancel?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -38,6 +40,7 @@ export function CustomModal({
   confirmLabel = "Confirmer",
   cancelLabel = "Annuler",
   confirmStyle = "primary",
+  hideCancel = false,
   onConfirm,
   onCancel,
 }: CustomModalProps) {
@@ -68,17 +71,26 @@ export function CustomModal({
           <Text style={styles.message}>{message}</Text>
 
           {/* Buttons */}
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.cancelButton} onPress={onCancel}>
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
-            </Pressable>
+          {hideCancel ? (
             <Pressable
-              style={[styles.confirmButton, confirmStyle === "danger" && styles.confirmButtonDanger]}
+              style={[styles.confirmButton, styles.confirmButtonFull, confirmStyle === "danger" && styles.confirmButtonDanger]}
               onPress={onConfirm}
             >
               <Text style={styles.confirmText}>{confirmLabel}</Text>
             </Pressable>
-          </View>
+          ) : (
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.cancelButton} onPress={onCancel}>
+                <Text style={styles.cancelText}>{cancelLabel}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.confirmButton, confirmStyle === "danger" && styles.confirmButtonDanger]}
+                onPress={onConfirm}
+              >
+                <Text style={styles.confirmText}>{confirmLabel}</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
@@ -170,5 +182,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: Colors.white,
+  },
+  confirmButtonFull: {
+    width: "100%",
   },
 });
