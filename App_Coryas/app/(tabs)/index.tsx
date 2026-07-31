@@ -45,7 +45,7 @@ export default function HomeScreen() {
   
   // Temps travaillé calculé en continu
   const [workedTime, setWorkedTime] = useState({ hours: 0, minutes: 0 });
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ============================================================
   // Fonctions utilitaires

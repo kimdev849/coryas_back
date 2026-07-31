@@ -24,6 +24,10 @@ export interface Presence {
   heure_sortie: string | null;
   statut: "Présent" | "En retard" | "Départ anticipé" | "Present" | "Retard" | null;
   employe_id: number;
+  // Gestion des pauses (ajouté avec la migration pause-tracking)
+  pause_statut: string | null;
+  pause_entree: string | null;
+  pause_sortie: string | null;
 }
 
 export interface Conge {
@@ -131,7 +135,6 @@ export const getCurrentPosition = async (): Promise<{ latitude: number; longitud
     // 2. Obtenir la position (haute précision)
     const pos = await getCurrentPositionAsync({
       accuracy: 6, // highest accuracy
-      timeout: 10000, // 10 secondes max
     });
     
     return {

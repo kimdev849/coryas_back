@@ -46,12 +46,12 @@ export default function PointerScreen() {
 
   // Animation
   const scaleAnim = useState(new Animated.Value(1))[0];
-  const pauseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pauseIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ============================================================
   // Calcul du temps de pause écoulé
   // ============================================================
-  const calculePause = (debut: string): string => {
+  const calculePause = (debut: string | null): string => {
     if (!debut) return "00:00";
     const [h, m] = debut.split(":").map(Number);
     const debutDate = new Date();

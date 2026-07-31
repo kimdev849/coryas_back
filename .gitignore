@@ -5,3 +5,6 @@ dist/
 .vite/
 *.bak
 .DS_Store
+*.rar
+*.zip
+*.tar.gz
