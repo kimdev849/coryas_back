@@ -35,7 +35,7 @@ export interface Conge {
   date_debut: string;
   date_fin: string;
   motif: string;
-  statut: "En attente" | "Approuvé" | "Rejeté" | "Approuve" | "Rejete";
+  statut: "En attente" | "Approuvé" | "Rejeté" | "Approuve" | "Rejete" | "Termine";
   commentaire_rh?: string;
   employe_id: number;
 }

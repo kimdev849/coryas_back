@@ -61,7 +61,8 @@ export default function CongesTab() {
 
   const congesValides = conges.filter((c) => c.statut === "Approuve");
   const congesEnAttente = conges.filter((c) => c.statut === "En attente");
-  const autresConges = conges.filter((c) => c.statut !== "Approuve" && c.statut !== "En attente");
+  const congesTermines = conges.filter((c) => c.statut === "Termine");
+  const congesHistorique = conges.filter((c) => c.statut !== "Approuve" && c.statut !== "En attente" && c.statut !== "Termine");
 
   const renderConge = (conge: Conge) => (
     <View key={conge.id} style={styles.congeCard}>
@@ -71,7 +72,7 @@ export default function CongesTab() {
       <View style={styles.congeInfos}>
         <Text style={styles.congeType}>{conge.motif}</Text>
         <Text style={styles.congePeriode}>{conge.date_debut} - {conge.date_fin}</Text>
-        {conge.commentaire_rh && (conge.statut === "Rejete" || conge.statut === "Approuve") && (
+        {conge.commentaire_rh && (conge.statut === "Rejete" || conge.statut === "Approuve" || conge.statut === "Termine") && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
             <Ionicons name="chatbubble-outline" size={14} color={Colors.textSecondary} />
             <Text style={styles.commentaireRh}>{conge.commentaire_rh}</Text>
@@ -115,10 +116,16 @@ export default function CongesTab() {
                 {congesEnAttente.map(renderConge)}
               </View>
             )}
-            {autresConges.length > 0 && (
+            {congesTermines.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Terminés</Text>
+                {congesTermines.map(renderConge)}
+              </View>
+            )}
+            {congesHistorique.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Historique</Text>
-                {autresConges.map(renderConge)}
+                {congesHistorique.map(renderConge)}
               </View>
             )}
             {erreurChargement && (
