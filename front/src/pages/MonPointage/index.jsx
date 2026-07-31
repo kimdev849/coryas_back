@@ -3,7 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import presencesService from "../../services/presencesService";
 import heuresSupService from "../../services/heuresSupService";
 import parametresService from "../../services/parametresService";
-import { Clock, Coffee, Zap, Play } from "lucide-react";
+import { Clock, Coffee, Zap, Play, AlertCircle, CheckCircle2 } from "lucide-react";
 import "./style.css";
 
 function MonPointage() {
@@ -135,10 +135,10 @@ function MonPointage() {
     try {
       const { latitude, longitude } = await getPosition();
       const res = await presencesService.checkIn(user.employe_id, nowTime(), latitude, longitude);
-      showMessage("✅ Arrivée enregistrée avec succès");
+      showMessage("Arrivée enregistrée avec succès");
       loadData();
     } catch (err) {
-      showMessage("❌ " + (err.message || "Erreur lors du pointage"), "error");
+      showMessage(err.message || "Erreur lors du pointage", "error");
     } finally {
       setActionLoading(false);
     }
@@ -149,7 +149,7 @@ function MonPointage() {
     setActionLoading(true);
     try {
       await presencesService.checkOut(activePresence.id, nowTime());
-      showMessage("✅ Départ enregistré. Bonne fin de journée !");
+      showMessage("Départ enregistré. Bonne fin de journée !");
 
       // Charger les heures sup du jour après checkout
       try {
@@ -161,7 +161,7 @@ function MonPointage() {
 
       loadData();
     } catch (err) {
-      showMessage("❌ " + (err.message || "Erreur lors du pointage"), "error");
+      showMessage(err.message || "Erreur lors du pointage", "error");
     } finally {
       setActionLoading(false);
     }
@@ -178,7 +178,7 @@ function MonPointage() {
         setActivePresence(res.data);
       }
     } catch (err) {
-      showMessage("❌ " + (err.message || "Erreur"), "error");
+      showMessage(err.message || "Erreur", "error");
     } finally {
       setActionLoading(false);
     }
@@ -190,13 +190,13 @@ function MonPointage() {
     try {
       const res = await presencesService.endPause(activePresence.id);
       if (res.data) {
-        showMessage("✅ Pause terminée ! Au travail !");
+        showMessage("Pause terminée ! Au travail !");
         cleanupPauseTimer();
         setPauseTimer(null);
         setActivePresence(res.data);
       }
     } catch (err) {
-      showMessage("❌ " + (err.message || "Erreur"), "error");
+      showMessage(err.message || "Erreur", "error");
     } finally {
       setActionLoading(false);
     }
@@ -246,7 +246,14 @@ function MonPointage() {
       </div>
 
       {message.text && (
-        <div className={`mp-message mp-message-${message.type}`}>{message.text}</div>
+        <div className={`mp-message mp-message-${message.type}`}>
+          {message.type === "error" ? (
+            <AlertCircle size={18} className="mp-message-icon" />
+          ) : (
+            <CheckCircle2 size={18} className="mp-message-icon" />
+          )}
+          <span>{message.text}</span>
+        </div>
       )}
 
       {loading ? (

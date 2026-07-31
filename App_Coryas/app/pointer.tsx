@@ -43,6 +43,8 @@ export default function PointerScreen() {
   const [heureOuverture, setHeureOuverture] = useState<string | null>(null);
   const [heureFermeture, setHeureFermeture] = useState<string | null>(null);
   const [dureePause, setDureePause] = useState<number>(60);
+  // Heure limite de pointage (si l'entreprise l'a activée)
+  const [heureLimitePointage, setHeureLimitePointage] = useState<string | null>(null);
 
   // Animation
   const scaleAnim = useState(new Animated.Value(1))[0];
@@ -82,6 +84,12 @@ export default function PointerScreen() {
           setHeureOuverture(parametres.heure_ouverture || null);
           setHeureFermeture(parametres.heure_fermeture || null);
           setDureePause(parametres.duree_pause || 60);
+          // Limite de pointage : seulement si l'entreprise l'a activée
+          setHeureLimitePointage(
+            parametres.limite_pointage && parametres.heure_limite_pointage
+              ? parametres.heure_limite_pointage.slice(0, 5)
+              : null
+          );
         }
       } catch (e) {
         console.warn("Erreur chargement horaires pointer:", e);
@@ -167,7 +175,10 @@ export default function PointerScreen() {
         );
         return;
       }
-      Alert.alert("Erreur", error?.friendlyMessage || error?.response?.data?.message || "Impossible d'enregistrer le pointage");
+      const msg = error?.friendlyMessage || error?.response?.data?.message || "Impossible d'enregistrer le pointage";
+      // Titre plus clair quand le serveur refuse explicitement le pointage (400)
+      const titre = error?.response?.status === 400 ? "Pointage refusé" : "Erreur";
+      Alert.alert(titre, msg);
     } finally {
       setLoadingAction(false);
     }
@@ -305,7 +316,7 @@ export default function PointerScreen() {
       </View>
 
       {/* Horaires configurés */}
-      {(heureOuverture || heureFermeture) && (
+      {(heureOuverture || heureFermeture || heureLimitePointage) && (
         <View style={styles.companySchedule}>
           {heureOuverture && (
             <View style={styles.scheduleChip}>
@@ -323,6 +334,12 @@ export default function PointerScreen() {
             <View style={styles.scheduleChip}>
               <Ionicons name="exit-outline" size={14} color={Colors.textSecondary} />
               <Text style={styles.scheduleChipText}>Fin {heureFermeture}</Text>
+            </View>
+          )}
+          {heureLimitePointage && (
+            <View style={styles.scheduleChip}>
+              <Ionicons name="time-outline" size={14} color={Colors.warning} />
+              <Text style={styles.scheduleChipText}>Pointage avant {heureLimitePointage}</Text>
             </View>
           )}
         </View>

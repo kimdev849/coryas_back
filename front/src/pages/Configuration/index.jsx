@@ -71,6 +71,8 @@ function Configuration() {
     auto_checkout: false,
     heure_auto_checkout: "19:00",
     geo_restriction: false,
+    limite_pointage: false,
+    heure_limite_pointage: "09:00",
     
     // Congés
     conges_annuel_default: 30,
@@ -131,6 +133,8 @@ function Configuration() {
           auto_checkout: result.data.auto_checkout ?? false,
           heure_auto_checkout: result.data.heure_auto_checkout?.slice(0, 5) || "19:00",
           geo_restriction: result.data.geo_restriction ?? false,
+          limite_pointage: result.data.limite_pointage ?? false,
+          heure_limite_pointage: result.data.heure_limite_pointage?.slice(0, 5) || "09:00",
           conges_annuel_default: result.data.conges_annuel_default ?? 30,
           conges_maladie_annee: result.data.conges_maladie_annee ?? 90,
           jours_max_consecutifs: result.data.jours_max_consecutifs ?? 15,
@@ -520,6 +524,22 @@ function Configuration() {
                   <input type="checkbox" name="geo_restriction" checked={settings.geo_restriction} onChange={handleChange} />
                   <span className="config-toggle-slider" />
                 </label>
+              </div>
+              <div className="config-row">
+                <div className="config-row-label">
+                  <strong><Timer size={14} /> Heure limite de pointage</strong>
+                  <p className="config-row-desc">Bloquer le pointage après cette heure (ex: arrivée très tardive)</p>
+                </div>
+                <div className="config-row-right">
+                  <label className="config-toggle">
+                    <input type="checkbox" name="limite_pointage" checked={settings.limite_pointage} onChange={handleChange} />
+                    <span className="config-toggle-slider" />
+                  </label>
+                  {settings.limite_pointage && (
+                    <input type="time" name="heure_limite_pointage" className="config-input config-input-time"
+                      value={settings.heure_limite_pointage} onChange={handleChange} style={{ marginLeft: 8 }} />
+                  )}
+                </div>
               </div>
             </div>
           )}

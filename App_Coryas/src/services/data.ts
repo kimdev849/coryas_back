@@ -286,6 +286,9 @@ export interface Parametres {
   email_entreprise: string;
   telephone: string;
   adresse: string;
+  // Heure limite de pointage (configurable — blocage si actif)
+  limite_pointage?: boolean;
+  heure_limite_pointage?: string | null;
 }
 
 /**

@@ -23,6 +23,21 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 // ----------------------------------------------------------------
+// formatDistance - Formate une distance en mètres de façon lisible
+// ----------------------------------------------------------------
+// < 1000 m  → "850 m"
+// >= 1000 m → "5,8 km" (séparateur décimal français)
+// ----------------------------------------------------------------
+function formatDistance(meters) {
+    const m = Math.round(meters);
+    if (m < 1000) {
+        return `${m} m`;
+    }
+    const km = (m / 1000).toFixed(1).replace(".", ",");
+    return `${km} km`;
+}
+
+// ----------------------------------------------------------------
 // GET /api/presences - Liste toutes les presences (avec filtres)
 // ----------------------------------------------------------------
 // Query params optionnels : employe_id, date_debut, date_fin
@@ -136,6 +151,22 @@ const checkIn = async (req, res) => {
         }
 
         // ============================================================
+        // 6b. VALIDATION : Heure limite de pointage (configurable)
+        //     Si l'entreprise a activé limite_pointage et défini une
+        //     heure_limite_pointage, on REFUSE le pointage après cette
+        //     heure (ex: plus de pointage après 09:30 pour les retards).
+        // ============================================================
+        if (params?.limite_pointage && params?.heure_limite_pointage) {
+            const heureLimitePointage = params.heure_limite_pointage.slice(0, 5);
+            if (heure_entree > heureLimitePointage) {
+                return res.status(400).json({
+                    message: `L'heure limite de pointage (${heureLimitePointage}) est passée. Vous ne pouvez plus pointer aujourd'hui.`,
+                    data: null
+                });
+            }
+        }
+
+        // ============================================================
         // 7. Auto-fermeture des présences des jours précédents oubliées
         //    avec l'heure configurée dans auto_checkout
         // ============================================================
@@ -168,7 +199,7 @@ const checkIn = async (req, res) => {
                 const rayon = site.rayon_gps || 100;
                 if (distance > rayon) {
                     return res.status(400).json({
-                        message: `Vous êtes à ${Math.round(distance)}m du site. Vous devez être à moins de ${rayon}m pour pointer.`,
+                        message: `Vous êtes actuellement à ${formatDistance(distance)} du site. Le pointage n'est autorisé qu'à moins de ${formatDistance(rayon)}. Rapprochez-vous du lieu de travail pour pointer.`,
                         data: null
                     });
                 }

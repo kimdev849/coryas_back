@@ -22,21 +22,32 @@
 }
 
 .mp-message {
-  padding: 12px 16px;
-  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
   margin-bottom: 20px;
   font-size: 14px;
   font-weight: 500;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.mp-message-icon {
+  flex-shrink: 0;
 }
 
 .mp-message-success {
   background: #e8f5e9;
   color: #2e7d32;
+  border-color: #c8e6c9;
 }
 
 .mp-message-error {
-  background: #fbe9e7;
-  color: #c62828;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 
 .mp-loading {

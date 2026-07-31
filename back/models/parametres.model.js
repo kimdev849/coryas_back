@@ -46,6 +46,7 @@ async function save(data) {
         jours_ouvrables, tolerance_retard,
         auto_checkout, heure_auto_checkout, geo_restriction,
         pause_debut,
+        limite_pointage, heure_limite_pointage,
     } = data;
 
     // Convertir jours_ouvrables array -> JSON pour stockage
@@ -93,6 +94,8 @@ async function save(data) {
                 heure_auto_checkout = COALESCE($18, heure_auto_checkout),
                 geo_restriction = COALESCE($19, geo_restriction),
                 pause_debut = COALESCE($20, pause_debut),
+                limite_pointage = COALESCE($21, limite_pointage),
+                heure_limite_pointage = COALESCE($22, heure_limite_pointage),
                 updated_at = NOW()
             WHERE id = 1
             RETURNING *
@@ -103,7 +106,7 @@ async function save(data) {
             defaultTheme, slogan, description, site_web, logo_url,
             joursOuvrablesJson, tolerance_retard,
             auto_checkout, heure_auto_checkout, geo_restriction,
-            pause_debut];
+            pause_debut, limite_pointage, heure_limite_pointage];
         return safeQuery(sql, params);
     };
 
@@ -118,11 +121,12 @@ async function save(data) {
                 jours_ouvrables, tolerance_retard,
                 auto_checkout, heure_auto_checkout, geo_restriction,
                 pause_debut,
+                limite_pointage, heure_limite_pointage,
                 updated_at
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
                     $12, $13, $14, $15, $16::jsonb, $17,
-                    $18, $19, $20, $21, NOW())
+                    $18, $19, $20, $21, $22, $23, NOW())
             ON CONFLICT (entreprise_id) DO UPDATE SET
                 nom_entreprise = COALESCE($2, parametres.nom_entreprise),
                 heure_ouverture = COALESCE($3, parametres.heure_ouverture),
@@ -144,6 +148,8 @@ async function save(data) {
                 heure_auto_checkout = COALESCE($19, parametres.heure_auto_checkout),
                 geo_restriction = COALESCE($20, parametres.geo_restriction),
                 pause_debut = COALESCE($21, parametres.pause_debut),
+                limite_pointage = COALESCE($22, parametres.limite_pointage),
+                heure_limite_pointage = COALESCE($23, parametres.heure_limite_pointage),
                 updated_at = NOW()
             RETURNING *
         `;
@@ -153,7 +159,7 @@ async function save(data) {
             defaultTheme, slogan, description, site_web, logo_url,
             joursOuvrablesJson, tolerance_retard,
             auto_checkout, heure_auto_checkout, geo_restriction,
-            pause_debut];
+            pause_debut, limite_pointage, heure_limite_pointage];
         return safeQuery(sql, params);
     };
 
