@@ -7,7 +7,7 @@ import {
   Building2, Mail, Phone, MapPin, Users, Calendar, CheckCircle2,
   XCircle, Globe, ChevronRight, Plus, Search, Filter,
   Clock, AlertCircle, CheckCheck, ArrowUpRight, Download, Eye,
-  ChevronDown, ChevronUp, Sparkles, Activity
+  ChevronDown, ChevronUp, Sparkles, Activity, Trash2
 } from "lucide-react";
 import "./style.css";
 
@@ -86,6 +86,26 @@ function SuperAdmin() {
     if (!window.confirm(`❌ Refuser la demande de "${nom}" ?`)) return;
     try {
       await entreprisesService.refuserDemande(id);
+      loadData();
+    } catch (err) {
+      alert("Erreur: " + err.message);
+    }
+  };
+
+  // ================================================================
+  // SUPPRIMER DÉFINITIVEMENT une entreprise (toutes ses données)
+  // ================================================================
+  const handleDeleteEntreprise = async (id, nom) => {
+    if (!window.confirm(
+      `🗑️ SUPPRIMER DÉFINITIVEMENT "${nom}" ?\n\n` +
+      `Toutes ses données seront perdues : employés, comptes utilisateurs, ` +
+      `pointages, congés, sites, équipes, départements, paramètres...\n\n` +
+      `Cette action est IRRÉVERSIBLE.`
+    )) return;
+    if (!window.confirm(`⚠️ Dernière confirmation : supprimer "${nom}" et TOUTES ses données ?`)) return;
+    try {
+      const res = await entreprisesService.remove(id);
+      alert(res?.message || `Entreprise "${nom}" supprimée.`);
       loadData();
     } catch (err) {
       alert("Erreur: " + err.message);
@@ -349,6 +369,13 @@ function SuperAdmin() {
                           title="Voir les détails"
                         >
                           <Eye size={16} />
+                        </button>
+                        <button
+                          className="sa-btn sa-btn-icon sa-btn-danger"
+                          onClick={() => handleDeleteEntreprise(ent.id, ent.nom)}
+                          title="Supprimer définitivement"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>

@@ -80,6 +80,50 @@ async function update(id, data) {
     return result.rows[0];
 }
 
+// ----------------------------------------------------------------
+// remove(id) - SUPPRIME COMPLÈTEMENT une entreprise et TOUTES ses données
+// ----------------------------------------------------------------
+// On supprime dans l'ordre inverse des dépendances pour respecter
+// les clés étrangères (enfant avant parent).
+// ----------------------------------------------------------------
+async function remove(id) {
+    // 1. Récupérer tous les employés de l'entreprise (pour leurs sous-données)
+    const empRes = await pool.query(`SELECT id FROM employes WHERE entreprise_id = $1`, [id]);
+    const employeIds = empRes.rows.map(r => r.id);
+
+    await pool.query("BEGIN");
+    try {
+        // 2. Données liées aux employés
+        if (employeIds.length > 0) {
+            await pool.query(`DELETE FROM utilisateurs WHERE employe_id = ANY($1::int[])`, [employeIds]);
+            await pool.query(`DELETE FROM presences WHERE employe_id = ANY($1::int[])`, [employeIds]);
+            await pool.query(`DELETE FROM conges WHERE employe_id = ANY($1::int[])`, [employeIds]);
+            await pool.query(`DELETE FROM notifications WHERE employe_id = ANY($1::int[])`, [employeIds]);
+            await pool.query(`DELETE FROM heures_sup WHERE employe_id = ANY($1::int[])`, [employeIds]);
+            await pool.query(`DELETE FROM solde_conge WHERE employe_id = ANY($1::int[])`, [employeIds]);
+            await pool.query(`DELETE FROM audit_log WHERE employe_id = ANY($1::int[])`, [employeIds]);
+        }
+
+        // 3. Données de l'entreprise (enfants directs)
+        await pool.query(`DELETE FROM parametres WHERE entreprise_id = $1`, [id]);
+        await pool.query(`DELETE FROM abonnements WHERE entreprise_id = $1`, [id]);
+        await pool.query(`DELETE FROM audit_log WHERE entreprise_id = $1`, [id]);
+        await pool.query(`DELETE FROM equipes WHERE entreprise_id = $1`, [id]);
+        await pool.query(`DELETE FROM sites WHERE entreprise_id = $1`, [id]);
+        await pool.query(`DELETE FROM departements WHERE entreprise_id = $1`, [id]);
+
+        // 4. Employés puis l'entreprise elle-même
+        await pool.query(`DELETE FROM employes WHERE entreprise_id = $1`, [id]);
+        const entRes = await pool.query(`DELETE FROM entreprises WHERE id = $1 RETURNING id, nom`, [id]);
+
+        await pool.query("COMMIT");
+        return entRes.rows[0];
+    } catch (error) {
+        await pool.query("ROLLBACK").catch(() => {});
+        throw error;
+    }
+}
+
 async function getStats() {
     const result = await pool.query(`
         SELECT
@@ -110,4 +154,4 @@ async function createDemandeInscription(data) {
     return result.rows[0];
 }
 
-module.exports = { getAll, getById, getBySlug, create, update, getStats, getDemandesInscription, createDemandeInscription };
+module.exports = { getAll, getById, getBySlug, create, update, remove, getStats, getDemandesInscription, createDemandeInscription };

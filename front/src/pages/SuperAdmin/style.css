@@ -123,6 +123,17 @@
   border-radius: 8px;
 }
 
+.sa-btn-icon.sa-btn-danger {
+  background: #FEE2E2;
+  color: #DC2626;
+  margin-left: 6px;
+}
+
+.sa-btn-icon.sa-btn-danger:hover {
+  background: #FECACA;
+  transform: translateY(-1px);
+}
+
 .sa-btn-icon:hover {
   background: #EFF6FF;
   color: #2563EB;

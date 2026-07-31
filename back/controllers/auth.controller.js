@@ -43,6 +43,12 @@ const login = async (req, res) => {
             return res.status(403).json({ message: "Compte desactive", data: null });
         }
 
+        // Si l'ENTREPRISE est desactivee (actif = false), on refuse aussi la
+        // connexion — tous ses employés sont bloqués, pas seulement l'admin.
+        if (user.entreprise_id && user.entreprise_actif === false) {
+            return res.status(403).json({ message: "Votre entreprise est désactivée. Contactez l'administrateur Présencia.", data: null });
+        }
+
         // Compare le mot de passe entré avec le hash stocké
         const passwordMatch = await bcrypt.compare(password, user.mot_de_passe);
         if (!passwordMatch) {

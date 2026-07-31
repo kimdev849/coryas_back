@@ -72,6 +72,16 @@ const entreprisesService = {
   },
 
   // ================================================================
+  // DELETE /api/entreprises/:id - Supprimer définitivement (toutes données)
+  // ================================================================
+  remove: async (id) => {
+    const data = await fetchWithAuth(`/entreprises/${id}`, {
+      method: "DELETE",
+    });
+    return data;
+  },
+
+  // ================================================================
   // PUT /api/entreprises/demande/:id/accepter - Accepter une demande
   // ================================================================
   accepterDemande: async (id, body) => {

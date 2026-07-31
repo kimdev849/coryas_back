@@ -116,6 +116,29 @@ const create = async (req, res) => {
     }
 };
 
+// ----------------------------------------------------------------
+// DELETE /api/entreprises/:id - Supprimer définitivement une entreprise
+// ----------------------------------------------------------------
+// Supprime TOUTES les données liées (employés, utilisateurs, présences,
+// congés, sites, équipes, départements, paramètres, abonnements...)
+// ----------------------------------------------------------------
+const remove = async (req, res) => {
+    try {
+        const entreprise = await entreprisesModel.getById(req.params.id);
+        if (!entreprise) {
+            return res.status(404).json({ message: "Entreprise introuvable", data: null });
+        }
+
+        const deleted = await entreprisesModel.remove(req.params.id);
+        console.log(`🗑️ Entreprise supprimée définitivement : ${deleted?.nom} (ID: ${req.params.id})`);
+
+        res.json({ message: `Entreprise "${deleted?.nom || req.params.id}" et toutes ses données ont été supprimées définitivement.`, data: deleted });
+    } catch (error) {
+        console.error("❌ deleteEntreprise:", error);
+        res.status(500).json({ message: "Erreur serveur", error: error.message, data: null });
+    }
+};
+
 const update = async (req, res) => {
     try {
         const data = await entreprisesModel.update(req.params.id, req.body);
@@ -286,4 +309,4 @@ const refuserDemande = async (req, res) => {
     }
 };
 
-module.exports = { getAll, getById, create, update, getStats, getDemandes, creerDemande, accepterDemande, refuserDemande };
+module.exports = { getAll, getById, create, update, remove, getStats, getDemandes, creerDemande, accepterDemande, refuserDemande };

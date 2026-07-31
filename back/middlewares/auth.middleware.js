@@ -22,7 +22,7 @@ const jwt = require("jsonwebtoken");
 // Si le token est invalide ou expire :
 //   -> on renvoie 401 (non autorise)
 // ================================================================
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
     try {
         // Recupere le header Authorization envoye par le frontend
         const authHeader = req.headers.authorization;
@@ -56,6 +56,25 @@ const verifyToken = (req, res, next) => {
             entreprise_id: decoded.entreprise_id, // ID de l'entreprise (null pour SuperAdmin)
         };
 
+        // ⚠️ MÊME SI DÉJÀ CONNECTÉ : si l'entreprise a été désactivée depuis
+        // la connexion, on bloque TOUTES les requêtes immédiatement
+        // (sinon un employé d'une entreprise désactivée garderait accès
+        // jusqu'à l'expiration de son JWT ~24h).
+        if (decoded.entreprise_id) {
+            try {
+                const pg = require("../config/database");
+                const entRes = await pg.query(
+                    `SELECT actif FROM entreprises WHERE id = $1`,
+                    [decoded.entreprise_id]
+                );
+                const entreprise = entRes.rows[0];
+                if (!entreprise || entreprise.actif === false) {
+                    return res.status(403).json({ message: "Votre entreprise est désactivée. Contactez l'administrateur Présencia.", data: null });
+                }
+            } catch (dbError) {
+                console.error("⚠️ Erreur vérification entreprise (verifyToken):", dbError.message);
+            }
+        }
         next(); // Token valide -> on passe au controlleur
     } catch (error) {
         // Si le token est expire

@@ -28,6 +28,7 @@ async function findByEmail(email) {
                e.id AS employe_id, e.nom AS employe_nom, e.prenom AS employe_prenom,
                e.entreprise_id,
                ent.nom AS entreprise_nom,
+               ent.actif AS entreprise_actif,
                r.nom AS role_nom
         -- Table principale : utilisateurs (alias u)
         FROM utilisateurs u
